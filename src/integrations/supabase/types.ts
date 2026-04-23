@@ -14,14 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_accounts: {
+        Row: {
+          actif: boolean
+          created_at: string
+          id: string
+          nom_complet: string
+          password_hash: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          id?: string
+          nom_complet?: string
+          password_hash: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          id?: string
+          nom_complet?: string
+          password_hash?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       chantiers: {
         Row: {
+          autoriser_budget_chef: boolean
+          budget_global: number
           chef_chantier: string
           created_at: string
           date_debut: string | null
           date_fin_prevue: string | null
           description: string
+          employes_assignes: string[]
           id: string
+          images_chantier: string[]
           localisation: string
           nom_chantier: string
           projet_lie: string | null
@@ -29,12 +63,16 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          autoriser_budget_chef?: boolean
+          budget_global?: number
           chef_chantier?: string
           created_at?: string
           date_debut?: string | null
           date_fin_prevue?: string | null
           description?: string
+          employes_assignes?: string[]
           id?: string
+          images_chantier?: string[]
           localisation?: string
           nom_chantier?: string
           projet_lie?: string | null
@@ -42,12 +80,16 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          autoriser_budget_chef?: boolean
+          budget_global?: number
           chef_chantier?: string
           created_at?: string
           date_debut?: string | null
           date_fin_prevue?: string | null
           description?: string
+          employes_assignes?: string[]
           id?: string
+          images_chantier?: string[]
           localisation?: string
           nom_chantier?: string
           projet_lie?: string | null
@@ -237,8 +279,13 @@ export type Database = {
           id: string
           matricule: string
           nom_complet: string
+          peut_voir_budget: boolean
           poste: string
+          role: string
           salaire: number
+          salaire_recu: number
+          salaire_restant: number
+          salaire_total: number
           statut: string
           telephone: string
           updated_at: string
@@ -250,8 +297,13 @@ export type Database = {
           id?: string
           matricule?: string
           nom_complet?: string
+          peut_voir_budget?: boolean
           poste?: string
+          role?: string
           salaire?: number
+          salaire_recu?: number
+          salaire_restant?: number
+          salaire_total?: number
           statut?: string
           telephone?: string
           updated_at?: string
@@ -263,8 +315,13 @@ export type Database = {
           id?: string
           matricule?: string
           nom_complet?: string
+          peut_voir_budget?: boolean
           poste?: string
+          role?: string
           salaire?: number
+          salaire_recu?: number
+          salaire_restant?: number
+          salaire_total?: number
           statut?: string
           telephone?: string
           updated_at?: string
@@ -314,6 +371,39 @@ export type Database = {
           nom_fichier?: string
           numero?: string
           pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      presences: {
+        Row: {
+          chantier_id: string
+          chef_chantier_id: string
+          created_at: string
+          date: string
+          employes_presence: Json
+          id: string
+          notes: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id: string
+          chef_chantier_id: string
+          created_at?: string
+          date?: string
+          employes_presence?: Json
+          id?: string
+          notes?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string
+          chef_chantier_id?: string
+          created_at?: string
+          date?: string
+          employes_presence?: Json
+          id?: string
+          notes?: string
           updated_at?: string
         }
         Relationships: []
@@ -396,6 +486,39 @@ export type Database = {
           numero?: string
           pdf_base64?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      scm_sessions: {
+        Row: {
+          admin_id: string | null
+          created_at: string
+          employe_id: string | null
+          expires_at: string
+          id: string
+          last_seen_at: string
+          role: string
+          token_hash: string
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string
+          employe_id?: string | null
+          expires_at: string
+          id?: string
+          last_seen_at?: string
+          role: string
+          token_hash: string
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string
+          employe_id?: string | null
+          expires_at?: string
+          id?: string
+          last_seen_at?: string
+          role?: string
+          token_hash?: string
         }
         Relationships: []
       }
