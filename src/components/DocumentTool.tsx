@@ -1,7 +1,7 @@
 import { ArrowLeft, FileCheck2, Plus, Save, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerPdf, enregistrerDocument, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
+import { creerPdf, enregistrerDocument, type DocumentRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea"; required?: boolean; defaultValue?: string };
 type Config = { type: OutilType; titre: string; theme: string; description: string; fields: Field[]; hasLines?: boolean; showTotal?: boolean; totalLabel?: string };
@@ -48,6 +48,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   const [libelleSignature, setLibelleSignature] = useState("Signature du client");
   const [chargement, setChargement] = useState(false);
   const [actualisation, setActualisation] = useState(0);
+  const [documentEdite, setDocumentEdite] = useState<DocumentRecord | null>(null);
 
   const total = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
 
@@ -60,18 +61,32 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
     if (config.hasLines && lignes.some((ligne) => !ligne.description.trim())) return alert("Veuillez renseigner toutes les descriptions de prestations.");
     setChargement(true);
     try {
-      const numero = await (await import("@/lib/scmDocuments")).genererNumero(config.type);
-      const sceauBase64 = await lireImage(sceau);
-      const signatureBase64 = await lireImage(signature);
+      const numero = documentEdite?.numero || await (await import("@/lib/scmDocuments")).genererNumero(config.type);
+      const ancienPayload = (documentEdite?.donnees_formulaire || {}) as Record<string, unknown>;
+      const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
+      const signatureBase64 = await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
       const champs: Array<[string, string]> = config.fields.map((field) => [field.label, formulaire[field.name] || "—"]);
       if (config.type === "facture") champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
       const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, total });
-      await enregistrerDocument(config.type, { ...formulaire, lignes, total, titreCourt: config.titre }, pdf, numero);
+      await enregistrerDocument(config.type, { ...formulaire, lignes, total, titreCourt: config.titre, libelleSceau, libelleSignature, sceauBase64, signatureBase64 }, pdf, numero, documentEdite?.id);
+      setDocumentEdite(null);
       setActualisation((valeur) => valeur + 1);
-      alert("Document PDF généré et enregistré avec succès.");
+      alert(documentEdite ? "Document PDF modifié et réenregistré avec succès." : "Document PDF généré et enregistré avec succès.");
     } catch (erreur) {
       alert(erreur instanceof Error ? erreur.message : "Une erreur est survenue.");
     } finally { setChargement(false); }
+  }
+
+  function editerDocument(document: DocumentRecord) {
+    const donnees = document.donnees_formulaire || {};
+    setDocumentEdite(document);
+    setFormulaire(Object.fromEntries(config.fields.map((field) => [field.name, String(donnees[field.name] ?? field.defaultValue ?? "")])));
+    setLignes(Array.isArray(donnees.lignes) && donnees.lignes.length ? donnees.lignes as LignePrestation[] : [{ description: "", quantite: 1, prix: 0 }]);
+    setLibelleSceau(String(donnees.libelleSceau || "Sceau de l’entreprise"));
+    setLibelleSignature(String(donnees.libelleSignature || "Signature du client"));
+    setSceau(undefined);
+    setSignature(undefined);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
@@ -103,9 +118,9 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer le sceau de l’entreprise</span><input type="file" accept="image/*" onChange={(e) => setSceau(e.target.files?.[0])} className="file-input" /></label>
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer la signature du client</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label>
             </div>
-            <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">{config.showTotal === false ? <span className="text-sm font-semibold text-foreground">Fiche prête à générer</span> : <strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong>}<button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : "Générer et enregistrer le PDF"}</button></div>
+            <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">{config.showTotal === false ? <span className="text-sm font-semibold text-foreground">{documentEdite ? `Modification de ${documentEdite.numero}` : "Fiche prête à générer"}</span> : <strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong>}<button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : documentEdite ? "Réenregistrer le PDF" : "Générer et enregistrer le PDF"}</button></div>
           </form>
-          <div className="space-y-6"><div className="rounded-2xl border border-border bg-card p-5 shadow-document"><FileCheck2 className="mb-3 size-8 text-primary" /><h2 className="text-xl font-bold text-foreground">Document officiel prêt à l’emploi</h2><p className="mt-2 text-sm text-muted-foreground">Chaque PDF inclut le logo SCM SARL, le drapeau de la RDC, une mise en page structurée, ainsi que les zones sceau et signature.</p></div><DocumentHistory type={config.type} actualisation={actualisation} /></div>
+          <div className="space-y-6"><div className="rounded-2xl border border-border bg-card p-5 shadow-document"><FileCheck2 className="mb-3 size-8 text-primary" /><h2 className="text-xl font-bold text-foreground">Document officiel prêt à l’emploi</h2><p className="mt-2 text-sm text-muted-foreground">Chaque PDF inclut le logo SCM SARL, le drapeau de la RDC, une mise en page structurée, ainsi que les zones sceau et signature.</p></div><DocumentHistory type={config.type} actualisation={actualisation} onEdit={editerDocument} /></div>
         </div>
       </div>
     </main>
