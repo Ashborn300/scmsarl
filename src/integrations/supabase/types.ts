@@ -280,6 +280,7 @@ export type Database = {
           matricule: string
           nom_complet: string
           peut_voir_budget: boolean
+          photo_profil: string
           poste: string
           role: string
           salaire: number
@@ -298,6 +299,7 @@ export type Database = {
           matricule?: string
           nom_complet?: string
           peut_voir_budget?: boolean
+          photo_profil?: string
           poste?: string
           role?: string
           salaire?: number
@@ -316,6 +318,7 @@ export type Database = {
           matricule?: string
           nom_complet?: string
           peut_voir_budget?: boolean
+          photo_profil?: string
           poste?: string
           role?: string
           salaire?: number
