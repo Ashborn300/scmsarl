@@ -164,7 +164,7 @@ function piedDePage(pdf: jsPDF, sceau?: string, signature?: string, libelleSceau
   if (signature) pdf.addImage(signature, "JPEG", 117, y + 7, 48, 24, undefined, "FAST");
 }
 
-function texteValeur(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170) {
+function texteValeur(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170, interligne = 4.5) {
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(16, 42, 88);
   pdf.text(label.toUpperCase(), x, y);
@@ -172,7 +172,7 @@ function texteValeur(pdf: jsPDF, label: string, valeur: string, x: number, y: nu
   pdf.setTextColor(36, 45, 64);
   const lignes = pdf.splitTextToSize(valeur || "—", largeur);
   pdf.text(lignes, x, y + 5);
-  return y + 9 + lignes.length * 4.5;
+  return y + 8 + lignes.length * interligne;
 }
 
 function valeurChamp(champs: Array<[string, string]>, label: string) {
@@ -180,26 +180,27 @@ function valeurChamp(champs: Array<[string, string]>, label: string) {
 }
 
 function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string }) {
-  let y = 58;
+  let y = 82;
   pdf.setTextColor(16, 42, 88);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(16);
-  pdf.text("DESCRIPTION DU PROJET DE CONSTRUCTION", 105, y, { align: "center" });
+  pdf.setFontSize(10);
+  pdf.setFillColor(230, 238, 250);
+  pdf.rect(20, y - 5, 168, 8, "F");
+  pdf.text("INFORMATIONS GÉNÉRALES", 23, y);
   y += 12;
-  y = texteValeur(pdf, "Titre du projet", valeurChamp(champs, "Titre du projet"), 20, y, 165);
-  y = texteValeur(pdf, "Nom du client", valeurChamp(champs, "Nom du client"), 20, y + 2, 165);
-
+  y = texteValeur(pdf, "Titre du projet", valeurChamp(champs, "Titre du projet"), 20, y, 78, 3.8);
+  y = texteValeur(pdf, "Nom du client", valeurChamp(champs, "Nom du client"), 110, y - 13, 78, 3.8) + 2;
   pdf.setFont("helvetica", "bold");
   pdf.setFillColor(230, 238, 250);
-  pdf.rect(20, y, 168, 8, "F");
-  pdf.text("Nom de l'entreprise", 23, y + 5);
-  pdf.text("Type", 104, y + 5);
-  pdf.text("Date", 142, y + 5);
+  pdf.rect(20, y - 5, 168, 8, "F");
+  pdf.text("ENTREPRISE", 23, y);
+  pdf.text("TYPE", 94, y);
+  pdf.text("DATE", 145, y);
   pdf.setFont("helvetica", "normal");
-  pdf.text(valeurChamp(champs, "Nom de l’entreprise"), 23, y + 14);
-  pdf.text(valeurChamp(champs, "Type"), 104, y + 14);
-  pdf.text(valeurChamp(champs, "Date"), 142, y + 14);
-  y += 26;
+  pdf.text(pdf.splitTextToSize(valeurChamp(champs, "Nom de l’entreprise"), 64), 23, y + 8);
+  pdf.text(pdf.splitTextToSize(valeurChamp(champs, "Type d’entreprise"), 42), 94, y + 8);
+  pdf.text(valeurChamp(champs, "Date"), 145, y + 8);
+  y += 23;
 
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(16, 42, 88);
@@ -214,13 +215,15 @@ function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, 
   pdf.text(pdf.splitTextToSize(valeurChamp(champs, "Nom du point de contact"), 54), 23, y + 8);
   pdf.text(pdf.splitTextToSize(valeurChamp(champs, "Adresse courriel"), 58), 82, y + 8);
   pdf.text(pdf.splitTextToSize(valeurChamp(champs, "Téléphone"), 40), 146, y + 8);
-  y += 22;
-  y = texteValeur(pdf, "Adresse postale", valeurChamp(champs, "Adresse postale"), 20, y, 165);
-  y = texteValeur(pdf, "Aperçu du projet", valeurChamp(champs, "Aperçu du projet / emplacement"), 20, y + 2, 165);
-  y = texteValeur(pdf, "Dimensions de la parcelle (Ly, lx (m))    Superficie (m²)", `${valeurChamp(champs, "Dimensions de la parcelle (Ly, lx (m))")}      ${valeurChamp(champs, "Superficie (m²)")}`, 20, y + 1, 165);
-  y = texteValeur(pdf, "Nombre de niveaux", valeurChamp(champs, "Nombre de niveaux"), 20, y + 1, 165);
-  y = texteValeur(pdf, "Portée du projet", valeurChamp(champs, "Portée du projet"), 20, y + 1, 165);
-  texteValeur(pdf, "État de la zone du terrain", valeurChamp(champs, "État de la zone du terrain"), 20, y + 1, 165);
+  y += 21;
+  y = texteValeur(pdf, "Adresse postale", valeurChamp(champs, "Adresse postale"), 20, y, 78, 3.8);
+  y = texteValeur(pdf, "Emplacement / adresse de la propriété", valeurChamp(champs, "Emplacement / adresse de la propriété"), 110, y - 13, 78, 3.8) + 1;
+  y = texteValeur(pdf, "Aperçu du projet", valeurChamp(champs, "Aperçu du projet"), 20, y, 168, 3.8);
+  y = texteValeur(pdf, "Dimensions de la parcelle : Ly × Lx en mètres", valeurChamp(champs, "Dimensions de la parcelle : Ly × Lx en mètres"), 20, y + 1, 78, 3.8);
+  y = texteValeur(pdf, "Superficie en m²", valeurChamp(champs, "Superficie en m²"), 110, y - 13, 36, 3.8);
+  y = texteValeur(pdf, "Nombre de niveaux", valeurChamp(champs, "Nombre de niveaux"), 151, y - 13, 37, 3.8) + 1;
+  y = texteValeur(pdf, "Portée du projet", valeurChamp(champs, "Portée du projet"), 20, y, 78, 3.8);
+  texteValeur(pdf, "État de la zone du terrain", valeurChamp(champs, "État de la zone du terrain"), 110, y - 13, 78, 3.8);
   piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
 }
 
