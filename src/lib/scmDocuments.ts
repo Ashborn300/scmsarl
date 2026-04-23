@@ -197,16 +197,18 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   });
 
   if (options.lignes?.length) {
+    const titreLignes = type === "devis" ? "Achats à faire" : "Prestations";
+    const libellePrix = type === "devis" ? "Coût" : "Prix";
     y += 2;
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(16, 42, 88);
-    pdf.text("Prestations", 20, y);
+    pdf.text(titreLignes, 20, y);
     y += 8;
     pdf.setFillColor(230, 238, 250);
     pdf.rect(20, y - 5, 168, 8, "F");
     pdf.text("Description", 23, y);
     pdf.text("Qté", 125, y);
-    pdf.text("Prix", 145, y);
+    pdf.text(libellePrix, 145, y);
     pdf.text("Total", 168, y);
     pdf.setFont("helvetica", "normal");
     options.lignes.forEach((ligne) => {
