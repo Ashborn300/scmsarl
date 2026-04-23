@@ -152,24 +152,19 @@ function texteMultiligne(pdf: jsPDF, label: string, valeur: string, x: number, y
   return y + 10 + lignes.length * 5;
 }
 
-function piedDePage(pdf: jsPDF, sceau?: string, signature?: string) {
+function piedDePage(pdf: jsPDF, sceau?: string, signature?: string, libelleSceau = "Sceau de l’entreprise", libelleSignature = "Signature du client") {
   const y = 244;
   pdf.setDrawColor(25, 55, 109);
   pdf.line(18, y - 8, 192, y - 8);
   pdf.setFontSize(9);
   pdf.setTextColor(90, 98, 115);
-  pdf.text("Zone réservée au sceau de l’entreprise", 25, y);
-  pdf.text("Zone réservée à la signature du client", 115, y);
-  pdf.setDrawColor(170, 176, 190);
-  pdf.roundedRect(22, y + 4, 58, 30, 2, 2);
-  pdf.roundedRect(112, y + 4, 58, 30, 2, 2);
+  pdf.text(libelleSceau || "Sceau de l’entreprise", 25, y);
+  pdf.text(libelleSignature || "Signature du client", 115, y);
   if (sceau) pdf.addImage(sceau, "JPEG", 27, y + 7, 48, 24, undefined, "FAST");
   if (signature) pdf.addImage(signature, "JPEG", 117, y + 7, 48, 24, undefined, "FAST");
-  pdf.setFontSize(8);
-  pdf.text("SCM SARL — RCCM : CD/KNM/RCCM/24-B-01256 — IDNAT : 01-F4200-N55523N — N° Impôt : A2442 173S", 18, 287);
 }
 
-export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; lignes?: LignePrestation[]; total?: number }) {
+export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string; lignes?: LignePrestation[]; total?: number }) {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const logo = await imageVersBase64(logoUrl);
   const drapeauRdc = await drapeauRdcVersPng();
@@ -195,7 +190,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   champs.forEach(([label, valeur]) => {
     y = texteMultiligne(pdf, label, valeur, 20, y, 165);
     if (y > 218) {
-      piedDePage(pdf, options.sceau, options.signature);
+      piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
       pdf.addPage();
       y = 24;
     }
@@ -231,7 +226,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     pdf.text(`TOTAL : ${options.total.toLocaleString("fr-FR")} $`, 130, 229);
   }
 
-  piedDePage(pdf, options.sceau, options.signature);
+  piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
   return pdf.output("datauristring");
 }
 
