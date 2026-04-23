@@ -140,7 +140,6 @@ function EmployePage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loginMode, setLoginMode] = useState<"admin" | "matricule">("matricule");
   const [identifiant, setIdentifiant] = useState("");
-  const [motDePasse, setMotDePasse] = useState("");
   const [onglet, setOnglet] = useState<Onglet>("dashboard");
   const [menuOuvert, setMenuOuvert] = useState(false);
   const [projets, setProjets] = useState<Projet[]>([]);
@@ -228,49 +227,33 @@ function EmployePage() {
   async function restaurerSession(token: string) {
     setChargement(true);
     const tokenHash = await sha256(token);
-    const { data } = await db.from("scm_sessions").select("*").eq("token_hash", tokenHash).gt("expires_at", new Date().toISOString()).maybeSingle();
-    if (!data) { localStorage.removeItem(SESSION_KEY); setChargement(false); return; }
-    let nom = "Utilisateur SCM";
-    if (data.role === "admin") {
-      const admin = await db.from("admin_accounts").select("nom_complet").eq("id", data.admin_id).maybeSingle();
-      nom = admin.data?.nom_complet || "Administrateur SCM SARL";
-    } else if (data.employe_id) {
-      const emp = await db.from("employes").select("nom_complet, role").eq("id", data.employe_id).maybeSingle();
-      nom = emp.data?.nom_complet || nom;
-    }
-    setSession({ token, role: data.role, nom, employeId: data.employe_id, adminId: data.admin_id });
+    const { data } = await db.rpc("scm_get_session", { _token_hash: tokenHash });
+    if (!data?.success) { localStorage.removeItem(SESSION_KEY); setChargement(false); return; }
+    setSession({ token, role: data.role, nom: data.nom, employeId: data.employeId, adminId: data.adminId });
     setChargement(false);
   }
 
   async function connecter(event: React.FormEvent) {
     event.preventDefault();
     setMessage("");
+    const saisie = identifiant.trim();
+    if (!saisie) { setIdentifiant(""); setMessage(loginMode === "admin" ? "Entrez l’identifiant admin." : "Entrez le matricule employé."); return; }
     setSauvegarde(true);
-    if (loginMode === "admin") {
-      const { data } = await db.from("admin_accounts").select("*").eq("username", identifiant.trim()).eq("actif", true).maybeSingle();
-      if (!data) { setSauvegarde(false); setMessage("Identifiants administrateur incorrects."); return; }
-      await creerSession("admin", data.nom_complet, null, data.id);
-    } else {
-      const { data } = await db.from("employes").select("*").eq("matricule", identifiant.trim()).eq("statut", "actif").maybeSingle();
-      if (!data) { setSauvegarde(false); setMessage("Matricule introuvable ou employé inactif."); return; }
-      await creerSession(data.role === "chef_chantier" ? "chef_chantier" : "employe", data.nom_complet, data.id, null);
-    }
-  }
-
-  async function creerSession(role: RoleSession, nom: string, employeId: string | null, adminId: string | null) {
     const token = crypto.randomUUID() + crypto.randomUUID();
     const tokenHash = await sha256(token);
-    const expires = new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString();
-    const { error } = await db.from("scm_sessions").insert({ token_hash: tokenHash, role, employe_id: employeId, admin_id: adminId, expires_at: expires });
+    const { data, error } = loginMode === "admin"
+      ? await db.rpc("scm_login_admin", { _username: saisie, _token_hash: tokenHash })
+      : await db.rpc("scm_login_employe", { _matricule: saisie, _token_hash: tokenHash });
     setSauvegarde(false);
-    if (error) { setMessage("Connexion impossible pour le moment."); return; }
+    if (error || !data?.success) { setIdentifiant(""); setMessage(data?.message || "Connexion impossible pour le moment."); return; }
     localStorage.setItem(SESSION_KEY, token);
-    setSession({ token, role, nom, employeId, adminId });
+    setIdentifiant("");
+    setSession({ token, role: data.role, nom: data.nom, employeId: data.employeId, adminId: data.adminId });
     setOnglet("dashboard");
   }
 
   async function deconnecter() {
-    if (session?.token) await db.from("scm_sessions").delete().eq("token_hash", await sha256(session.token));
+    if (session?.token) await db.rpc("scm_logout", { _token_hash: await sha256(session.token) });
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
     setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setMessage(""); setOnglet("dashboard");
@@ -385,7 +368,7 @@ function EmployePage() {
 
   function changerOnglet(tab: Onglet) { setOnglet(tab); setRecherche(""); setMenuOuvert(false); }
 
-  if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} motDePasse={motDePasse} setMotDePasse={setMotDePasse} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
+  if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
   const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
