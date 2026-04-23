@@ -38,6 +38,15 @@ export const prefixesParOutil: Record<OutilType, string> = {
   description_projet: "PRJ",
 };
 
+const colonnesRechercheParOutil: Record<OutilType, string[]> = {
+  facture: ["nom_fichier", "numero", "client"],
+  devis: ["nom_fichier", "numero", "client"],
+  recu: ["nom_fichier", "numero", "client"],
+  contrat_construction: ["nom_fichier", "numero", "client"],
+  contrat_employe: ["nom_fichier", "numero", "employe"],
+  description_projet: ["nom_fichier", "numero", "projet"],
+};
+
 const db = supabase as any;
 
 export async function genererNumero(type: OutilType) {
@@ -54,7 +63,7 @@ export async function listerDocuments(type: OutilType, recherche = "") {
   let requete = db.from(table).select("*").order("created_at", { ascending: false });
   if (recherche.trim()) {
     const terme = `%${recherche.trim()}%`;
-    requete = requete.or(`nom_fichier.ilike.${terme},numero.ilike.${terme},client.ilike.${terme},employe.ilike.${terme},projet.ilike.${terme}`);
+    requete = requete.or(colonnesRechercheParOutil[type].map((colonne) => `${colonne}.ilike.${terme}`).join(","));
   }
   const { data, error } = await requete;
   if (error) throw new Error(error.message);
@@ -75,16 +84,22 @@ export async function enregistrerDocument(type: OutilType, payload: Record<strin
   const table = tablesParOutil[type];
   const documentNumero = numero || (await genererNumero(type));
   const nomFichier = `${documentNumero}-${String(payload.titreCourt || payload.client || payload.employe || payload.projet || "document").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
-  const ligne = {
+  const ligneBase = {
     numero: documentNumero,
     nom_fichier: nomFichier,
     donnees_formulaire: payload,
     pdf_base64: pdfBase64,
-    montant_total: Number(payload.total || payload.montant || payload.budget || 0),
-    client: String(payload.client || payload.nomClient || ""),
-    employe: String(payload.employe || ""),
-    projet: String(payload.projet || payload.nomProjet || ""),
     date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
+  };
+
+  const ligne = {
+    ...ligneBase,
+    ...(type === "facture" || type === "devis" || type === "recu"
+      ? { montant_total: Number(payload.total || payload.montant || payload.budget || 0) }
+      : {}),
+    ...(type === "facture" || type === "devis" || type === "recu" || type === "contrat_construction" ? { client: String(payload.client || payload.nomClient || "") } : {}),
+    ...(type === "contrat_employe" ? { employe: String(payload.employe || "") } : {}),
+    ...(type === "description_projet" ? { projet: String(payload.projet || payload.nomProjet || "") } : {}),
   };
   const requete = id ? db.from(table).update(ligne).eq("id", id).select().single() : db.from(table).insert(ligne).select().single();
   const { data, error } = await requete;
