@@ -44,6 +44,8 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   const [lignes, setLignes] = useState<LignePrestation[]>([{ description: "", quantite: 1, prix: 0 }]);
   const [sceau, setSceau] = useState<File>();
   const [signature, setSignature] = useState<File>();
+  const [libelleSceau, setLibelleSceau] = useState("Sceau de l’entreprise");
+  const [libelleSignature, setLibelleSignature] = useState("Signature du client");
   const [chargement, setChargement] = useState(false);
   const [actualisation, setActualisation] = useState(0);
 
@@ -63,7 +65,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
       const signatureBase64 = await lireImage(signature);
       const champs: Array<[string, string]> = config.fields.map((field) => [field.label, formulaire[field.name] || "—"]);
       if (config.type === "facture") champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
-      const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, lignes: config.hasLines ? lignes : undefined, total });
+      const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, total });
       await enregistrerDocument(config.type, { ...formulaire, lignes, total, titreCourt: config.titre }, pdf, numero);
       setActualisation((valeur) => valeur + 1);
       alert("Document PDF généré et enregistré avec succès.");
@@ -95,7 +97,12 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
               <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">Prestations</h3><button type="button" onClick={() => setLignes([...lignes, { description: "", quantite: 1, prix: 0 }])} className="mini-button"><Plus className="size-4" /> Ajouter</button></div>
               <div className="space-y-3">{lignes.map((ligne, index) => <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_90px_120px_40px]"><input placeholder="Description" value={ligne.description} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, description: e.target.value } : l))} className="form-control" /><input type="number" min="1" value={ligne.quantite} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, quantite: Number(e.target.value) } : l))} className="form-control" /><input type="number" min="0" value={ligne.prix} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, prix: Number(e.target.value) } : l))} className="form-control" /><button type="button" onClick={() => setLignes(lignes.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button></div>)}</div>
             </div>}
-            <div className="mt-6 grid gap-4 sm:grid-cols-2"><label><span className="mb-1 block text-sm font-semibold text-foreground">Importer le sceau de l’entreprise</span><input type="file" accept="image/*" onChange={(e) => setSceau(e.target.files?.[0])} className="file-input" /></label><label><span className="mb-1 block text-sm font-semibold text-foreground">Importer la signature du client</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label></div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <label><span className="mb-1 block text-sm font-semibold text-foreground">Texte au-dessus du sceau</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
+              <label><span className="mb-1 block text-sm font-semibold text-foreground">Texte au-dessus de la signature</span><input value={libelleSignature} onChange={(e) => setLibelleSignature(e.target.value)} className="form-control" /></label>
+              <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer le sceau de l’entreprise</span><input type="file" accept="image/*" onChange={(e) => setSceau(e.target.files?.[0])} className="file-input" /></label>
+              <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer la signature du client</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label>
+            </div>
             <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between"><strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong><button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : "Générer et enregistrer le PDF"}</button></div>
           </form>
           <div className="space-y-6"><div className="rounded-2xl border border-border bg-card p-5 shadow-document"><FileCheck2 className="mb-3 size-8 text-primary" /><h2 className="text-xl font-bold text-foreground">Document officiel prêt à l’emploi</h2><p className="mt-2 text-sm text-muted-foreground">Chaque PDF inclut le logo SCM SARL, le drapeau de la RDC, une mise en page structurée, ainsi que les zones sceau et signature.</p></div><DocumentHistory type={config.type} actualisation={actualisation} /></div>
