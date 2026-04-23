@@ -275,10 +275,16 @@ export type Database = {
         Row: {
           adresse: string
           chantier_assigne: string | null
+          contact_urgence: string
           created_at: string
+          date_admission: string | null
+          date_naissance: string | null
+          email: string
+          genre: string
           id: string
           matricule: string
           nom_complet: string
+          numero_piece_identite: string
           peut_voir_budget: boolean
           photo_profil: string
           poste: string
@@ -294,10 +300,16 @@ export type Database = {
         Insert: {
           adresse?: string
           chantier_assigne?: string | null
+          contact_urgence?: string
           created_at?: string
+          date_admission?: string | null
+          date_naissance?: string | null
+          email?: string
+          genre?: string
           id?: string
           matricule?: string
           nom_complet?: string
+          numero_piece_identite?: string
           peut_voir_budget?: boolean
           photo_profil?: string
           poste?: string
@@ -313,10 +325,16 @@ export type Database = {
         Update: {
           adresse?: string
           chantier_assigne?: string | null
+          contact_urgence?: string
           created_at?: string
+          date_admission?: string | null
+          date_naissance?: string | null
+          email?: string
+          genre?: string
           id?: string
           matricule?: string
           nom_complet?: string
+          numero_piece_identite?: string
           peut_voir_budget?: boolean
           photo_profil?: string
           poste?: string
