@@ -164,6 +164,66 @@ function piedDePage(pdf: jsPDF, sceau?: string, signature?: string, libelleSceau
   if (signature) pdf.addImage(signature, "JPEG", 117, y + 7, 48, 24, undefined, "FAST");
 }
 
+function texteValeur(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170) {
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(16, 42, 88);
+  pdf.text(label.toUpperCase(), x, y);
+  pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(36, 45, 64);
+  const lignes = pdf.splitTextToSize(valeur || "—", largeur);
+  pdf.text(lignes, x, y + 5);
+  return y + 9 + lignes.length * 4.5;
+}
+
+function valeurChamp(champs: Array<[string, string]>, label: string) {
+  return champs.find(([nom]) => nom === label)?.[1] || "—";
+}
+
+function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string }) {
+  let y = 58;
+  pdf.setTextColor(16, 42, 88);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(16);
+  pdf.text("DESCRIPTION DU PROJET DE CONSTRUCTION", 105, y, { align: "center" });
+  y += 12;
+  y = texteValeur(pdf, "Titre du projet", valeurChamp(champs, "Titre du projet"), 20, y, 165);
+  y = texteValeur(pdf, "Nom du client", valeurChamp(champs, "Nom du client"), 20, y + 2, 165);
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFillColor(230, 238, 250);
+  pdf.rect(20, y, 168, 8, "F");
+  pdf.text("Nom de l'entreprise", 23, y + 5);
+  pdf.text("Type", 104, y + 5);
+  pdf.text("Date", 142, y + 5);
+  pdf.setFont("helvetica", "normal");
+  pdf.text(valeurChamp(champs, "Nom de l’entreprise"), 23, y + 14);
+  pdf.text(valeurChamp(champs, "Type"), 104, y + 14);
+  pdf.text(valeurChamp(champs, "Date"), 142, y + 14);
+  y += 26;
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(16, 42, 88);
+  pdf.text("COORDONNÉES", 20, y);
+  y += 8;
+  pdf.setFillColor(230, 238, 250);
+  pdf.rect(20, y - 5, 168, 8, "F");
+  pdf.text("Nom du point de contact", 23, y);
+  pdf.text("Adresse courriel", 82, y);
+  pdf.text("Téléphone", 146, y);
+  pdf.setFont("helvetica", "normal");
+  pdf.text(pdf.splitTextToSize(valeurChamp(champs, "Nom du point de contact"), 54), 23, y + 8);
+  pdf.text(pdf.splitTextToSize(valeurChamp(champs, "Adresse courriel"), 58), 82, y + 8);
+  pdf.text(pdf.splitTextToSize(valeurChamp(champs, "Téléphone"), 40), 146, y + 8);
+  y += 22;
+  y = texteValeur(pdf, "Adresse postale", valeurChamp(champs, "Adresse postale"), 20, y, 165);
+  y = texteValeur(pdf, "Aperçu du projet", valeurChamp(champs, "Aperçu du projet / emplacement"), 20, y + 2, 165);
+  y = texteValeur(pdf, "Dimensions de la parcelle (Ly, lx (m))    Superficie (m²)", `${valeurChamp(champs, "Dimensions de la parcelle (Ly, lx (m))")}      ${valeurChamp(champs, "Superficie (m²)")}`, 20, y + 1, 165);
+  y = texteValeur(pdf, "Nombre de niveaux", valeurChamp(champs, "Nombre de niveaux"), 20, y + 1, 165);
+  y = texteValeur(pdf, "Portée du projet", valeurChamp(champs, "Portée du projet"), 20, y + 1, 165);
+  texteValeur(pdf, "État de la zone du terrain", valeurChamp(champs, "État de la zone du terrain"), 20, y + 1, 165);
+  piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
+}
+
 export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string; lignes?: LignePrestation[]; total?: number }) {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const logo = await imageVersBase64(logoUrl);
@@ -185,6 +245,11 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   pdf.setDrawColor(22, 73, 146);
   pdf.setLineWidth(0.7);
   pdf.line(18, 70, 192, 70);
+
+  if (type === "description_projet") {
+    creerPdfDescriptionProjet(pdf, champs, options);
+    return pdf.output("datauristring");
+  }
 
   let y = 82;
   champs.forEach(([label, valeur]) => {
