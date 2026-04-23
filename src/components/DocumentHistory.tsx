@@ -1,8 +1,8 @@
-import { Download, Eye, FileText, Search, Trash2 } from "lucide-react";
+import { Download, Eye, FilePenLine, FileText, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { listerDocuments, supprimerDocument, telechargerPdf, voirPdf, type DocumentRecord, type OutilType } from "@/lib/scmDocuments";
 
-export function DocumentHistory({ type, actualisation }: { type: OutilType; actualisation: number }) {
+export function DocumentHistory({ type, actualisation, onEdit }: { type: OutilType; actualisation: number; onEdit: (document: DocumentRecord) => void }) {
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [recherche, setRecherche] = useState("");
   const [chargement, setChargement] = useState(true);
@@ -47,9 +47,10 @@ export function DocumentHistory({ type, actualisation }: { type: OutilType; actu
                   <p className="text-xs text-muted-foreground">{document.numero} · {new Date(document.created_at).toLocaleDateString("fr-FR")}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 sm:flex">
+              <div className="grid grid-cols-4 gap-2 sm:flex">
                 <button type="button" onClick={() => voirPdf(document.pdf_base64)} className="tool-action" aria-label="Voir le PDF"><Eye className="size-4" /></button>
                 <button type="button" onClick={() => telechargerPdf(document.pdf_base64, document.nom_fichier)} className="tool-action" aria-label="Télécharger le PDF"><Download className="size-4" /></button>
+                <button type="button" onClick={() => onEdit(document)} className="tool-action" aria-label="Éditer le PDF"><FilePenLine className="size-4" /></button>
                 <button type="button" onClick={() => supprimer(document.id)} className="tool-action danger" aria-label="Supprimer le PDF"><Trash2 className="size-4" /></button>
               </div>
             </article>
