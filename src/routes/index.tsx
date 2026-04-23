@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, FileText, Hammer, HardHat, ReceiptText, ShieldCheck, UsersRound } from "lucide-react";
 import { useState } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
@@ -74,7 +74,15 @@ function Index() {
 
       <section className="px-4 pb-10 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-5 mt-2"><h2 className="text-2xl font-black text-foreground lg:text-3xl">Outils disponibles</h2><p className="text-sm text-muted-foreground">Chaque carte ouvre un générateur complet avec PDF et historique dédié.</p></div>
+          <div className="mb-5 mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-black text-foreground lg:text-3xl">Outils disponibles</h2>
+              <p className="text-sm text-muted-foreground">Chaque carte ouvre un générateur complet avec PDF et historique dédié.</p>
+            </div>
+            <Link to="/employe" className="primary-action tool-green w-full sm:w-auto">
+              <UsersRound className="size-4" /> Espace employés
+            </Link>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {configs.map((config) => {
               const Icone = icones[config.type];
