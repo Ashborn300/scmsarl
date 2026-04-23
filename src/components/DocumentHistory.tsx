@@ -1,0 +1,61 @@
+import { Download, Eye, FileText, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { listerDocuments, supprimerDocument, telechargerPdf, voirPdf, type DocumentRecord, type OutilType } from "@/lib/scmDocuments";
+
+export function DocumentHistory({ type, actualisation }: { type: OutilType; actualisation: number }) {
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+  const [recherche, setRecherche] = useState("");
+  const [chargement, setChargement] = useState(true);
+
+  useEffect(() => {
+    setChargement(true);
+    listerDocuments(type, recherche)
+      .then(setDocuments)
+      .finally(() => setChargement(false));
+  }, [type, actualisation, recherche]);
+
+  async function supprimer(id: string) {
+    if (!confirm("Voulez-vous supprimer définitivement ce fichier PDF ?")) return;
+    await supprimerDocument(type, id);
+    setDocuments((liste) => liste.filter((document) => document.id !== id));
+  }
+
+  return (
+    <section className="rounded-2xl border border-border bg-card/90 p-4 shadow-document lg:p-6">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Historique des fichiers</h2>
+          <p className="text-sm text-muted-foreground">PDF générés, consultables et téléchargeables.</p>
+        </div>
+        <label className="relative block sm:w-72">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input value={recherche} onChange={(event) => setRecherche(event.target.value)} placeholder="Rechercher un fichier" className="h-10 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm outline-none ring-ring transition focus:ring-2" />
+        </label>
+      </div>
+      <div className="space-y-3">
+        {chargement ? (
+          <div className="rounded-xl border border-border bg-muted p-4 text-sm text-muted-foreground">Chargement de l’historique…</div>
+        ) : documents.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-muted/60 p-6 text-center text-sm text-muted-foreground">Aucun PDF généré pour le moment.</div>
+        ) : (
+          documents.map((document) => (
+            <article key={document.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><FileText className="size-5" /></span>
+                <div className="min-w-0">
+                  <h3 className="truncate text-sm font-semibold text-foreground">{document.nom_fichier}</h3>
+                  <p className="text-xs text-muted-foreground">{document.numero} · {new Date(document.created_at).toLocaleDateString("fr-FR")}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:flex">
+                <button type="button" onClick={() => voirPdf(document.pdf_base64)} className="tool-action" aria-label="Voir le PDF"><Eye className="size-4" /></button>
+                <button type="button" onClick={() => telechargerPdf(document.pdf_base64, document.nom_fichier)} className="tool-action" aria-label="Télécharger le PDF"><Download className="size-4" /></button>
+                <button type="button" onClick={() => supprimer(document.id)} className="tool-action danger" aria-label="Supprimer le PDF"><Trash2 className="size-4" /></button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
