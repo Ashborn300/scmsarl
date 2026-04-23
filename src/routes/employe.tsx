@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import scmCompanyLogo from "@/assets/scm-company-logo.jpeg";
 
 export const Route = createFileRoute("/employe")({
   head: () => ({
@@ -180,8 +181,10 @@ function EmployePage() {
 
   const chantiersVisibles = useMemo(() => {
     if (!session || isAdmin) return chantiers;
-    if (isChef && session.employeId) return chantiers.filter((c) => c.chef_chantier === session.employeId || (c.employes_assignes || []).includes(session.employeId));
-    return chantiers.filter((c) => session.employeId && ((c.employes_assignes || []).includes(session.employeId) || c.id === employeConnecte?.chantier_assigne));
+    const employeId = session.employeId;
+    if (!employeId) return [];
+    if (isChef) return chantiers.filter((c) => c.chef_chantier === employeId || (c.employes_assignes || []).includes(employeId));
+    return chantiers.filter((c) => (c.employes_assignes || []).includes(employeId) || c.id === employeConnecte?.chantier_assigne);
   }, [chantiers, session, isAdmin, isChef, employeConnecte]);
 
   const employesVisibles = useMemo(() => {
