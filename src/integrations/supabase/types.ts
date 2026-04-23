@@ -532,6 +532,16 @@ export type Database = {
         Args: { _prefixe: string; _type_document: string }
         Returns: string
       }
+      scm_get_session: { Args: { _token_hash: string }; Returns: Json }
+      scm_login_admin: {
+        Args: { _token_hash: string; _username: string }
+        Returns: Json
+      }
+      scm_login_employe: {
+        Args: { _matricule: string; _token_hash: string }
+        Returns: Json
+      }
+      scm_logout: { Args: { _token_hash: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
