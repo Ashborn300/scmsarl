@@ -363,13 +363,14 @@ function EmployePage() {
     setSauvegarde(false);
   }
 
-  function retirerImage(url: string) { setFormChantier({ ...formChantier, images_chantier: formChantier.images_chantier.filter((img) => img !== url) }); }
+  async function retirerImage(url: string) { await supprimerFichierStockage("chantier-images", url); setFormChantier({ ...formChantier, images_chantier: formChantier.images_chantier.filter((img) => img !== url) }); }
 
   async function televerserPhotoEmploye(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
     setSauvegarde(true);
     const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+    if (formEmploye.photo_profil) await supprimerFichierStockage("employe-photos", formEmploye.photo_profil);
     const { error } = await supabase.storage.from("employe-photos").upload(path, file, { upsert: false });
     if (error) { setMessage("Téléversement de la photo impossible."); setSauvegarde(false); return; }
     const { data } = supabase.storage.from("employe-photos").getPublicUrl(path);
@@ -377,7 +378,7 @@ function EmployePage() {
     setSauvegarde(false);
   }
 
-  function retirerPhotoEmploye() { setFormEmploye({ ...formEmploye, photo_profil: "" }); }
+  async function retirerPhotoEmploye() { await supprimerFichierStockage("employe-photos", formEmploye.photo_profil); setFormEmploye({ ...formEmploye, photo_profil: "" }); }
 
   async function enregistrerPresence(event: React.FormEvent) {
     event.preventDefault();
