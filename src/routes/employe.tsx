@@ -85,6 +85,12 @@ type Employe = {
   chantier_assigne: string | null;
   peut_voir_budget?: boolean;
   photo_profil?: string;
+  genre?: string;
+  date_admission?: string | null;
+  date_naissance?: string | null;
+  email?: string;
+  numero_piece_identite?: string;
+  contact_urgence?: string;
   created_at: string;
 };
 
@@ -127,7 +133,7 @@ const statutsChantier = ["Planifié", "Actif", "En pause", "Terminé"];
 const statutsPresence: StatutPresence[] = ["présent", "absent", "en retard", "excusé"];
 
 const projetInitial: ProjetForm = { nom_projet: "", client: "", localisation: "", description: "", budget_estime: "", statut: "Planifié", date_debut: "", date_fin_prevue: "" };
-const employeInitial: EmployeForm = { nom_complet: "", poste: "", matricule: "", telephone: "", adresse: "", salaire_total: "", salaire_recu: "0", role: "employe", statut: "actif", chantier_assigne: "", peut_voir_budget: false, photo_profil: "" };
+const employeInitial: EmployeForm = { nom_complet: "", poste: "", matricule: "", telephone: "", adresse: "", salaire_total: "", salaire_recu: "0", role: "employe", statut: "actif", chantier_assigne: "", peut_voir_budget: false, photo_profil: "", genre: "", date_admission: "", date_naissance: "", email: "", numero_piece_identite: "", contact_urgence: "" };
 const chantierInitial: ChantierForm = { nom_chantier: "", localisation: "", chef_chantier: "", projet_lie: "", employes_assignes: [], description: "", budget_global: "", images_chantier: [], autoriser_budget_chef: false, statut: "Planifié", date_debut: "", date_fin_prevue: "" };
 
 function nombre(value: number) { return new Intl.NumberFormat("fr-FR").format(value || 0); }
@@ -290,7 +296,7 @@ function EmployePage() {
     if (!isAdmin) return;
     setEdition({ type, id }); setDetail(null); setMessage("");
     if (type === "projets") { const item = projets.find((p) => p.id === id); if (item) setFormProjet({ ...item, budget_estime: String(item.budget_estime || ""), date_debut: item.date_debut || "", date_fin_prevue: item.date_fin_prevue || "" }); }
-    if (type === "employes") { const item = employes.find((e) => e.id === id); if (item) setFormEmploye({ ...item, salaire_total: String(item.salaire_total ?? item.salaire ?? ""), salaire_recu: String(item.salaire_recu || 0), chantier_assigne: item.chantier_assigne || "", role: item.role || "employe", peut_voir_budget: !!item.peut_voir_budget, photo_profil: item.photo_profil || "" }); }
+    if (type === "employes") { const item = employes.find((e) => e.id === id); if (item) setFormEmploye({ ...item, salaire_total: String(item.salaire_total ?? item.salaire ?? ""), salaire_recu: String(item.salaire_recu || 0), chantier_assigne: item.chantier_assigne || "", role: item.role || "employe", peut_voir_budget: !!item.peut_voir_budget, photo_profil: item.photo_profil || "", genre: item.genre || "", date_admission: item.date_admission || "", date_naissance: item.date_naissance || "", email: item.email || "", numero_piece_identite: item.numero_piece_identite || "", contact_urgence: item.contact_urgence || "" }); }
     if (type === "chantiers") { const item = chantiers.find((c) => c.id === id); if (item) setFormChantier({ ...item, projet_lie: item.projet_lie || "", chef_chantier: item.chef_chantier || "", employes_assignes: item.employes_assignes || [], budget_global: String(item.budget_global || ""), images_chantier: item.images_chantier || [], date_debut: item.date_debut || "", date_fin_prevue: item.date_fin_prevue || "", autoriser_budget_chef: !!item.autoriser_budget_chef }); }
   };
 
@@ -309,7 +315,7 @@ function EmployePage() {
     const total = Number(formEmploye.salaire_total) || 0;
     const recu = Number(formEmploye.salaire_recu) || 0;
     setSauvegarde(true);
-    const payload = { ...formEmploye, salaire: total, salaire_total: total, salaire_recu: recu, salaire_restant: Math.max(total - recu, 0), chantier_assigne: formEmploye.chantier_assigne || null };
+    const payload = { ...formEmploye, nom_complet: formEmploye.nom_complet.trim(), matricule: formEmploye.matricule.trim(), poste: formEmploye.poste.trim(), telephone: formEmploye.telephone.trim(), adresse: formEmploye.adresse.trim(), email: (formEmploye.email || "").trim(), numero_piece_identite: (formEmploye.numero_piece_identite || "").trim(), contact_urgence: (formEmploye.contact_urgence || "").trim(), salaire: total, salaire_total: total, salaire_recu: recu, salaire_restant: Math.max(total - recu, 0), chantier_assigne: formEmploye.chantier_assigne || null, date_admission: normaliserDate(formEmploye.date_admission || null), date_naissance: normaliserDate(formEmploye.date_naissance || null) };
     const { error } = edition?.id ? await db.from("employes").update(payload).eq("id", edition.id) : await db.from("employes").insert(payload);
     await finaliserSauvegarde(error, "Employé enregistré.");
   }
