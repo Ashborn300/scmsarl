@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_accounts: {
+        Row: {
+          actif: boolean
+          created_at: string
+          id: string
+          nom_complet: string
+          password_hash: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          id?: string
+          nom_complet?: string
+          password_hash: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          id?: string
+          nom_complet?: string
+          password_hash?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       chantiers: {
         Row: {
           autoriser_budget_chef: boolean
@@ -456,6 +486,39 @@ export type Database = {
           numero?: string
           pdf_base64?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      scm_sessions: {
+        Row: {
+          admin_id: string | null
+          created_at: string
+          employe_id: string | null
+          expires_at: string
+          id: string
+          last_seen_at: string
+          role: string
+          token_hash: string
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string
+          employe_id?: string | null
+          expires_at: string
+          id?: string
+          last_seen_at?: string
+          role: string
+          token_hash: string
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string
+          employe_id?: string | null
+          expires_at?: string
+          id?: string
+          last_seen_at?: string
+          role?: string
+          token_hash?: string
         }
         Relationships: []
       }
