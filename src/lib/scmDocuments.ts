@@ -164,7 +164,7 @@ function piedDePage(pdf: jsPDF, sceau?: string, signature?: string, libelleSceau
   if (signature) pdf.addImage(signature, "JPEG", 117, y + 7, 48, 24, undefined, "FAST");
 }
 
-function texteValeur(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170) {
+function texteValeur(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170, interligne = 4.5) {
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(16, 42, 88);
   pdf.text(label.toUpperCase(), x, y);
@@ -172,7 +172,7 @@ function texteValeur(pdf: jsPDF, label: string, valeur: string, x: number, y: nu
   pdf.setTextColor(36, 45, 64);
   const lignes = pdf.splitTextToSize(valeur || "—", largeur);
   pdf.text(lignes, x, y + 5);
-  return y + 9 + lignes.length * 4.5;
+  return y + 8 + lignes.length * interligne;
 }
 
 function valeurChamp(champs: Array<[string, string]>, label: string) {
