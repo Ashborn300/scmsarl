@@ -262,6 +262,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acces_application_scm: { Args: never; Returns: boolean }
       generer_numero_document: {
         Args: { _prefixe: string; _type_document: string }
         Returns: string
