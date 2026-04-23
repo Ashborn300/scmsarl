@@ -142,6 +142,8 @@ function dateFr(value?: string | null) { return value ? new Date(value).toLocale
 function normaliserDate(value: string | null) { return value && value.length > 0 ? value : null; }
 async function sha256(value: string) { const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)); return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join(""); }
 function sessionRoleLabel(role: RoleSession) { return role === "admin" ? "Administrateur" : role === "chef_chantier" ? "Chef de chantier" : "Employé"; }
+function cheminStockageDepuisUrl(url: string, bucket: string) { try { const parsed = new URL(url); const marker = `/object/public/${bucket}/`; const index = parsed.pathname.indexOf(marker); return index >= 0 ? decodeURIComponent(parsed.pathname.slice(index + marker.length)) : ""; } catch { return ""; } }
+async function supprimerFichierStockage(bucket: string, url?: string) { const path = url ? cheminStockageDepuisUrl(url, bucket) : ""; if (path) await supabase.storage.from(bucket).remove([path]); }
 
 function EmployePage() {
   const [session, setSession] = useState<Session | null>(null);
@@ -339,6 +341,8 @@ function EmployePage() {
     if (!isAdmin) return;
     const libelle = type === "projets" ? "ce projet" : type === "employes" ? "cet employé" : "ce chantier";
     if (!confirm(`Voulez-vous vraiment supprimer ${libelle} ?`)) return;
+    if (type === "employes") await supprimerFichierStockage("employe-photos", employes.find((e) => e.id === id)?.photo_profil);
+    if (type === "chantiers") await Promise.all((chantiers.find((c) => c.id === id)?.images_chantier || []).map((url) => supprimerFichierStockage("chantier-images", url)));
     const { error } = await db.from(type).delete().eq("id", id);
     if (error) setMessage(error.message || "Suppression impossible."); else { setMessage("Élément supprimé."); setDetail(null); await chargerDonnees(); }
   }
