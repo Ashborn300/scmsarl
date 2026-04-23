@@ -4,7 +4,7 @@ import { DocumentHistory } from "./DocumentHistory";
 import { creerPdf, enregistrerDocument, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea"; required?: boolean; defaultValue?: string };
-type Config = { type: OutilType; titre: string; theme: string; description: string; fields: Field[]; hasLines?: boolean; totalLabel?: string };
+type Config = { type: OutilType; titre: string; theme: string; description: string; fields: Field[]; hasLines?: boolean; showTotal?: boolean; totalLabel?: string };
 
 const aujourdhui = new Date().toISOString().slice(0, 10);
 
@@ -24,8 +24,8 @@ export const configs: Config[] = [
   { type: "contrat_employe", titre: "Générateur de contrat d’employé", theme: "teal", description: "Contrat d’employé avec poste, salaire, durée et responsabilités.", fields: [
     { name: "employe", label: "Nom de l’employé", required: true }, { name: "poste", label: "Poste", required: true }, { name: "salaire", label: "Salaire ($)", type: "number", required: true }, { name: "duree", label: "Durée du contrat", required: true }, { name: "responsabilites", label: "Responsabilités", type: "textarea" }, { name: "conditions", label: "Conditions", type: "textarea" },
   ]},
-  { type: "description_projet", titre: "Générateur de description de projet", theme: "red", description: "Fiche projet structurée avec localisation, matériaux, durée et budget.", fields: [
-    { name: "projet", label: "Nom du projet", required: true }, { name: "localisation", label: "Localisation", required: true }, { name: "description", label: "Description", type: "textarea", required: true }, { name: "materiaux", label: "Matériaux utilisés", type: "textarea" }, { name: "duree", label: "Durée", required: true }, { name: "budget", label: "Budget estimé ($)", type: "number" },
+  { type: "description_projet", titre: "Générateur de description de projet", theme: "red", description: "Fiche officielle structurée avec aperçu, coordonnées, parcelle, niveaux et signatures.", showTotal: false, fields: [
+    { name: "projet", label: "Titre du projet", required: true, defaultValue: "CONSTRUCTION D'UN BATIMENT EN R+3" }, { name: "client", label: "Nom du client", required: true }, { name: "nomEntreprise", label: "Nom de l’entreprise", defaultValue: "SCM SARL" }, { name: "typeEntreprise", label: "Type", defaultValue: "SARL" }, { name: "date", label: "Date", type: "date", defaultValue: aujourdhui }, { name: "contactNom", label: "Nom du point de contact", defaultValue: "SCM SARL" }, { name: "email", label: "Adresse courriel", defaultValue: "Solutiondeconstructionmodernes@gmail.com" }, { name: "telephone", label: "Téléphone", defaultValue: "+243814644847" }, { name: "adressePostale", label: "Adresse postale", type: "textarea", defaultValue: "RDC/KINSHASA /NGALIEMA/AV.KILIMANI N° 28 A" }, { name: "apercu", label: "Aperçu du projet / emplacement", type: "textarea", required: true }, { name: "dimensionsParcelle", label: "Dimensions de la parcelle (Ly, lx (m))", defaultValue: "20m X 16m" }, { name: "superficie", label: "Superficie (m²)", defaultValue: "321,2 m²" }, { name: "nombreNiveaux", label: "Nombre de niveaux", defaultValue: "4 NIVEAUX / 3 ETAGES (R+3)" }, { name: "porteeProjet", label: "Portée du projet", defaultValue: "Ly x Ly" }, { name: "etatTerrain", label: "État de la zone du terrain", defaultValue: "Plate / Sec" },
   ]},
 ];
 
@@ -103,7 +103,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer le sceau de l’entreprise</span><input type="file" accept="image/*" onChange={(e) => setSceau(e.target.files?.[0])} className="file-input" /></label>
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer la signature du client</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label>
             </div>
-            <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between"><strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong><button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : "Générer et enregistrer le PDF"}</button></div>
+            <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">{config.showTotal === false ? <span className="text-sm font-semibold text-foreground">Fiche prête à générer</span> : <strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong>}<button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : "Générer et enregistrer le PDF"}</button></div>
           </form>
           <div className="space-y-6"><div className="rounded-2xl border border-border bg-card p-5 shadow-document"><FileCheck2 className="mb-3 size-8 text-primary" /><h2 className="text-xl font-bold text-foreground">Document officiel prêt à l’emploi</h2><p className="mt-2 text-sm text-muted-foreground">Chaque PDF inclut le logo SCM SARL, le drapeau de la RDC, une mise en page structurée, ainsi que les zones sceau et signature.</p></div><DocumentHistory type={config.type} actualisation={actualisation} /></div>
         </div>
