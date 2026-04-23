@@ -215,13 +215,15 @@ function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, 
   pdf.text(pdf.splitTextToSize(valeurChamp(champs, "Nom du point de contact"), 54), 23, y + 8);
   pdf.text(pdf.splitTextToSize(valeurChamp(champs, "Adresse courriel"), 58), 82, y + 8);
   pdf.text(pdf.splitTextToSize(valeurChamp(champs, "Téléphone"), 40), 146, y + 8);
-  y += 22;
-  y = texteValeur(pdf, "Adresse postale", valeurChamp(champs, "Adresse postale"), 20, y, 165);
-  y = texteValeur(pdf, "Aperçu du projet", valeurChamp(champs, "Aperçu du projet / emplacement"), 20, y + 2, 165);
-  y = texteValeur(pdf, "Dimensions de la parcelle (Ly, lx (m))    Superficie (m²)", `${valeurChamp(champs, "Dimensions de la parcelle (Ly, lx (m))")}      ${valeurChamp(champs, "Superficie (m²)")}`, 20, y + 1, 165);
-  y = texteValeur(pdf, "Nombre de niveaux", valeurChamp(champs, "Nombre de niveaux"), 20, y + 1, 165);
-  y = texteValeur(pdf, "Portée du projet", valeurChamp(champs, "Portée du projet"), 20, y + 1, 165);
-  texteValeur(pdf, "État de la zone du terrain", valeurChamp(champs, "État de la zone du terrain"), 20, y + 1, 165);
+  y += 21;
+  y = texteValeur(pdf, "Adresse postale", valeurChamp(champs, "Adresse postale"), 20, y, 78, 3.8);
+  y = texteValeur(pdf, "Emplacement / adresse de la propriété", valeurChamp(champs, "Emplacement / adresse de la propriété"), 110, y - 13, 78, 3.8) + 1;
+  y = texteValeur(pdf, "Aperçu du projet", valeurChamp(champs, "Aperçu du projet"), 20, y, 168, 3.8);
+  y = texteValeur(pdf, "Dimensions de la parcelle : Ly × Lx en mètres", valeurChamp(champs, "Dimensions de la parcelle : Ly × Lx en mètres"), 20, y + 1, 78, 3.8);
+  y = texteValeur(pdf, "Superficie en m²", valeurChamp(champs, "Superficie en m²"), 110, y - 13, 36, 3.8);
+  y = texteValeur(pdf, "Nombre de niveaux", valeurChamp(champs, "Nombre de niveaux"), 151, y - 13, 37, 3.8) + 1;
+  y = texteValeur(pdf, "Portée du projet", valeurChamp(champs, "Portée du projet"), 20, y, 78, 3.8);
+  texteValeur(pdf, "État de la zone du terrain", valeurChamp(champs, "État de la zone du terrain"), 110, y - 13, 78, 3.8);
   piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
 }
 
