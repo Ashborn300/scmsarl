@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/scm-logo.jpeg";
+import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 
 export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet";
 
@@ -123,17 +124,23 @@ async function imageVersBase64(url: string) {
   });
 }
 
-function ajouterDrapeauRdc(pdf: jsPDF, x: number, y: number) {
-  pdf.setFillColor(0, 149, 218);
-  pdf.rect(x, y, 22, 14, "F");
-  pdf.setDrawColor(252, 209, 22);
-  pdf.setLineWidth(4);
-  pdf.line(x + 2, y + 14, x + 22, y);
-  pdf.setDrawColor(206, 17, 38);
-  pdf.setLineWidth(2);
-  pdf.line(x + 3, y + 14, x + 22, y + 1);
-  pdf.setFillColor(252, 209, 22);
-  pdf.text("★", x + 3, y + 6);
+async function drapeauRdcVersPng() {
+  const svg = await fetch(drapeauRdcUrl).then((reponse) => reponse.text());
+  const image = new Image();
+  const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = reject;
+    image.src = url;
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = 800;
+  canvas.height = 600;
+  const contexte = canvas.getContext("2d");
+  if (!contexte) throw new Error("Impossible de préparer le drapeau de la RDC.");
+  contexte.drawImage(image, 0, 0, canvas.width, canvas.height);
+  URL.revokeObjectURL(url);
+  return canvas.toDataURL("image/png");
 }
 
 function texteMultiligne(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170) {
@@ -165,12 +172,13 @@ function piedDePage(pdf: jsPDF, sceau?: string, signature?: string) {
 export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; lignes?: LignePrestation[]; total?: number }) {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const logo = await imageVersBase64(logoUrl);
+  const drapeauRdc = await drapeauRdcVersPng();
   pdf.setFillColor(247, 249, 252);
   pdf.rect(0, 0, 210, 297, "F");
   pdf.setFillColor(255, 255, 255);
   pdf.roundedRect(12, 12, 186, 273, 3, 3, "F");
   pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST");
-  ajouterDrapeauRdc(pdf, 170, 18);
+  pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST");
   pdf.setTextColor(16, 42, 88);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(19);
