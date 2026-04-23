@@ -219,7 +219,7 @@ function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, 
   y = texteValeur(pdf, "Adresse postale", valeurChamp(champs, "Adresse postale"), 20, y, 78, 3.8);
   y = texteValeur(pdf, "Emplacement / adresse de la propriété", valeurChamp(champs, "Emplacement / adresse de la propriété"), 110, y - 13, 78, 3.8) + 1;
   y = texteValeur(pdf, "Aperçu du projet", valeurChamp(champs, "Aperçu du projet"), 20, y, 168, 3.8);
-  y = texteValeur(pdf, "Dimensions de la parcelle : Ly × Lx en mètres", valeurChamp(champs, "Dimensions de la parcelle : Ly × Lx en mètres"), 20, y + 1, 78, 3.8);
+  y = texteValeur(pdf, "Dim. parcelle : Ly x LX en mètres", valeurChamp(champs, "Dim. parcelle : Ly x LX en mètres"), 20, y + 1, 78, 3.8);
   y = texteValeur(pdf, "Superficie en m²", valeurChamp(champs, "Superficie en m²"), 110, y - 13, 36, 3.8);
   y = texteValeur(pdf, "Nombre de niveaux", valeurChamp(champs, "Nombre de niveaux"), 151, y - 13, 37, 3.8) + 1;
   y = texteValeur(pdf, "Portée du projet", valeurChamp(champs, "Portée du projet"), 20, y, 78, 3.8);
