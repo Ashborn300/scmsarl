@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      chantiers: {
+        Row: {
+          chef_chantier: string
+          created_at: string
+          date_debut: string | null
+          date_fin_prevue: string | null
+          description: string
+          id: string
+          localisation: string
+          nom_chantier: string
+          projet_lie: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          chef_chantier?: string
+          created_at?: string
+          date_debut?: string | null
+          date_fin_prevue?: string | null
+          description?: string
+          id?: string
+          localisation?: string
+          nom_chantier?: string
+          projet_lie?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          chef_chantier?: string
+          created_at?: string
+          date_debut?: string | null
+          date_fin_prevue?: string | null
+          description?: string
+          id?: string
+          localisation?: string
+          nom_chantier?: string
+          projet_lie?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chantiers_projet_lie_fkey"
+            columns: ["projet_lie"]
+            isOneToOne: false
+            referencedRelation: "projets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compteurs_documents: {
         Row: {
           dernier_numero: number
@@ -179,6 +229,56 @@ export type Database = {
         }
         Relationships: []
       }
+      employes: {
+        Row: {
+          adresse: string
+          chantier_assigne: string | null
+          created_at: string
+          id: string
+          matricule: string
+          nom_complet: string
+          poste: string
+          salaire: number
+          statut: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string
+          chantier_assigne?: string | null
+          created_at?: string
+          id?: string
+          matricule?: string
+          nom_complet?: string
+          poste?: string
+          salaire?: number
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string
+          chantier_assigne?: string | null
+          created_at?: string
+          id?: string
+          matricule?: string
+          nom_complet?: string
+          poste?: string
+          salaire?: number
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employes_chantier_assigne_fkey"
+            columns: ["chantier_assigne"]
+            isOneToOne: false
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       factures: {
         Row: {
           client: string
@@ -214,6 +314,48 @@ export type Database = {
           nom_fichier?: string
           numero?: string
           pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      projets: {
+        Row: {
+          budget_estime: number
+          client: string
+          created_at: string
+          date_debut: string | null
+          date_fin_prevue: string | null
+          description: string
+          id: string
+          localisation: string
+          nom_projet: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          budget_estime?: number
+          client?: string
+          created_at?: string
+          date_debut?: string | null
+          date_fin_prevue?: string | null
+          description?: string
+          id?: string
+          localisation?: string
+          nom_projet?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          budget_estime?: number
+          client?: string
+          created_at?: string
+          date_debut?: string | null
+          date_fin_prevue?: string | null
+          description?: string
+          id?: string
+          localisation?: string
+          nom_projet?: string
+          statut?: string
           updated_at?: string
         }
         Relationships: []
