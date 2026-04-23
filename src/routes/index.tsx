@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Building2, Clock3, FileText, Hammer, HardHat, ReceiptText, ShieldCheck, UsersRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Building2, FileText, Hammer, HardHat, ReceiptText, ShieldCheck, UsersRound } from "lucide-react";
+import { useState } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
-import { listerDocumentsRecents, telechargerPdf, voirPdf, type DocumentRecord, type OutilType } from "@/lib/scmDocuments";
+import { type OutilType } from "@/lib/scmDocuments";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
 export const Route = createFileRoute("/")({
@@ -26,22 +26,8 @@ const icones: Record<OutilType, React.ElementType> = {
   description_projet: Building2,
 };
 
-const libelles: Record<OutilType, string> = {
-  facture: "Facture",
-  devis: "Devis",
-  recu: "Reçu",
-  contrat_construction: "Contrat construction",
-  contrat_employe: "Contrat employé",
-  description_projet: "Description projet",
-};
-
-type RecentDocument = DocumentRecord & { type: OutilType };
-
 function Index() {
   const [outilActif, setOutilActif] = useState<OutilType | null>(null);
-  const [recents, setRecents] = useState<RecentDocument[]>([]);
-
-  useEffect(() => { listerDocumentsRecents().then((data) => setRecents(data as RecentDocument[])); }, [outilActif]);
 
   const configActive = configs.find((config) => config.type === outilActif);
   if (configActive) return <DocumentTool config={configActive} retour={() => setOutilActif(null)} />;
@@ -76,14 +62,10 @@ function Index() {
               </div>
             </div>
             <aside className="rounded-3xl border border-border bg-card/90 p-5 shadow-document backdrop-blur lg:p-6">
-              <div className="mb-4 flex items-center gap-2"><Clock3 className="size-5 text-primary" /><h2 className="text-xl font-black text-foreground">Fichiers récents générés</h2></div>
-              <div className="space-y-3">
-                {recents.length === 0 ? <p className="rounded-xl border border-dashed border-border bg-muted p-5 text-sm text-muted-foreground">Aucun document récent. Sélectionnez un outil pour générer votre premier PDF.</p> : recents.map((document) => (
-                  <article key={`${document.type}-${document.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3">
-                    <div className="min-w-0"><p className="truncate text-sm font-bold text-foreground">{document.nom_fichier}</p><p className="text-xs text-muted-foreground">{libelles[document.type]} · {new Date(document.created_at).toLocaleDateString("fr-FR")}</p></div>
-                    <div className="flex gap-1"><button type="button" onClick={() => voirPdf(document.pdf_base64)} className="tool-action" aria-label="Voir">Voir</button><button type="button" onClick={() => telechargerPdf(document.pdf_base64, document.nom_fichier)} className="tool-action" aria-label="Télécharger">PDF</button></div>
-                  </article>
-                ))}
+              <div className="flex h-full flex-col justify-center gap-4">
+                <HardHat className="size-10 text-primary" />
+                <h2 className="text-2xl font-black text-foreground">Archives par outil</h2>
+                <p className="text-sm leading-6 text-muted-foreground">Les documents générés sont désormais visibles uniquement dans l’historique de leur outil correspondant.</p>
               </div>
             </aside>
           </div>
