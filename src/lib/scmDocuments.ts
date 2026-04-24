@@ -4,7 +4,7 @@ import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel";
 export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
 export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
@@ -15,6 +15,8 @@ export type BlocOrganigramme = { id: string; titre: string; niveau: number; coul
 export type OrganigrammeEntreprise = { id: string; titre: string; description: string; blocs: BlocOrganigramme[]; actif: boolean; created_at: string; updated_at: string };
 export type DemandeConge = { id: string; employe_id: string; employe_nom: string; raison: string; image_url: string; statut: string; created_at: string; updated_at: string };
 export type BilanSanteEmploye = { id: string; employe_id: string; employe_nom: string; semaine: string; etat_global: string; groupe_sanguin: string; allergies: string; blessure: boolean; details_blessure: string; created_at: string; updated_at: string };
+export type LigneMateriel = { nom: string; quantite: number };
+export type RapportMateriel = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; semaine: string; materiel_prevu: LigneMateriel[]; materiel_utilise: LigneMateriel[]; materiel_recupere: LigneMateriel[]; materiel_perdu: LigneMateriel[]; notes: string; statut: string; created_at: string; updated_at: string };
 
 export type DocumentRecord = {
   id: string;
@@ -76,6 +78,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   organigramme_entreprise: { principal: [13, 42, 148], secondaire: [20, 184, 166], doux: [232, 240, 255] },
   demandes_conges: { principal: [14, 116, 144], secondaire: [34, 197, 94], doux: [230, 248, 250] },
   bilans_sante: { principal: [190, 18, 60], secondaire: [245, 158, 11], doux: [255, 238, 242] },
+  gestion_materiel: { principal: [71, 85, 105], secondaire: [202, 138, 4], doux: [245, 242, 232] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -98,6 +101,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   organigramme_entreprise: "organigrammes_entreprise",
   demandes_conges: "demandes_conges",
   bilans_sante: "bilans_sante_employes",
+  gestion_materiel: "rapports_materiel",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -120,6 +124,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   organigramme_entreprise: "ORG",
   demandes_conges: "DCG",
   bilans_sante: "SAN",
+  gestion_materiel: "MAT",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -142,6 +147,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   organigramme_entreprise: ["titre", "description"],
   demandes_conges: ["employe_nom", "raison", "statut"],
   bilans_sante: ["employe_nom", "etat_global", "groupe_sanguin", "allergies", "details_blessure"],
+  gestion_materiel: ["chef_chantier_nom", "chantier_nom", "notes", "statut"],
 };
 
 const db = supabase as any;
