@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, Archive, Award, Building2, CalendarDays, ClipboardList, Cuboid, HeartPulse, FileClock, FileText, FilePlus2, FileX2, Hammer, HardHat, IdCard, LayoutGrid, Megaphone, Network, PackageCheck, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Wallet, Warehouse } from "lucide-react";
+import { AlertTriangle, Archive, Award, Building2, CalendarDays, ClipboardList, Cuboid, HeartPulse, FileClock, FileText, FilePlus2, FileX2, Hammer, HardHat, IdCard, LayoutGrid, Megaphone, Moon, Network, PackageCheck, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Wallet, Warehouse } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -44,6 +44,7 @@ const icones: Record<OutilType, React.ElementType> = {
   archives_chantiers: Archive,
   lettre_licenciement: FileX2,
   facture_employe: Wallet,
+  version_nuit: Moon,
 };
 
 type ToolVisual = {
@@ -263,6 +264,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(21,94,117,0.08)", border: "1px solid rgba(202,138,4,0.16)" },
     action: { background: "rgba(202,138,4,0.12)", border: "1px solid rgba(21,94,117,0.16)" },
     icon: { background: "linear-gradient(135deg, #155e75, #ca8a04)", color: "white" },
+  },
+  version_nuit: {
+    card: { background: "linear-gradient(180deg, rgba(15,23,42,0.18) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(99,102,241,0.32)" },
+    banner: { background: "linear-gradient(135deg, #0f172a, #6366f1)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(15,23,42,0.08)", border: "1px solid rgba(99,102,241,0.18)" },
+    action: { background: "rgba(99,102,241,0.14)", border: "1px solid rgba(15,23,42,0.16)" },
+    icon: { background: "linear-gradient(135deg, #0f172a, #6366f1)", color: "white" },
   },
 };
 

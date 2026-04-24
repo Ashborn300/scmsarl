@@ -4,7 +4,7 @@ import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "plan_architectural" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement" | "facture_employe";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "plan_architectural" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement" | "facture_employe" | "version_nuit";
 export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
 export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
@@ -89,6 +89,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   archives_chantiers: { principal: [52, 88, 74], secondaire: [180, 83, 9], doux: [238, 246, 241] },
   lettre_licenciement: { principal: [127, 29, 29], secondaire: [180, 83, 9], doux: [253, 240, 232] },
   facture_employe: { principal: [21, 94, 117], secondaire: [202, 138, 4], doux: [228, 244, 248] },
+  version_nuit: { principal: [15, 23, 42], secondaire: [99, 102, 241], doux: [226, 232, 240] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -118,6 +119,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   archives_chantiers: "archives_chantiers",
   lettre_licenciement: "lettres_licenciement",
   facture_employe: "factures_employes",
+  version_nuit: "versions_nuit",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -147,6 +149,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   archives_chantiers: "ARC",
   lettre_licenciement: "LIC",
   facture_employe: "FAE",
+  version_nuit: "VNT",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -176,6 +179,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   archives_chantiers: ["nom_chantier", "nom_client", "adresse_projet", "nom_fichier"],
   lettre_licenciement: ["nom_fichier", "numero", "employe"],
   facture_employe: ["nom_fichier", "numero", "employe_nom", "matricule", "poste"],
+  version_nuit: ["nom_fichier", "numero", "titre"],
 };
 
 const db = supabase as any;
@@ -294,6 +298,23 @@ export async function enregistrerRealisticSketchup(payload: Record<string, unkno
     date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
   };
   const requete = id ? db.from("realistic_sketchup").update(ligne).eq("id", id).select().single() : db.from("realistic_sketchup").insert(ligne).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as DocumentRecord;
+}
+
+export async function enregistrerVersionNuit(payload: Record<string, unknown>, imageBase64: string, numero?: string, id?: string) {
+  const documentNumero = numero || (await genererNumero("version_nuit"));
+  const nomFichier = `${documentNumero}-${String(payload.titre || "version-nuit").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.png`;
+  const ligne = {
+    numero: documentNumero,
+    nom_fichier: nomFichier,
+    titre: String(payload.titre || "Version nuit"),
+    donnees_formulaire: payload,
+    image_base64: imageBase64,
+    date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
+  };
+  const requete = id ? db.from("versions_nuit").update(ligne).eq("id", id).select().single() : db.from("versions_nuit").insert(ligne).select().single();
   const { data, error } = await requete;
   if (error) throw new Error(error.message);
   return data as DocumentRecord;
