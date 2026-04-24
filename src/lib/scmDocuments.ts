@@ -88,6 +88,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   incidents_chantier: { principal: [185, 28, 28], secondaire: [234, 88, 12], doux: [255, 236, 232] },
   archives_chantiers: { principal: [52, 88, 74], secondaire: [180, 83, 9], doux: [238, 246, 241] },
   lettre_licenciement: { principal: [127, 29, 29], secondaire: [180, 83, 9], doux: [253, 240, 232] },
+  facture_employe: { principal: [21, 94, 117], secondaire: [202, 138, 4], doux: [228, 244, 248] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -116,6 +117,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   incidents_chantier: "incidents_chantier",
   archives_chantiers: "archives_chantiers",
   lettre_licenciement: "lettres_licenciement",
+  facture_employe: "factures_employes",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -144,6 +146,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   incidents_chantier: "INC",
   archives_chantiers: "ARC",
   lettre_licenciement: "LIC",
+  facture_employe: "FAE",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -172,6 +175,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   incidents_chantier: ["chef_chantier_nom", "chantier_nom", "type_evenement", "explication", "statut"],
   archives_chantiers: ["nom_chantier", "nom_client", "adresse_projet", "nom_fichier"],
   lettre_licenciement: ["nom_fichier", "numero", "employe"],
+  facture_employe: ["nom_fichier", "numero", "employe_nom", "matricule", "poste"],
 };
 
 const db = supabase as any;
