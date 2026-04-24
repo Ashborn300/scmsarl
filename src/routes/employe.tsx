@@ -573,6 +573,29 @@ function EmployePage() {
     if (error) setMessage(error.message || "Rapport matériel non envoyé."); else { setMessage("Rapport matériel envoyé à l’admin."); setFormMateriel({ ...materielInitial, semaine: new Date().toISOString().slice(0, 10) }); await chargerDonnees(); }
   }
 
+  async function televerserPreuveArrivage(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    setSauvegarde(true);
+    const path = `arrivages-materiel/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+    const { error } = await supabase.storage.from("scm-images").upload(path, file, { upsert: false });
+    if (error) { setMessage("Téléversement de la preuve impossible."); setSauvegarde(false); return; }
+    setFormArrivage({ ...formArrivage, preuve_image_url: supabase.storage.from("scm-images").getPublicUrl(path).data.publicUrl });
+    setSauvegarde(false);
+  }
+
+  async function envoyerArrivageMateriel(event: React.FormEvent) {
+    event.preventDefault();
+    if (!isChef || !session?.employeId || !employeConnecte) return setMessage("Seul le chef de chantier peut envoyer un rapport d’arrivage.");
+    const chantier = chantiersVisibles.find((c) => c.id === formArrivage.chantier_id) || chantiersVisibles[0];
+    if (!chantier) return setMessage("Aucun chantier disponible pour ce rapport.");
+    if (!formArrivage.nom_materiel.trim()) return setMessage("Le nom du matériel livré est obligatoire.");
+    setSauvegarde(true);
+    const { error } = await db.from("arrivages_materiel").insert({ chef_chantier_id: session.employeId, chef_chantier_nom: employeConnecte.nom_complet, chantier_id: chantier.id, chantier_nom: chantier.nom_chantier, date_livraison: formArrivage.date_livraison, nom_materiel: formArrivage.nom_materiel.trim(), quantite: Number(formArrivage.quantite) || 0, entreprise_partenaire: formArrivage.entreprise_partenaire.trim(), prix_total: Number(formArrivage.prix_total) || 0, informations_supplementaires: formArrivage.informations_supplementaires.trim(), preuve_image_url: formArrivage.preuve_image_url, statut: "Rapport envoyé" });
+    setSauvegarde(false);
+    if (error) setMessage(error.message || "Rapport d’arrivage non envoyé."); else { setMessage("Rapport d’arrivage envoyé à l’admin."); setFormArrivage({ ...arrivageInitial, date_livraison: new Date().toISOString().slice(0, 10) }); await chargerDonnees(); }
+  }
+
   async function televerserImagesIncident(files: FileList | null) {
     if (!files?.length) return;
     setSauvegarde(true);
