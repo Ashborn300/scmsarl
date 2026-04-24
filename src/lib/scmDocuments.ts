@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat";
 
 export type DocumentRecord = {
   id: string;
@@ -29,6 +29,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   contrat_employe: { principal: [20, 184, 166], secondaire: [6, 182, 212], doux: [224, 250, 247] },
   description_projet: { principal: [239, 68, 68], secondaire: [249, 115, 22], doux: [255, 235, 232] },
   communiquer: { principal: [236, 72, 153], secondaire: [249, 115, 22], doux: [255, 232, 243] },
+  certificat: { principal: [3, 76, 120], secondaire: [245, 181, 72], doux: [238, 248, 252] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -39,6 +40,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   contrat_employe: "contrats_employes",
   description_projet: "descriptions_projets",
   communiquer: "communications",
+  certificat: "certificats",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -49,6 +51,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   contrat_employe: "CEM",
   description_projet: "PRJ",
   communiquer: "COM",
+  certificat: "CRT",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -59,6 +62,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   contrat_employe: ["nom_fichier", "numero", "employe"],
   description_projet: ["nom_fichier", "numero", "projet"],
   communiquer: ["nom_fichier", "numero", "titre"],
+  certificat: ["nom_fichier", "numero", "beneficiaire"],
 };
 
 const db = supabase as any;
