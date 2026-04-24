@@ -6,6 +6,7 @@ export function DocumentHistory({ type, actualisation, onEdit }: { type: OutilTy
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [recherche, setRecherche] = useState("");
   const [chargement, setChargement] = useState(true);
+  const estImage = type === "carte_service" || type === "rendu_3d";
 
   useEffect(() => {
     setChargement(true);
@@ -15,7 +16,7 @@ export function DocumentHistory({ type, actualisation, onEdit }: { type: OutilTy
   }, [type, actualisation, recherche]);
 
   async function supprimer(id: string) {
-    if (!confirm("Voulez-vous supprimer définitivement ce fichier PDF ?")) return;
+    if (!confirm(`Voulez-vous supprimer définitivement ce fichier ${estImage ? "image" : "PDF"} ?`)) return;
     await supprimerDocument(type, id);
     setDocuments((liste) => liste.filter((document) => document.id !== id));
   }
@@ -25,7 +26,7 @@ export function DocumentHistory({ type, actualisation, onEdit }: { type: OutilTy
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-bold text-foreground">Historique des fichiers</h2>
-          <p className="text-sm text-muted-foreground">PDF générés, consultables et téléchargeables.</p>
+          <p className="text-sm text-muted-foreground">Fichiers générés, consultables et téléchargeables.</p>
         </div>
         <label className="relative block sm:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -36,7 +37,7 @@ export function DocumentHistory({ type, actualisation, onEdit }: { type: OutilTy
         {chargement ? (
           <div className="rounded-xl border border-border bg-muted p-4 text-sm text-muted-foreground">Chargement de l’historique…</div>
         ) : documents.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-muted/60 p-6 text-center text-sm text-muted-foreground">Aucun PDF généré pour le moment.</div>
+          <div className="rounded-xl border border-dashed border-border bg-muted/60 p-6 text-center text-sm text-muted-foreground">Aucun fichier généré pour le moment.</div>
         ) : (
           documents.map((document) => (
             <article key={document.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -48,10 +49,10 @@ export function DocumentHistory({ type, actualisation, onEdit }: { type: OutilTy
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-2 sm:flex">
-                <button type="button" onClick={() => type === "carte_service" ? voirImage(document.image_base64 || "") : voirPdf(document.pdf_base64)} className="tool-action" aria-label="Voir le fichier"><Eye className="size-4" /></button>
-                <button type="button" onClick={() => type === "carte_service" ? telechargerImage(document.image_base64 || "", document.nom_fichier) : telechargerPdf(document.pdf_base64, document.nom_fichier)} className="tool-action" aria-label="Télécharger le fichier"><Download className="size-4" /></button>
-                <button type="button" onClick={() => onEdit(document)} className="tool-action" aria-label="Éditer le PDF"><FilePenLine className="size-4" /></button>
-                <button type="button" onClick={() => supprimer(document.id)} className="tool-action danger" aria-label="Supprimer le PDF"><Trash2 className="size-4" /></button>
+                <button type="button" onClick={() => estImage ? voirImage(document.image_base64 || "") : voirPdf(document.pdf_base64)} className="tool-action" aria-label="Voir le fichier"><Eye className="size-4" /></button>
+                <button type="button" onClick={() => estImage ? telechargerImage(document.image_base64 || "", document.nom_fichier) : telechargerPdf(document.pdf_base64, document.nom_fichier)} className="tool-action" aria-label="Télécharger le fichier"><Download className="size-4" /></button>
+                <button type="button" onClick={() => onEdit(document)} className="tool-action" aria-label="Éditer le fichier"><FilePenLine className="size-4" /></button>
+                <button type="button" onClick={() => supprimer(document.id)} className="tool-action danger" aria-label="Supprimer le fichier"><Trash2 className="size-4" /></button>
               </div>
             </article>
           ))

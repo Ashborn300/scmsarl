@@ -116,6 +116,7 @@
 .tool-coral { --tool-1: var(--dash-coral); --tool-2: var(--dash-amber); }
 .tool-certificate { --tool-1: oklch(0.42 0.12 235); --tool-2: oklch(0.78 0.15 78); }
 .tool-service-card { --tool-1: oklch(0.58 0.17 240); --tool-2: oklch(0.28 0.04 240); }
+.tool-render-3d { --tool-1: oklch(0.45 0.09 132); --tool-2: oklch(0.62 0.12 54); }
 
 @layer base {
   * { border-color: var(--color-border); }
