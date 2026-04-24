@@ -18,7 +18,7 @@ export type BilanSanteEmploye = { id: string; employe_id: string; employe_nom: s
 export type LigneMateriel = { nom: string; quantite: number };
 export type RapportMateriel = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; semaine: string; materiel_prevu: LigneMateriel[]; materiel_utilise: LigneMateriel[]; materiel_recupere: LigneMateriel[]; materiel_perdu: LigneMateriel[]; notes: string; statut: string; created_at: string; updated_at: string };
 export type IncidentChantier = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; type_evenement: string; date_evenement: string; explication: string; images: string[]; statut: string; created_at: string; updated_at: string };
-export type ArchiveChantier = { id: string; nom_chantier: string; nom_client: string; date_debut_construction: string | null; date_finalisation_construction: string | null; budget_estime_debut: number; budget_final: number; adresse_projet: string; employes_participants: EmployeRecord[]; pdf_base64: string; nom_fichier: string; created_at: string; updated_at: string };
+export type ArchiveChantier = { id: string; nom_chantier: string; nom_client: string; date_debut_construction: string | null; date_finalisation_construction: string | null; budget_estime_debut: number; budget_final: number; adresse_projet: string; employes_participants: EmployeRecord[]; images_chantier: string[]; pdf_base64: string; nom_fichier: string; created_at: string; updated_at: string };
 
 export type DocumentRecord = {
   id: string;
@@ -457,6 +457,14 @@ export async function listerArchivesChantiers() {
   const { data, error } = await db.from("archives_chantiers").select("*").order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []) as ArchiveChantier[];
+}
+
+export async function televerserImageArchiveChantier(fichier: File) {
+  const extension = fichier.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+  const chemin = `archives-chantiers/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from("scm-images").upload(chemin, fichier, { cacheControl: "3600", contentType: fichier.type || "image/png", upsert: false });
+  if (error) throw new Error(error.message);
+  return supabase.storage.from("scm-images").getPublicUrl(chemin).data.publicUrl;
 }
 
 export async function enregistrerArchiveChantier(payload: Omit<ArchiveChantier, "id" | "created_at" | "updated_at">, id?: string) {
