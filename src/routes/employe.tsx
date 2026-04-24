@@ -183,7 +183,7 @@ async function supprimerFichierStockage(bucket: string, url?: string) { const pa
 
 function EmployePage() {
   const [session, setSession] = useState<Session | null>(null);
-  const [loginMode, setLoginMode] = useState<"admin" | "matricule">("matricule");
+  
   const [identifiant, setIdentifiant] = useState("");
   const [onglet, setOnglet] = useState<Onglet>("dashboard");
   const [menuOuvert, setMenuOuvert] = useState(false);
