@@ -295,7 +295,9 @@ function OrgNode({ bloc, blocs }: { bloc: BlocOrganigramme; blocs: BlocOrganigra
   const enfants = blocs.filter((item) => item.parentId === bloc.id).slice(0, 3);
   const enfantsBas = enfants.filter((item) => item.position !== "cote");
   const enfantsCote = enfants.filter((item) => item.position === "cote");
-  return <div className="org-branch"><div className="org-node-row"><div className={`org-node org-${bloc.couleur}`}><span className="org-icon"><UsersRound className="size-6" /></span><strong>{bloc.titre}</strong></div>{enfantsCote.length > 0 && <div className="org-side-children">{enfantsCote.map((enfant) => <OrgNode key={enfant.id} bloc={enfant} blocs={blocs} />)}</div>}</div>{enfantsBas.length > 0 && <div className="org-children">{enfantsBas.map((enfant) => <OrgNode key={enfant.id} bloc={enfant} blocs={blocs} />)}</div>}</div>;
+  const enfantsGauche = enfantsCote.filter((_, index) => index % 2 === 0);
+  const enfantsDroite = enfantsCote.filter((_, index) => index % 2 === 1);
+  return <div className="org-branch"><div className="org-node-row">{enfantsGauche.length > 0 && <div className="org-side-children org-side-left">{enfantsGauche.map((enfant) => <OrgNode key={enfant.id} bloc={enfant} blocs={blocs} />)}</div>}<div className={`org-node org-${bloc.couleur}`}><span className="org-icon"><UsersRound className="size-6" /></span><strong>{bloc.titre}</strong></div>{enfantsDroite.length > 0 && <div className="org-side-children org-side-right">{enfantsDroite.map((enfant) => <OrgNode key={enfant.id} bloc={enfant} blocs={blocs} />)}</div>}</div>{enfantsBas.length > 0 && <div className="org-children">{enfantsBas.map((enfant) => <OrgNode key={enfant.id} bloc={enfant} blocs={blocs} />)}</div>}</div>;
 }
 
 function OrganigrammePreview({ blocs }: { blocs: BlocOrganigramme[] }) {
