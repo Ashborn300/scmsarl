@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BriefcaseBusiness, CalendarDays, IdCard, Mail, MapPin, Phone, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
@@ -26,9 +27,12 @@ function QrEmployePage() {
   const [chargement, setChargement] = useState(true);
 
   useEffect(() => {
-    supabase.from("employes").select("nom_complet, matricule, genre, poste, telephone, email, adresse, date_admission, statut, photo_profil").eq("id", employeId).maybeSingle()
-      .then(({ data }) => setEmploye(data as EmployePublic | null))
-      .finally(() => setChargement(false));
+    async function chargerEmploye() {
+      const { data } = await supabase.from("employes").select("nom_complet, matricule, genre, poste, telephone, email, adresse, date_admission, statut, photo_profil").eq("id", employeId).maybeSingle();
+      setEmploye(data as EmployePublic | null);
+      setChargement(false);
+    }
+    chargerEmploye();
   }, [employeId]);
 
   if (chargement) return <main className="min-h-screen bg-background p-5 text-foreground">Chargement…</main>;
@@ -68,5 +72,3 @@ function QrEmployePage() {
     </main>
   );
 }
-
-import { useEffect, useState } from "react";
