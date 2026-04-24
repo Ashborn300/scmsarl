@@ -116,6 +116,7 @@ export type Database = {
           date_finalisation_construction: string | null
           employes_participants: Json
           id: string
+          images_chantier: string[]
           nom_chantier: string
           nom_client: string
           nom_fichier: string
@@ -131,6 +132,7 @@ export type Database = {
           date_finalisation_construction?: string | null
           employes_participants?: Json
           id?: string
+          images_chantier?: string[]
           nom_chantier?: string
           nom_client?: string
           nom_fichier?: string
@@ -146,6 +148,7 @@ export type Database = {
           date_finalisation_construction?: string | null
           employes_participants?: Json
           id?: string
+          images_chantier?: string[]
           nom_chantier?: string
           nom_client?: string
           nom_fichier?: string

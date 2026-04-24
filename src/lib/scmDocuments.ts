@@ -18,7 +18,7 @@ export type BilanSanteEmploye = { id: string; employe_id: string; employe_nom: s
 export type LigneMateriel = { nom: string; quantite: number };
 export type RapportMateriel = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; semaine: string; materiel_prevu: LigneMateriel[]; materiel_utilise: LigneMateriel[]; materiel_recupere: LigneMateriel[]; materiel_perdu: LigneMateriel[]; notes: string; statut: string; created_at: string; updated_at: string };
 export type IncidentChantier = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; type_evenement: string; date_evenement: string; explication: string; images: string[]; statut: string; created_at: string; updated_at: string };
-export type ArchiveChantier = { id: string; nom_chantier: string; nom_client: string; date_debut_construction: string | null; date_finalisation_construction: string | null; budget_estime_debut: number; budget_final: number; adresse_projet: string; employes_participants: EmployeRecord[]; pdf_base64: string; nom_fichier: string; created_at: string; updated_at: string };
+export type ArchiveChantier = { id: string; nom_chantier: string; nom_client: string; date_debut_construction: string | null; date_finalisation_construction: string | null; budget_estime_debut: number; budget_final: number; adresse_projet: string; employes_participants: EmployeRecord[]; images_chantier: string[]; pdf_base64: string; nom_fichier: string; created_at: string; updated_at: string };
 
 export type DocumentRecord = {
   id: string;
@@ -459,6 +459,14 @@ export async function listerArchivesChantiers() {
   return (data ?? []) as ArchiveChantier[];
 }
 
+export async function televerserImageArchiveChantier(fichier: File) {
+  const extension = fichier.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+  const chemin = `archives-chantiers/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from("scm-images").upload(chemin, fichier, { cacheControl: "3600", contentType: fichier.type || "image/png", upsert: false });
+  if (error) throw new Error(error.message);
+  return supabase.storage.from("scm-images").getPublicUrl(chemin).data.publicUrl;
+}
+
 export async function enregistrerArchiveChantier(payload: Omit<ArchiveChantier, "id" | "created_at" | "updated_at">, id?: string) {
   const requete = id ? db.from("archives_chantiers").update(payload).eq("id", id).select().single() : db.from("archives_chantiers").insert(payload).select().single();
   const { data, error } = await requete;
@@ -716,6 +724,11 @@ export async function creerPdfArchiveChantier(archive: Omit<ArchiveChantier, "id
   y += 4; pdf.setFillColor(...couleurs.doux); pdf.rect(20, y - 5, 168, 8, "F"); pdf.setFont("helvetica", "bold"); pdf.setTextColor(...couleurs.principal); pdf.text("EMPLOYÉS AYANT PARTICIPÉ", 23, y); y += 10;
   pdf.setFont("helvetica", "normal"); pdf.setTextColor(36, 45, 64);
   archive.employes_participants.forEach((employe, index) => { if (y > 234) { piedDePage(pdf, couleurs.principal, undefined, undefined, "SCM SARL", "Archive chantier"); pdf.addPage(); ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche archive chantier", "ARCHIVE", couleurs.principal); y = 84; } pdf.text(`${index + 1}. ${employe.nom_complet || "—"} — ${employe.poste || employe.matricule || "—"}`, 24, y); y += 6; });
+  if (archive.images_chantier?.length) {
+    piedDePage(pdf, couleurs.principal, undefined, undefined, "SCM SARL", "Archive chantier"); pdf.addPage(); ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Images du chantier", "ARCHIVE", couleurs.principal);
+    const imagesBase64 = await Promise.all(archive.images_chantier.slice(0, 6).map((image) => imageVersBase64(image).catch(() => "")));
+    imagesBase64.filter(Boolean).forEach((image, index) => ajouterImageSiValide(pdf, image, index % 2 === 0 ? 20 : 108, 84 + Math.floor(index / 2) * 58, 80, 48));
+  }
   piedDePage(pdf, couleurs.principal, undefined, undefined, "SCM SARL", "Archive chantier");
   return pdf.output("datauristring");
 }
