@@ -2,7 +2,7 @@ import { ArrowLeft, FileCheck2, Plus, Save, Trash2 } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { DocumentHistory } from "./DocumentHistory";
-import { CustomFormTool } from "./CustomFormTool";
+import { CustomFormTool } from "@/components/CustomFormTool";
 import { creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerRealisticSketchup, enregistrerRendu3D, listerEmployes, mockupCarteServiceBase64, type DocumentRecord, type EmployeRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 
