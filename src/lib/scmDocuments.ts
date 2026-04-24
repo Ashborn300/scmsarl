@@ -423,6 +423,12 @@ export async function listerBilansSanteEmployes() {
   return (data ?? []) as BilanSanteEmploye[];
 }
 
+export async function listerRapportsMateriel() {
+  const { data, error } = await db.from("rapports_materiel").select("*").order("semaine", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as RapportMateriel[];
+}
+
 export async function supprimerDocument(type: OutilType, id: string) {
   const { error } = await db.from(tablesParOutil[type]).delete().eq("id", id);
   if (error) throw new Error(error.message);
