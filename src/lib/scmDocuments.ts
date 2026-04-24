@@ -277,13 +277,11 @@ export async function enregistrerCodeQR(payload: Record<string, unknown>, qrBase
 }
 
 export async function creerFormulairePersonnalise(titre: string, description: string, champs: ChampPersonnalise[], urlPublique = "") {
-  const { data, error } = await db.from("formulaires_personnalises").insert({ titre, description, champs, url_publique: urlPublique, publie: true }).select().single();
+  const id = crypto.randomUUID();
+  const lien = urlPublique || `https://scm-tolls.lovable.app/formulaire/${id}`;
+  const { data, error } = await db.from("formulaires_personnalises").insert({ id, titre, description, champs, url_publique: lien, publie: true }).select().single();
   if (error) throw new Error(error.message);
-  const formulaire = data as FormulairePersonnalise;
-  const url = urlPublique || `https://scm-tolls.lovable.app/formulaire/${formulaire.id}`;
-  const { data: maj, error: erreurMaj } = await db.from("formulaires_personnalises").update({ url_publique: url }).eq("id", formulaire.id).select().single();
-  if (erreurMaj) return { ...formulaire, url_publique: url };
-  return maj as FormulairePersonnalise;
+  return data as FormulairePersonnalise;
 }
 
 export async function listerFormulairesPersonnalises() {
