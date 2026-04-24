@@ -4,7 +4,7 @@ import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr";
 
 export type DocumentRecord = {
   id: string;
@@ -13,6 +13,8 @@ export type DocumentRecord = {
   donnees_formulaire: Record<string, unknown>;
   pdf_base64: string;
   image_base64?: string;
+  qr_base64?: string;
+  url_publique?: string;
   montant_total?: number;
   client?: string;
   employe?: string;
@@ -57,6 +59,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   rendu_3d: { principal: [85, 107, 47], secondaire: [196, 126, 66], doux: [242, 246, 232] },
   realistic_sketchup: { principal: [88, 77, 66], secondaire: [46, 125, 92], doux: [241, 238, 233] },
   fiche_employe: { principal: [22, 101, 52], secondaire: [37, 99, 235], doux: [232, 246, 237] },
+  code_qr: { principal: [15, 23, 42], secondaire: [20, 184, 166], doux: [232, 247, 245] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -72,6 +75,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   rendu_3d: "rendus_3d",
   realistic_sketchup: "realistic_sketchup",
   fiche_employe: "fiches_employes",
+  code_qr: "codes_qr_employes",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -87,6 +91,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   rendu_3d: "R3D",
   realistic_sketchup: "RSK",
   fiche_employe: "FEM",
+  code_qr: "QR",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -102,6 +107,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   rendu_3d: ["nom_fichier", "numero", "titre"],
   realistic_sketchup: ["nom_fichier", "numero", "titre"],
   fiche_employe: ["nom_fichier", "numero", "titre", "type_fiche"],
+  code_qr: ["nom_fichier", "numero", "employe_nom", "matricule"],
 };
 
 const db = supabase as any;

@@ -6,7 +6,7 @@ export function DocumentHistory({ type, actualisation, onEdit }: { type: OutilTy
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [recherche, setRecherche] = useState("");
   const [chargement, setChargement] = useState(true);
-  const estImage = type === "carte_service" || type === "rendu_3d" || type === "realistic_sketchup";
+  const estImage = type === "carte_service" || type === "rendu_3d" || type === "realistic_sketchup" || type === "code_qr";
 
   useEffect(() => {
     setChargement(true);
@@ -49,8 +49,8 @@ export function DocumentHistory({ type, actualisation, onEdit }: { type: OutilTy
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-2 sm:flex">
-                <button type="button" onClick={() => estImage ? voirImage(document.image_base64 || "") : voirPdf(document.pdf_base64)} className="tool-action" aria-label="Voir le fichier"><Eye className="size-4" /></button>
-                <button type="button" onClick={() => estImage ? telechargerImage(document.image_base64 || "", document.nom_fichier) : telechargerPdf(document.pdf_base64, document.nom_fichier)} className="tool-action" aria-label="Télécharger le fichier"><Download className="size-4" /></button>
+                <button type="button" onClick={() => estImage ? voirImage(document.qr_base64 || document.image_base64 || "") : voirPdf(document.pdf_base64)} className="tool-action" aria-label="Voir le fichier"><Eye className="size-4" /></button>
+                <button type="button" onClick={() => estImage ? telechargerImage(document.qr_base64 || document.image_base64 || "", document.nom_fichier) : telechargerPdf(document.pdf_base64, document.nom_fichier)} className="tool-action" aria-label="Télécharger le fichier"><Download className="size-4" /></button>
                 <button type="button" onClick={() => onEdit(document)} className="tool-action" aria-label="Éditer le fichier"><FilePenLine className="size-4" /></button>
                 <button type="button" onClick={() => supprimer(document.id)} className="tool-action danger" aria-label="Supprimer le fichier"><Trash2 className="size-4" /></button>
               </div>
