@@ -106,6 +106,48 @@ export type Database = {
           },
         ]
       }
+      bilans_sante_employes: {
+        Row: {
+          allergies: string
+          blessure: boolean
+          created_at: string
+          details_blessure: string
+          employe_id: string
+          employe_nom: string
+          etat_global: string
+          groupe_sanguin: string
+          id: string
+          semaine: string
+          updated_at: string
+        }
+        Insert: {
+          allergies?: string
+          blessure?: boolean
+          created_at?: string
+          details_blessure?: string
+          employe_id: string
+          employe_nom?: string
+          etat_global?: string
+          groupe_sanguin?: string
+          id?: string
+          semaine?: string
+          updated_at?: string
+        }
+        Update: {
+          allergies?: string
+          blessure?: boolean
+          created_at?: string
+          details_blessure?: string
+          employe_id?: string
+          employe_nom?: string
+          etat_global?: string
+          groupe_sanguin?: string
+          id?: string
+          semaine?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cartes_service: {
         Row: {
           created_at: string
@@ -446,6 +488,39 @@ export type Database = {
           nom_fichier?: string
           numero?: string
           pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      demandes_conges: {
+        Row: {
+          created_at: string
+          employe_id: string
+          employe_nom: string
+          id: string
+          image_url: string
+          raison: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employe_id: string
+          employe_nom?: string
+          id?: string
+          image_url?: string
+          raison?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employe_id?: string
+          employe_nom?: string
+          id?: string
+          image_url?: string
+          raison?: string
+          statut?: string
           updated_at?: string
         }
         Relationships: []
