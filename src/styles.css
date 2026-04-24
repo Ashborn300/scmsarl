@@ -126,6 +126,7 @@
 .tool-organization-chart { --tool-1: oklch(0.34 0.16 260); --tool-2: oklch(0.68 0.14 190); }
 .tool-leave-requests { --tool-1: oklch(0.48 0.13 220); --tool-2: oklch(0.67 0.16 150); }
 .tool-health-report { --tool-1: oklch(0.5 0.19 20); --tool-2: oklch(0.72 0.17 70); }
+.tool-material-management { --tool-1: oklch(0.45 0.06 255); --tool-2: oklch(0.66 0.15 78); }
 
 @layer base {
   * { border-color: var(--color-border); }
