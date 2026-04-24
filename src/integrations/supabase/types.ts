@@ -106,6 +106,45 @@ export type Database = {
           },
         ]
       }
+      cartes_service: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          image_base64: string
+          matricule: string
+          nom_complet: string
+          nom_fichier: string
+          numero: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64: string
+          matricule?: string
+          nom_complet?: string
+          nom_fichier: string
+          numero: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64?: string
+          matricule?: string
+          nom_complet?: string
+          nom_fichier?: string
+          numero?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       certificats: {
         Row: {
           beneficiaire: string
