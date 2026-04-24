@@ -106,6 +106,42 @@ export type Database = {
           },
         ]
       }
+      certificats: {
+        Row: {
+          beneficiaire: string
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          beneficiaire?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at?: string
+        }
+        Update: {
+          beneficiaire?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chantiers: {
         Row: {
           autoriser_budget_chef: boolean
