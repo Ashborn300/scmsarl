@@ -935,6 +935,57 @@ export type Database = {
         }
         Relationships: []
       }
+      rapports_materiel: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          chef_chantier_id: string
+          chef_chantier_nom: string
+          created_at: string
+          id: string
+          materiel_perdu: Json
+          materiel_prevu: Json
+          materiel_recupere: Json
+          materiel_utilise: Json
+          notes: string
+          semaine: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id: string
+          chef_chantier_nom?: string
+          created_at?: string
+          id?: string
+          materiel_perdu?: Json
+          materiel_prevu?: Json
+          materiel_recupere?: Json
+          materiel_utilise?: Json
+          notes?: string
+          semaine?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id?: string
+          chef_chantier_nom?: string
+          created_at?: string
+          id?: string
+          materiel_perdu?: Json
+          materiel_prevu?: Json
+          materiel_recupere?: Json
+          materiel_utilise?: Json
+          notes?: string
+          semaine?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       realistic_sketchup: {
         Row: {
           created_at: string
