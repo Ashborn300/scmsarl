@@ -1,4 +1,4 @@
-import { AlertTriangle, Archive, ArrowLeft, CalendarDays, ClipboardList, Copy, Eye, FileCheck2, FileDown, HeartPulse, Link2, Pencil, Plus, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, Archive, ArrowLeft, CalendarDays, ClipboardList, Copy, Eye, FileCheck2, FileDown, HeartPulse, Link2, PackageCheck, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
