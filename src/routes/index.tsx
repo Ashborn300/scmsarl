@@ -83,15 +83,22 @@ function Index() {
               <UsersRound className="size-4" /> Espace employés
             </Link>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {configs.map((config) => {
               const Icone = icones[config.type];
               return (
-                <button key={config.type} type="button" onClick={() => setOutilActif(config.type)} className={`tool-${config.theme} group rounded-2xl border border-border bg-card p-5 text-left shadow-document transition hover:-translate-y-1 hover:shadow-tool`}>
-                  <span className="mb-5 flex size-12 items-center justify-center rounded-xl bg-tool-gradient text-tool-foreground shadow-tool"><Icone className="size-6" /></span>
-                  <h3 className="text-xl font-black text-foreground">{config.titre.replace("Générateur de ", "")}</h3>
-                  <p className="mt-2 min-h-12 text-sm text-muted-foreground">{config.description}</p>
-                  <span className="mt-5 inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-bold text-foreground group-hover:bg-tool-gradient group-hover:text-tool-foreground">Ouvrir l’outil</span>
+                <button key={config.type} type="button" onClick={() => setOutilActif(config.type)} className={`tool-${config.theme} group relative overflow-hidden rounded-3xl border border-border bg-card p-5 text-left shadow-document transition hover:-translate-y-1 hover:shadow-tool`}>
+                  <span className="absolute inset-x-0 top-0 h-2 bg-tool-gradient" />
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="flex size-14 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool transition group-hover:scale-105"><Icone className="size-7" /></span>
+                    <span className="rounded-full bg-muted px-3 py-1 text-xs font-black uppercase text-muted-foreground">SCM</span>
+                  </div>
+                  <h3 className="mt-6 text-xl font-black text-foreground">{config.titre.replace("Générateur de ", "")}</h3>
+                  <p className="mt-2 min-h-14 text-sm leading-6 text-muted-foreground">{config.description}</p>
+                  <div className="mt-5 flex items-center justify-between rounded-2xl bg-muted p-2 pl-4">
+                    <span className="text-xs font-black text-foreground">Ouvrir l’outil</span>
+                    <span className="flex size-9 items-center justify-center rounded-xl bg-tool-gradient text-tool-foreground shadow-tool">→</span>
+                  </div>
                 </button>
               );
             })}
