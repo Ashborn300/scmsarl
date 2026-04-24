@@ -119,6 +119,7 @@
 .tool-render-3d { --tool-1: oklch(0.45 0.09 132); --tool-2: oklch(0.62 0.12 54); }
 .tool-realistic-sketchup { --tool-1: oklch(0.42 0.06 70); --tool-2: oklch(0.5 0.12 155); }
 .tool-employee-sheet { --tool-1: oklch(0.42 0.13 150); --tool-2: oklch(0.5 0.18 260); }
+.tool-qr-code { --tool-1: oklch(0.25 0.05 255); --tool-2: oklch(0.64 0.14 185); }
 
 @layer base {
   * { border-color: var(--color-border); }
