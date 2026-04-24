@@ -1,7 +1,8 @@
 import { ArrowLeft, FileCheck2, Plus, Save, Trash2 } from "lucide-react";
+import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerDocument, enregistrerFicheEmploye, enregistrerRealisticSketchup, enregistrerRendu3D, listerEmployes, mockupCarteServiceBase64, type DocumentRecord, type EmployeRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
+import { creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerRealisticSketchup, enregistrerRendu3D, listerEmployes, mockupCarteServiceBase64, type DocumentRecord, type EmployeRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea" | "image"; required?: boolean; defaultValue?: string };
@@ -44,6 +45,7 @@ export const configs: Config[] = [
     { name: "sketchupImage", label: "Image du modèle SketchUp", type: "image", required: true }, { name: "titre", label: "Titre du rendu", defaultValue: "Realistic SketchUp" }, { name: "correctionPrompt", label: "Correction à appliquer au résultat", type: "textarea" },
   ]},
   { type: "fiche_employe", titre: "Générateur de fiche d’employé", theme: "employee-sheet", description: "Fiche individuelle complète ou fiche collective avec photo, nom, matricule et genre.", showTotal: false, fields: [] },
+  { type: "code_qr", titre: "Générateur Code QR", theme: "qr-code", description: "Code QR public menant vers une fiche web accessible avec les informations personnelles d’un employé.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
@@ -90,7 +92,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
 
   const total = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
 
-  useEffect(() => { if (config.type === "fiche_employe") listerEmployes().then(setEmployes).catch((erreur) => alert(erreur instanceof Error ? erreur.message : "Impossible de charger les employés.")); }, [config.type]);
+  useEffect(() => { if (config.type === "fiche_employe" || config.type === "code_qr") listerEmployes().then(setEmployes).catch((erreur) => alert(erreur instanceof Error ? erreur.message : "Impossible de charger les employés.")); }, [config.type]);
 
   function changer(name: string, value: string) { setFormulaire((actuel) => ({ ...actuel, [name]: value })); }
   function changerImage(name: string, file?: File) { setImagesFormulaire((actuel) => ({ ...actuel, [name]: file })); }
@@ -140,6 +142,15 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
         const pdf = await creerPdfFicheEmploye(typeFiche, selection, numero, sceauBase64);
         await enregistrerFicheEmploye({ typeFiche, titre: typeFiche === "collective" ? "Fiche collective employés" : selection[0]?.nom_complet || "Fiche employé", employeIds: employesSelectionnes, employes: selection, sceauBase64 }, pdf, numero, documentEdite?.id);
         setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Fiche employé modifiée avec succès." : "Fiche employé générée et enregistrée avec succès."); return;
+      }
+      if (config.type === "code_qr") {
+        if (employesSelectionnes.length !== 1) return alert("Veuillez sélectionner un seul employé pour générer son code QR.");
+        const employe = employes.find((item) => item.id === employesSelectionnes[0]);
+        if (!employe) return alert("Employé introuvable.");
+        const urlPublique = `${window.location.origin}/qr-employe/${employe.id}`;
+        const qrBase64 = await QRCode.toDataURL(urlPublique, { width: 1200, margin: 2, errorCorrectionLevel: "H", color: { dark: "#0f172a", light: "#ffffff" } });
+        await enregistrerCodeQR({ employeId: employe.id, employeNom: employe.nom_complet, matricule: employe.matricule, urlPublique, employe }, qrBase64, urlPublique, numero, documentEdite?.id);
+        setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert("Code QR généré et enregistré avec succès. Le lien public est fonctionnel."); return;
       }
       const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
       const signatureBase64 = estCommunication ? undefined : await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
