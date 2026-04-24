@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as EmployeRouteImport } from './routes/employe'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QrEmployeEmployeIdRouteImport } from './routes/qr-employe.$employeId'
+import { Route as FormulaireFormulaireIdRouteImport } from './routes/formulaire.$formulaireId'
 
 const EmployeRoute = EmployeRouteImport.update({
   id: '/employe',
@@ -28,34 +29,52 @@ const QrEmployeEmployeIdRoute = QrEmployeEmployeIdRouteImport.update({
   path: '/qr-employe/$employeId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FormulaireFormulaireIdRoute = FormulaireFormulaireIdRouteImport.update({
+  id: '/formulaire/$formulaireId',
+  path: '/formulaire/$formulaireId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
   '/qr-employe/$employeId': typeof QrEmployeEmployeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
   '/qr-employe/$employeId': typeof QrEmployeEmployeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
   '/qr-employe/$employeId': typeof QrEmployeEmployeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/employe' | '/qr-employe/$employeId'
+  fullPaths:
+    | '/'
+    | '/employe'
+    | '/formulaire/$formulaireId'
+    | '/qr-employe/$employeId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/employe' | '/qr-employe/$employeId'
-  id: '__root__' | '/' | '/employe' | '/qr-employe/$employeId'
+  to: '/' | '/employe' | '/formulaire/$formulaireId' | '/qr-employe/$employeId'
+  id:
+    | '__root__'
+    | '/'
+    | '/employe'
+    | '/formulaire/$formulaireId'
+    | '/qr-employe/$employeId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EmployeRoute: typeof EmployeRoute
+  FormulaireFormulaireIdRoute: typeof FormulaireFormulaireIdRoute
   QrEmployeEmployeIdRoute: typeof QrEmployeEmployeIdRoute
 }
 
@@ -82,14 +101,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QrEmployeEmployeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/formulaire/$formulaireId': {
+      id: '/formulaire/$formulaireId'
+      path: '/formulaire/$formulaireId'
+      fullPath: '/formulaire/$formulaireId'
+      preLoaderRoute: typeof FormulaireFormulaireIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EmployeRoute: EmployeRoute,
+  FormulaireFormulaireIdRoute: FormulaireFormulaireIdRoute,
   QrEmployeEmployeIdRoute: QrEmployeEmployeIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
