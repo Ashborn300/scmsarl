@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, Building2, ClipboardList, Cuboid, FileText, Hammer, HardHat, IdCard, Megaphone, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Warehouse } from "lucide-react";
+import { Award, Building2, CalendarDays, ClipboardList, Cuboid, FileClock, FileText, Hammer, HardHat, IdCard, Megaphone, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Warehouse } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -32,6 +32,8 @@ const icones: Record<OutilType, React.ElementType> = {
   fiche_employe: ClipboardList,
   code_qr: QrCode,
   formulaire_personnalise: SquarePen,
+  historique_connexion: FileClock,
+  calendrier_feries: CalendarDays,
 };
 
 type ToolVisual = {
@@ -155,6 +157,22 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(80,70,229,0.08)", border: "1px solid rgba(13,148,136,0.16)" },
     action: { background: "rgba(13,148,136,0.12)", border: "1px solid rgba(80,70,229,0.16)" },
     icon: { background: "linear-gradient(135deg, #5046e5, #0d9488)", color: "white" },
+  },
+  historique_connexion: {
+    card: { background: "linear-gradient(180deg, rgba(40,92,120,0.14) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(21,128,61,0.24)" },
+    banner: { background: "linear-gradient(135deg, #285c78, #15803d)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(40,92,120,0.08)", border: "1px solid rgba(21,128,61,0.16)" },
+    action: { background: "rgba(21,128,61,0.12)", border: "1px solid rgba(40,92,120,0.16)" },
+    icon: { background: "linear-gradient(135deg, #285c78, #15803d)", color: "white" },
+  },
+  calendrier_feries: {
+    card: { background: "linear-gradient(180deg, rgba(194,120,3,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(125,71,10,0.26)" },
+    banner: { background: "linear-gradient(135deg, #7d470a, #c27803)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(194,120,3,0.08)", border: "1px solid rgba(125,71,10,0.16)" },
+    action: { background: "rgba(194,120,3,0.12)", border: "1px solid rgba(125,71,10,0.16)" },
+    icon: { background: "linear-gradient(135deg, #7d470a, #c27803)", color: "white" },
   },
 };
 

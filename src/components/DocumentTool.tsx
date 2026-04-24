@@ -1,9 +1,9 @@
-import { ArrowLeft, Copy, Eye, FileCheck2, FileDown, Link2, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, Copy, Eye, FileCheck2, FileDown, Link2, Plus, Save, Trash2, UsersRound } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerRealisticSketchup, enregistrerRendu3D, listerEmployes, listerFormulairesPersonnalises, listerReponsesFormulaire, mockupCarteServiceBase64, type ChampPersonnalise, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type LignePrestation, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerJoursNonTravailles, listerReponsesFormulaire, mockupCarteServiceBase64, supprimerJourNonTravaille, type ChampPersonnalise, type ConnexionScm, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea" | "image"; required?: boolean; defaultValue?: string };
@@ -49,6 +49,8 @@ export const configs: Config[] = [
   { type: "fiche_employe", titre: "Générateur de fiche d’employé", theme: "employee-sheet", description: "Fiche individuelle complète ou fiche collective avec photo, nom, matricule et genre.", showTotal: false, fields: [] },
   { type: "code_qr", titre: "Générateur Code QR", theme: "qr-code", description: "Code QR public menant vers une fiche web accessible avec les informations personnelles d’un employé.", showTotal: false, fields: [] },
   { type: "formulaire_personnalise", titre: "Créateur de formulaire personnalisable", theme: "custom-form", description: "Formulaire champ par champ avec lien public externe et consultation des réponses.", showTotal: false, fields: [] },
+  { type: "historique_connexion", titre: "Historique de connexion", theme: "login-history", description: "Consultez les connexions par date et téléchargez le rapport journalier en PDF.", showTotal: false, fields: [] },
+  { type: "calendrier_feries", titre: "Calendrier des jours fériés", theme: "holiday-calendar", description: "Définissez les jours fériés et non travaillés visibles sur les dashboards employés.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
@@ -136,8 +138,108 @@ function CustomFormTool({ retour }: { retour: () => void }) {
   );
 }
 
+function HistoriqueConnexionTool({ retour }: { retour: () => void }) {
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [connexions, setConnexions] = useState<ConnexionScm[]>([]);
+  const [chargement, setChargement] = useState(false);
+  useEffect(() => { charger(); }, [date]);
+  async function charger() { setChargement(true); try { setConnexions(await listerConnexionsScm(date)); } catch (e) { alert(e instanceof Error ? e.message : "Chargement impossible."); } finally { setChargement(false); } }
+  async function telechargerPdf() {
+    const { jsPDF } = await import("jspdf");
+    const pdf = new jsPDF({ unit: "mm", format: "a4" });
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.text("Rapport journalier de connexion", 16, 20);
+    pdf.setFontSize(11); pdf.text(`Date : ${new Date(date).toLocaleDateString("fr-FR")}`, 16, 30);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
+    let y = 44; pdf.text("Heure", 16, 38); pdf.text("Nom", 45, 38); pdf.text("Rôle", 116, 38); pdf.text("Matricule", 154, 38);
+    connexions.forEach((c) => { if (y > 280) { pdf.addPage(); y = 20; } pdf.text(new Date(c.connected_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), 16, y); pdf.text(pdf.splitTextToSize(c.nom_utilisateur || "—", 64), 45, y); pdf.text(c.role || "—", 116, y); pdf.text(c.matricule || "—", 154, y); y += 8; });
+    if (!connexions.length) pdf.text("Aucune connexion enregistrée pour cette date.", 16, 48);
+    pdf.save(`rapport-connexions-${date}.pdf`);
+  }
+  return <main className="min-h-screen bg-background px-4 py-5 sm:px-6 lg:px-8 tool-login-history"><div className="mx-auto max-w-7xl"><button type="button" onClick={retour} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Retour au tableau de bord</button><div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-8"><span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span><h1 className="max-w-3xl text-3xl font-black lg:text-5xl">Historique de connexion</h1><p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">Voyez qui s’est connecté, à quelle heure, et téléchargez le rapport journalier.</p></div><section className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><label className="w-full sm:max-w-xs"><span className="mb-1 block text-sm font-semibold text-foreground">Date</span><input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} /></label><button className="primary-action" onClick={telechargerPdf}><FileDown className="size-4" /> Télécharger PDF</button></div><div className="mt-5 space-y-3">{chargement ? <p className="rounded-xl bg-muted p-4 text-sm font-bold">Chargement…</p> : connexions.length ? connexions.map((c) => <article key={c.id} className="grid gap-2 rounded-xl border border-border bg-background p-4 sm:grid-cols-[110px_1fr_130px_120px]"><strong>{new Date(c.connected_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</strong><span>{c.nom_utilisateur || "—"}</span><span className="font-bold text-primary">{c.role}</span><span>{c.matricule || "—"}</span></article>) : <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">Aucune connexion pour cette date.</p>}</div></section></div></main>;
+}
+
+function CalendrierFeriesTool({ retour }: { retour: () => void }) {
+  const [jours, setJours] = useState<JourNonTravaille[]>([]);
+  const [form, setForm] = useState({ date_jour: new Date().toISOString().slice(0, 10), titre: "", description: "", type_jour: "jour_ferie", actif: true });
+  const [editionId, setEditionId] = useState<string | undefined>();
+
+  useEffect(() => { charger(); }, []);
+
+  async function charger() {
+    try { setJours(await listerJoursNonTravailles()); } catch (e) { alert(e instanceof Error ? e.message : "Chargement impossible."); }
+  }
+
+  async function enregistrer(event: React.FormEvent) {
+    event.preventDefault();
+    if (!form.titre.trim()) return alert("Le titre est obligatoire.");
+    await enregistrerJourNonTravaille({ ...form, titre: form.titre.trim(), description: form.description.trim() }, editionId);
+    setForm({ date_jour: new Date().toISOString().slice(0, 10), titre: "", description: "", type_jour: "jour_ferie", actif: true });
+    setEditionId(undefined);
+    await charger();
+  }
+
+  async function retirer(id: string) {
+    if (!confirm("Supprimer ce jour ?")) return;
+    await supprimerJourNonTravaille(id);
+    await charger();
+  }
+
+  function modifier(jour: JourNonTravaille) {
+    setEditionId(jour.id);
+    setForm({ date_jour: jour.date_jour, titre: jour.titre, description: jour.description, type_jour: jour.type_jour, actif: jour.actif });
+  }
+
+  return (
+    <main className="min-h-screen bg-background px-4 py-5 sm:px-6 lg:px-8 tool-holiday-calendar">
+      <div className="mx-auto max-w-7xl">
+        <button type="button" onClick={retour} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Retour au tableau de bord</button>
+        <div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-8">
+          <span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span>
+          <h1 className="max-w-3xl text-3xl font-black lg:text-5xl">Calendrier des jours fériés</h1>
+          <p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">Les jours actifs apparaissent automatiquement chez les employés et chefs de chantier.</p>
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <form onSubmit={enregistrer} className="rounded-2xl border border-border bg-card p-5 shadow-document">
+            <div className="grid gap-4">
+              <label><span className="mb-1 block text-sm font-semibold">Date</span><input type="date" className="form-control" value={form.date_jour} onChange={(e) => setForm({ ...form, date_jour: e.target.value })} /></label>
+              <label><span className="mb-1 block text-sm font-semibold">Titre</span><input className="form-control" maxLength={120} value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} /></label>
+              <label><span className="mb-1 block text-sm font-semibold">Type</span><select className="form-control" value={form.type_jour} onChange={(e) => setForm({ ...form, type_jour: e.target.value })}><option value="jour_ferie">Jour férié</option><option value="jour_non_travaille">Jour non travaillé</option></select></label>
+              <label><span className="mb-1 block text-sm font-semibold">Description</span><textarea className="form-control" rows={4} maxLength={1000} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+              <label className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 text-sm font-bold"><input type="checkbox" checked={form.actif} onChange={(e) => setForm({ ...form, actif: e.target.checked })} /> Actif</label>
+              <button className="primary-action"><Save className="size-4" /> {editionId ? "Modifier" : "Ajouter"}</button>
+            </div>
+          </form>
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-document">
+            <h2 className="text-xl font-black">Jours configurés</h2>
+            <div className="mt-4 space-y-3">
+              {jours.map((jour) => (
+                <article key={jour.id} className="rounded-xl border border-border bg-background p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-black text-primary">{new Date(jour.date_jour).toLocaleDateString("fr-FR")} · {jour.type_jour === "jour_ferie" ? "Jour férié" : "Jour non travaillé"}</p>
+                      <h3 className="mt-1 text-lg font-black">{jour.titre}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{jour.description || "—"}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" className="tool-action" onClick={() => modifier(jour)}><CalendarDays className="size-4" /></button>
+                      <button type="button" className="tool-action danger" onClick={() => retirer(jour.id)}><Trash2 className="size-4" /></button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+              {!jours.length && <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">Aucun jour configuré.</p>}
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export function DocumentTool({ config, retour }: { config: Config; retour: () => void }) {
   if (config.type === "formulaire_personnalise") return <CustomFormTool retour={retour} />;
+  if (config.type === "historique_connexion") return <HistoriqueConnexionTool retour={retour} />;
+  if (config.type === "calendrier_feries") return <CalendrierFeriesTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
 }
 

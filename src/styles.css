@@ -121,6 +121,8 @@
 .tool-employee-sheet { --tool-1: oklch(0.42 0.13 150); --tool-2: oklch(0.5 0.18 260); }
 .tool-qr-code { --tool-1: oklch(0.25 0.05 255); --tool-2: oklch(0.64 0.14 185); }
 .tool-custom-form { --tool-1: oklch(0.52 0.2 285); --tool-2: oklch(0.58 0.13 185); }
+.tool-login-history { --tool-1: oklch(0.44 0.09 230); --tool-2: oklch(0.48 0.13 150); }
+.tool-holiday-calendar { --tool-1: oklch(0.46 0.11 70); --tool-2: oklch(0.68 0.16 78); }
 
 @layer base {
   * { border-color: var(--color-border); }

@@ -4,11 +4,13 @@ import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr" | "formulaire_personnalise";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries";
 export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
 export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
 export type ReponseFormulaire = { id: string; formulaire_id: string; reponses: Record<string, string>; fichiers: Record<string, { nom: string; type: string; taille: number; contenu: string }>; created_at: string };
+export type ConnexionScm = { id: string; role: string; nom_utilisateur: string; admin_id: string | null; employe_id: string | null; matricule: string; type_connexion: string; connected_at: string; created_at: string };
+export type JourNonTravaille = { id: string; date_jour: string; titre: string; description: string; type_jour: string; actif: boolean; created_at: string; updated_at: string };
 
 export type DocumentRecord = {
   id: string;
@@ -65,6 +67,8 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   fiche_employe: { principal: [22, 101, 52], secondaire: [37, 99, 235], doux: [232, 246, 237] },
   code_qr: { principal: [15, 23, 42], secondaire: [20, 184, 166], doux: [232, 247, 245] },
   formulaire_personnalise: { principal: [80, 70, 229], secondaire: [13, 148, 136], doux: [236, 238, 255] },
+  historique_connexion: { principal: [40, 92, 120], secondaire: [21, 128, 61], doux: [232, 242, 245] },
+  calendrier_feries: { principal: [125, 71, 10], secondaire: [194, 120, 3], doux: [255, 245, 225] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -82,6 +86,8 @@ export const tablesParOutil: Record<OutilType, string> = {
   fiche_employe: "fiches_employes",
   code_qr: "codes_qr_employes",
   formulaire_personnalise: "formulaires_personnalises",
+  historique_connexion: "connexions_scm",
+  calendrier_feries: "jours_non_travailles",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -99,6 +105,8 @@ export const prefixesParOutil: Record<OutilType, string> = {
   fiche_employe: "FEM",
   code_qr: "QR",
   formulaire_personnalise: "FRM",
+  historique_connexion: "LOG",
+  calendrier_feries: "JNT",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -116,6 +124,8 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   fiche_employe: ["nom_fichier", "numero", "titre", "type_fiche"],
   code_qr: ["nom_fichier", "numero", "employe_nom", "matricule"],
   formulaire_personnalise: ["titre", "description", "url_publique"],
+  historique_connexion: ["nom_utilisateur", "role", "matricule"],
+  calendrier_feries: ["titre", "description", "type_jour"],
 };
 
 const db = supabase as any;
@@ -306,6 +316,32 @@ export async function listerReponsesFormulaire(formulaireId: string) {
   const { data, error } = await db.from("reponses_formulaires").select("*").eq("formulaire_id", formulaireId).order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []) as ReponseFormulaire[];
+}
+
+export async function listerConnexionsScm(dateJour: string) {
+  const debut = `${dateJour}T00:00:00.000Z`;
+  const fin = `${dateJour}T23:59:59.999Z`;
+  const { data, error } = await db.from("connexions_scm").select("*").gte("connected_at", debut).lte("connected_at", fin).order("connected_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ConnexionScm[];
+}
+
+export async function listerJoursNonTravailles() {
+  const { data, error } = await db.from("jours_non_travailles").select("*").order("date_jour", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as JourNonTravaille[];
+}
+
+export async function enregistrerJourNonTravaille(payload: Pick<JourNonTravaille, "date_jour" | "titre" | "description" | "type_jour" | "actif">, id?: string) {
+  const requete = id ? db.from("jours_non_travailles").update(payload).eq("id", id).select().single() : db.from("jours_non_travailles").insert(payload).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as JourNonTravaille;
+}
+
+export async function supprimerJourNonTravaille(id: string) {
+  const { error } = await db.from("jours_non_travailles").delete().eq("id", id);
+  if (error) throw new Error(error.message);
 }
 
 export async function supprimerDocument(type: OutilType, id: string) {

@@ -342,6 +342,42 @@ export type Database = {
         }
         Relationships: []
       }
+      connexions_scm: {
+        Row: {
+          admin_id: string | null
+          connected_at: string
+          created_at: string
+          employe_id: string | null
+          id: string
+          matricule: string
+          nom_utilisateur: string
+          role: string
+          type_connexion: string
+        }
+        Insert: {
+          admin_id?: string | null
+          connected_at?: string
+          created_at?: string
+          employe_id?: string | null
+          id?: string
+          matricule?: string
+          nom_utilisateur?: string
+          role: string
+          type_connexion?: string
+        }
+        Update: {
+          admin_id?: string | null
+          connected_at?: string
+          created_at?: string
+          employe_id?: string | null
+          id?: string
+          matricule?: string
+          nom_utilisateur?: string
+          role?: string
+          type_connexion?: string
+        }
+        Relationships: []
+      }
       contrats_construction: {
         Row: {
           client: string
@@ -683,6 +719,39 @@ export type Database = {
           titre?: string
           updated_at?: string
           url_publique?: string
+        }
+        Relationships: []
+      }
+      jours_non_travailles: {
+        Row: {
+          actif: boolean
+          created_at: string
+          date_jour: string
+          description: string
+          id: string
+          titre: string
+          type_jour: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          date_jour: string
+          description?: string
+          id?: string
+          titre?: string
+          type_jour?: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          date_jour?: string
+          description?: string
+          id?: string
+          titre?: string
+          type_jour?: string
+          updated_at?: string
         }
         Relationships: []
       }
