@@ -724,6 +724,11 @@ export async function creerPdfArchiveChantier(archive: Omit<ArchiveChantier, "id
   y += 4; pdf.setFillColor(...couleurs.doux); pdf.rect(20, y - 5, 168, 8, "F"); pdf.setFont("helvetica", "bold"); pdf.setTextColor(...couleurs.principal); pdf.text("EMPLOYÉS AYANT PARTICIPÉ", 23, y); y += 10;
   pdf.setFont("helvetica", "normal"); pdf.setTextColor(36, 45, 64);
   archive.employes_participants.forEach((employe, index) => { if (y > 234) { piedDePage(pdf, couleurs.principal, undefined, undefined, "SCM SARL", "Archive chantier"); pdf.addPage(); ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche archive chantier", "ARCHIVE", couleurs.principal); y = 84; } pdf.text(`${index + 1}. ${employe.nom_complet || "—"} — ${employe.poste || employe.matricule || "—"}`, 24, y); y += 6; });
+  if (archive.images_chantier?.length) {
+    piedDePage(pdf, couleurs.principal, undefined, undefined, "SCM SARL", "Archive chantier"); pdf.addPage(); ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Images du chantier", "ARCHIVE", couleurs.principal);
+    const imagesBase64 = await Promise.all(archive.images_chantier.slice(0, 6).map((image) => imageVersBase64(image).catch(() => "")));
+    imagesBase64.filter(Boolean).forEach((image, index) => ajouterImageSiValide(pdf, image, index % 2 === 0 ? 20 : 108, 84 + Math.floor(index / 2) * 58, 80, 48));
+  }
   piedDePage(pdf, couleurs.principal, undefined, undefined, "SCM SARL", "Archive chantier");
   return pdf.output("datauristring");
 }
