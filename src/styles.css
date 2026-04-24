@@ -209,6 +209,8 @@
   .org-node { display: flex; min-height: 4.5rem; width: min(20rem, 100%); align-items: center; gap: 1rem; border: .24rem solid var(--org-color); border-radius: 1.25rem; background: var(--card); padding: .7rem 1.1rem; color: var(--org-color); box-shadow: var(--shadow-document); }
   .org-icon { display: inline-flex; min-height: 3.35rem; min-width: 3.35rem; align-items: center; justify-content: center; border-radius: 999px; background: var(--org-color); color: var(--primary-foreground); }
   .org-node strong { flex: 1; font-size: clamp(1rem, 2vw, 1.45rem); font-weight: 950; text-transform: uppercase; }
+  .org-image-chart { overflow: hidden; }
+  .org-uploaded-image { position: relative; z-index: 1; display: block; width: 100%; max-height: 78vh; border-radius: var(--radius-2xl); object-fit: contain; background: var(--card); box-shadow: var(--shadow-document); }
   .org-bleu { --org-color: oklch(0.34 0.16 260); } .org-vert { --org-color: oklch(0.55 0.16 145); } .org-orange { --org-color: oklch(0.68 0.18 55); } .org-violet { --org-color: oklch(0.48 0.19 305); } .org-turquoise { --org-color: oklch(0.63 0.14 190); }
 }
 

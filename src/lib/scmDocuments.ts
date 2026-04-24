@@ -11,7 +11,7 @@ export type FormulairePersonnalise = { id: string; titre: string; description: s
 export type ReponseFormulaire = { id: string; formulaire_id: string; reponses: Record<string, string>; fichiers: Record<string, { nom: string; type: string; taille: number; contenu: string }>; created_at: string };
 export type ConnexionScm = { id: string; role: string; nom_utilisateur: string; admin_id: string | null; employe_id: string | null; matricule: string; type_connexion: string; connected_at: string; created_at: string };
 export type JourNonTravaille = { id: string; date_jour: string; titre: string; description: string; type_jour: string; actif: boolean; created_at: string; updated_at: string };
-export type BlocOrganigramme = { id: string; titre: string; niveau: number; couleur: "bleu" | "vert" | "orange" | "violet" | "turquoise"; parentId?: string; position?: "bas" | "cote" };
+export type BlocOrganigramme = { id: string; titre: string; niveau: number; couleur: "bleu" | "vert" | "orange" | "violet" | "turquoise"; parentId?: string; position?: "bas" | "cote"; image_url?: string };
 export type OrganigrammeEntreprise = { id: string; titre: string; description: string; blocs: BlocOrganigramme[]; actif: boolean; created_at: string; updated_at: string };
 
 export type DocumentRecord = {
@@ -359,6 +359,14 @@ export async function enregistrerJourNonTravaille(payload: Pick<JourNonTravaille
 export async function supprimerJourNonTravaille(id: string) {
   const { error } = await db.from("jours_non_travailles").delete().eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+export async function televerserImageOrganigramme(fichier: File) {
+  const extension = fichier.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+  const chemin = `organigrammes/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from("scm-images").upload(chemin, fichier, { cacheControl: "3600", contentType: fichier.type || "image/png", upsert: false });
+  if (error) throw new Error(error.message);
+  return supabase.storage.from("scm-images").getPublicUrl(chemin).data.publicUrl;
 }
 
 export async function listerOrganigrammesEntreprise() {
