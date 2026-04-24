@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer";
 
 export type DocumentRecord = {
   id: string;
@@ -28,6 +28,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   contrat_construction: "contrats_construction",
   contrat_employe: "contrats_employes",
   description_projet: "descriptions_projets",
+  communiquer: "communications",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -37,6 +38,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   contrat_construction: "CCO",
   contrat_employe: "CEM",
   description_projet: "PRJ",
+  communiquer: "COM",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -46,6 +48,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   contrat_construction: ["nom_fichier", "numero", "client"],
   contrat_employe: ["nom_fichier", "numero", "employe"],
   description_projet: ["nom_fichier", "numero", "projet"],
+  communiquer: ["nom_fichier", "numero", "titre"],
 };
 
 const db = supabase as any;
@@ -101,6 +104,7 @@ export async function enregistrerDocument(type: OutilType, payload: Record<strin
     ...(type === "facture" || type === "devis" || type === "recu" || type === "contrat_construction" ? { client: String(payload.client || payload.nomClient || "") } : {}),
     ...(type === "contrat_employe" ? { employe: String(payload.employe || "") } : {}),
     ...(type === "description_projet" ? { projet: String(payload.projet || payload.nomProjet || "") } : {}),
+    ...(type === "communiquer" ? { titre: String(payload.titre || payload.objet || "") } : {}),
   };
   const requete = id ? db.from(table).update(ligne).eq("id", id).select().single() : db.from(table).insert(ligne).select().single();
   const { data, error } = await requete;
@@ -162,6 +166,16 @@ function piedDePage(pdf: jsPDF, sceau?: string, signature?: string, libelleSceau
   pdf.text(libelleSignature || "Signature du client", 115, y);
   if (sceau) pdf.addImage(sceau, "JPEG", 27, y + 7, 48, 24, undefined, "FAST");
   if (signature) pdf.addImage(signature, "JPEG", 117, y + 7, 48, 24, undefined, "FAST");
+}
+
+function piedDePageCommunication(pdf: jsPDF, sceau?: string, libelleSceau = "Nom / fonction de celui qui impose le sceau") {
+  const y = 238;
+  pdf.setDrawColor(25, 55, 109);
+  pdf.line(18, y - 8, 192, y - 8);
+  pdf.setFontSize(9);
+  pdf.setTextColor(90, 98, 115);
+  pdf.text(libelleSceau || "Nom / fonction de celui qui impose le sceau", 115, y);
+  if (sceau) pdf.addImage(sceau, "JPEG", 118, y + 7, 52, 28, undefined, "FAST");
 }
 
 function texteValeur(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170, interligne = 4.5) {
@@ -258,7 +272,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   champs.forEach(([label, valeur]) => {
     y = texteMultiligne(pdf, label, valeur, 20, y, 165);
     if (y > 218) {
-      piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
+      type === "communiquer" ? piedDePageCommunication(pdf, options.sceau, options.libelleSceau) : piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
       pdf.addPage();
       y = 24;
     }
@@ -296,7 +310,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     pdf.text(`TOTAL : ${options.total.toLocaleString("fr-FR")} $`, 130, 229);
   }
 
-  piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
+  type === "communiquer" ? piedDePageCommunication(pdf, options.sceau, options.libelleSceau) : piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
   return pdf.output("datauristring");
 }
 

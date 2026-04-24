@@ -168,6 +168,42 @@ export type Database = {
           },
         ]
       }
+      communications: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       compteurs_documents: {
         Row: {
           dernier_numero: number
