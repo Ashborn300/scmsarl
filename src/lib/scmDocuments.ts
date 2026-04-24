@@ -203,7 +203,7 @@ function valeurChamp(champs: Array<[string, string]>, label: string) {
   return champs.find(([nom]) => nom === label)?.[1] || "—";
 }
 
-function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string }) {
+function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, couleur: [number, number, number], options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string }) {
   let y = 82;
   pdf.setTextColor(16, 42, 88);
   pdf.setFont("helvetica", "bold");
@@ -248,11 +248,12 @@ function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, 
   y = texteValeur(pdf, "Nombre de niveaux", valeurChamp(champs, "Nombre de niveaux"), 151, y - 13, 37, 3.8) + 1;
   y = texteValeur(pdf, "Portée du projet", valeurChamp(champs, "Portée du projet"), 20, y, 78, 3.8);
   texteValeur(pdf, "État de la zone du terrain", valeurChamp(champs, "État de la zone du terrain"), 110, y - 13, 78, 3.8);
-  piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
+  piedDePage(pdf, couleur, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
 }
 
 export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string; lignes?: LignePrestation[]; total?: number }) {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const couleurs = couleursPdfParOutil[type];
   const logo = await imageVersBase64(logoUrl);
   const drapeauRdc = await drapeauRdcVersPng();
   pdf.setFillColor(247, 249, 252);
@@ -261,7 +262,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   pdf.roundedRect(12, 12, 186, 273, 3, 3, "F");
   pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST");
   pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST");
-  pdf.setTextColor(16, 42, 88);
+  pdf.setTextColor(...couleurs.principal);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(19);
   pdf.text(titre.toUpperCase(), 18, 58);
@@ -269,12 +270,12 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   pdf.text(`N° ${numero}`, 18, 65);
   pdf.setFont("helvetica", "normal");
   pdf.text(`Date : ${new Date().toLocaleDateString("fr-FR")}`, 158, 65);
-  pdf.setDrawColor(22, 73, 146);
+  pdf.setDrawColor(...couleurs.secondaire);
   pdf.setLineWidth(0.7);
   pdf.line(18, 70, 192, 70);
 
   if (type === "description_projet") {
-    creerPdfDescriptionProjet(pdf, champs, options);
+    creerPdfDescriptionProjet(pdf, champs, couleurs.principal, options);
     return pdf.output("datauristring");
   }
 
@@ -282,7 +283,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   champs.forEach(([label, valeur]) => {
     y = texteMultiligne(pdf, label, valeur, 20, y, 165);
     if (y > 218) {
-      type === "communiquer" ? piedDePageCommunication(pdf, options.sceau, options.libelleSceau) : piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
+      type === "communiquer" ? piedDePageCommunication(pdf, couleurs.principal, options.sceau, options.libelleSceau) : piedDePage(pdf, couleurs.principal, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
       pdf.addPage();
       y = 24;
     }
