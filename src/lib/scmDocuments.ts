@@ -41,6 +41,7 @@ export type DocumentRecord = {
 };
 
 export type LignePrestation = { description: string; quantite: number; prix: number };
+export type LigneDeduction = { libelle: string; pourcentage: number };
 
 export type EmployeRecord = {
   id: string;
@@ -219,7 +220,7 @@ export async function enregistrerDocument(type: OutilType, payload: Record<strin
   const ligne = {
     ...ligneBase,
     ...(type === "facture" || type === "devis" || type === "recu"
-      ? { montant_total: Number(payload.total || payload.montant || payload.budget || 0) }
+      ? { montant_total: Number(payload.totalFinal || payload.total || payload.montant || payload.budget || 0) }
       : {}),
     ...(type === "facture" || type === "devis" || type === "recu" || type === "contrat_construction" ? { client: String(payload.client || payload.nomClient || "") } : {}),
     ...(type === "contrat_employe" ? { employe: String(payload.employe || "") } : {}),
@@ -752,7 +753,7 @@ export async function creerPdfArchiveChantier(archive: Omit<ArchiveChantier, "id
   return pdf.output("datauristring");
 }
 
-export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string; lignes?: LignePrestation[]; total?: number }) {
+export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string; lignes?: LignePrestation[]; deductions?: LigneDeduction[]; total?: number; totalAvantDeduction?: number }) {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const couleurs = couleursPdfParOutil[type];
   const logo = await imageVersBase64(logoUrl);
@@ -817,6 +818,20 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
       pdf.text(String(ligne.quantite), 126, y);
       pdf.text(`${ligne.prix.toLocaleString("fr-FR")} $`, 144, y);
       pdf.text(`${(ligne.quantite * ligne.prix).toLocaleString("fr-FR")} $`, 166, y);
+    });
+  }
+
+  if (options.deductions?.length && typeof options.totalAvantDeduction === "number") {
+    y = Math.min(y + 12, 198);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text("Frais à déduire", 20, y);
+    pdf.setFont("helvetica", "normal");
+    options.deductions.forEach((deduction) => {
+      y += 7;
+      const montant = options.totalAvantDeduction! * Number(deduction.pourcentage || 0) / 100;
+      pdf.text(`${deduction.libelle || "Frais"} (${Number(deduction.pourcentage || 0).toLocaleString("fr-FR")} %)`, 23, y);
+      pdf.text(`- ${montant.toLocaleString("fr-FR")} $`, 146, y);
     });
   }
 

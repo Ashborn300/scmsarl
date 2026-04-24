@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerRealisticSketchup, enregistrerRendu3D, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerRealisticSketchup, enregistrerRendu3D, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
@@ -20,7 +20,7 @@ export const configs: Config[] = [
   { type: "devis", titre: "Générateur de devis professionnel", theme: "yellow", description: "Devis détaillé avec projet, achats à faire, quantités, coûts et total automatique.", hasLines: true, fields: [
     { name: "client", label: "Informations client", type: "textarea", required: true }, { name: "projet", label: "Description du projet", type: "textarea", required: true }, { name: "validite", label: "Date de validité", type: "date" }, { name: "notes", label: "Notes", type: "textarea" },
   ]},
-  { type: "recu", titre: "Générateur de reçu", theme: "green", description: "Reçu de paiement formel pour règlement client.", fields: [
+  { type: "recu", titre: "Générateur de reçu", theme: "green", description: "Reçu de paiement formel pour règlement client.", totalLabel: "Montant final", fields: [
     { name: "client", label: "Nom du client", required: true }, { name: "montant", label: "Montant payé ($)", type: "number", required: true }, { name: "modePaiement", label: "Mode de paiement", required: true }, { name: "date", label: "Date", type: "date", defaultValue: aujourdhui }, { name: "description", label: "Description", type: "textarea", required: true },
   ]},
   { type: "contrat_construction", titre: "Générateur de contrat de construction", theme: "purple", description: "Contrat officiel avec travaux, délais, paiement et clauses éditables.", fields: [
@@ -358,8 +358,10 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
 function DocumentToolStandard({ config, retour }: { config: Config; retour: () => void }) {
 
   const estCommunication = config.type === "communiquer";
+  const avecDeductions = config.type === "facture" || config.type === "devis" || config.type === "recu";
   const [formulaire, setFormulaire] = useState<Record<string, string>>(() => Object.fromEntries(config.fields.map((field) => [field.name, field.defaultValue || ""])));
   const [lignes, setLignes] = useState<LignePrestation[]>([{ description: "", quantite: 1, prix: 0 }]);
+  const [deductions, setDeductions] = useState<LigneDeduction[]>([]);
   const [imagesFormulaire, setImagesFormulaire] = useState<Record<string, File | undefined>>({});
   const [sceau, setSceau] = useState<File>();
   const [signature, setSignature] = useState<File>();
@@ -371,7 +373,9 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
   const [employes, setEmployes] = useState<EmployeRecord[]>([]);
   const [employesSelectionnes, setEmployesSelectionnes] = useState<string[]>([]);
 
-  const total = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
+  const totalAvantDeduction = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
+  const totalDeductions = useMemo(() => avecDeductions ? deductions.reduce((somme, deduction) => somme + totalAvantDeduction * Number(deduction.pourcentage || 0) / 100, 0) : 0, [avecDeductions, deductions, totalAvantDeduction]);
+  const total = Math.max(0, totalAvantDeduction - totalDeductions);
 
   useEffect(() => { if (config.type === "fiche_employe" || config.type === "code_qr") listerEmployes().then(setEmployes).catch((erreur) => alert(erreur instanceof Error ? erreur.message : "Impossible de charger les employés.")); }, [config.type]);
 
@@ -438,8 +442,9 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
       const signatureBase64 = estCommunication ? undefined : await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
       const champs: Array<[string, string]> = config.fields.map((field) => [field.label, field.type === "image" ? imagesChamps[field.name] || "—" : formulaire[field.name] || "—"]);
       if (config.type === "facture") champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
-      const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, total });
-      await enregistrerDocument(config.type, { ...formulaire, ...imagesChamps, lignes, total, titreCourt: config.titre, libelleSceau, libelleSignature, sceauBase64, signatureBase64 }, pdf, numero, documentEdite?.id);
+      const deductionsActives = avecDeductions ? deductions.filter((deduction) => deduction.libelle.trim() && Number(deduction.pourcentage || 0) > 0) : [];
+      const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, deductions: deductionsActives, total, totalAvantDeduction });
+      await enregistrerDocument(config.type, { ...formulaire, ...imagesChamps, lignes, deductions: deductionsActives, totalAvantDeduction, totalDeductions, totalFinal: total, total, titreCourt: config.titre, libelleSceau, libelleSignature, sceauBase64, signatureBase64 }, pdf, numero, documentEdite?.id);
       setDocumentEdite(null);
       setActualisation((valeur) => valeur + 1);
       alert(documentEdite ? "Document PDF modifié et réenregistré avec succès." : "Document PDF généré et enregistré avec succès.");
@@ -453,6 +458,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
     setDocumentEdite(document);
     setFormulaire(Object.fromEntries(config.fields.map((field) => [field.name, String(donnees[field.name] ?? field.defaultValue ?? "")])));
     setLignes(Array.isArray(donnees.lignes) && donnees.lignes.length ? donnees.lignes as LignePrestation[] : [{ description: "", quantite: 1, prix: 0 }]);
+    setDeductions(Array.isArray(donnees.deductions) ? donnees.deductions as LigneDeduction[] : []);
     setLibelleSceau(String(donnees.libelleSceau || (estCommunication ? "Nom / fonction de celui qui impose le sceau" : "Sceau de l’entreprise")));
     setLibelleSignature(String(donnees.libelleSignature || "Signature du client"));
     setImagesFormulaire({});
@@ -488,6 +494,11 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
             {config.hasLines && <div className="mt-6 rounded-xl bg-muted p-3">
               <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">{config.type === "devis" ? "Achats à faire" : "Prestations"}</h3><button type="button" onClick={() => setLignes([...lignes, { description: "", quantite: 1, prix: 0 }])} className="mini-button"><Plus className="size-4" /> Ajouter</button></div>
               <div className="space-y-3">{lignes.map((ligne, index) => <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_90px_120px_40px]"><input placeholder={config.type === "devis" ? "Achat à faire" : "Description"} value={ligne.description} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, description: e.target.value } : l))} className="form-control" /><input type="number" min="1" value={ligne.quantite} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, quantite: Number(e.target.value) } : l))} className="form-control" /><input type="number" min="0" value={ligne.prix} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, prix: Number(e.target.value) } : l))} placeholder={config.type === "devis" ? "Coût" : "Prix"} className="form-control" /><button type="button" onClick={() => setLignes(lignes.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button></div>)}</div>
+            </div>}
+            {avecDeductions && <div className="mt-6 rounded-xl bg-muted p-3">
+              <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">Frais à déduire</h3><button type="button" onClick={() => setDeductions([...deductions, { libelle: "Frais d’entreprise", pourcentage: 1.2 }])} className="mini-button"><Plus className="size-4" /> Ajouter</button></div>
+              <div className="space-y-3">{deductions.map((deduction, index) => <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_120px_40px]"><input placeholder="Nom des frais" value={deduction.libelle} onChange={(e) => setDeductions(deductions.map((d, i) => i === index ? { ...d, libelle: e.target.value } : d))} className="form-control" /><input type="number" min="0" step="0.01" value={deduction.pourcentage} onChange={(e) => setDeductions(deductions.map((d, i) => i === index ? { ...d, pourcentage: Number(e.target.value) } : d))} placeholder="%" className="form-control" /><button type="button" onClick={() => setDeductions(deductions.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button></div>)}</div>
+              <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3"><span>Total avant déduction : {totalAvantDeduction.toLocaleString("fr-FR")} $</span><span>Déductions : {totalDeductions.toLocaleString("fr-FR")} $</span><span>Montant final : {total.toLocaleString("fr-FR")} $</span></div>
             </div>}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {config.type !== "carte_service" && config.type !== "rendu_3d" && config.type !== "realistic_sketchup" && config.type !== "code_qr" && <><label><span className="mb-1 block text-sm font-semibold text-foreground">{estCommunication ? "Dénominateur de celui qui impose le sceau" : "Texte au-dessus du sceau"}</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
