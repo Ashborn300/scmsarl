@@ -1,7 +1,7 @@
 import { ArrowLeft, FileCheck2, Plus, Save, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerPdf, enregistrerCarteService, enregistrerDocument, enregistrerRealisticSketchup, enregistrerRendu3D, mockupCarteServiceBase64, type DocumentRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
+import { creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerDocument, enregistrerFicheEmploye, enregistrerRealisticSketchup, enregistrerRendu3D, listerEmployes, mockupCarteServiceBase64, type DocumentRecord, type EmployeRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea" | "image"; required?: boolean; defaultValue?: string };
@@ -43,6 +43,7 @@ export const configs: Config[] = [
   { type: "realistic_sketchup", titre: "Realistic SketchUp", theme: "realistic-sketchup", description: "Transformation Nano Banana d’un modèle SketchUp en rendu architectural hyperréaliste.", showTotal: false, fields: [
     { name: "sketchupImage", label: "Image du modèle SketchUp", type: "image", required: true }, { name: "titre", label: "Titre du rendu", defaultValue: "Realistic SketchUp" }, { name: "correctionPrompt", label: "Correction à appliquer au résultat", type: "textarea" },
   ]},
+  { type: "fiche_employe", titre: "Générateur de fiche d’employé", theme: "employee-sheet", description: "Fiche individuelle complète ou fiche collective avec photo, nom, matricule et genre.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
@@ -84,8 +85,12 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   const [chargement, setChargement] = useState(false);
   const [actualisation, setActualisation] = useState(0);
   const [documentEdite, setDocumentEdite] = useState<DocumentRecord | null>(null);
+  const [employes, setEmployes] = useState<EmployeRecord[]>([]);
+  const [employesSelectionnes, setEmployesSelectionnes] = useState<string[]>([]);
 
   const total = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
+
+  useEffect(() => { if (config.type === "fiche_employe") listerEmployes().then(setEmployes).catch((erreur) => alert(erreur instanceof Error ? erreur.message : "Impossible de charger les employés.")); }, [config.type]);
 
   function changer(name: string, value: string) { setFormulaire((actuel) => ({ ...actuel, [name]: value })); }
   function changerImage(name: string, file?: File) { setImagesFormulaire((actuel) => ({ ...actuel, [name]: file })); }
@@ -125,6 +130,16 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
         const image = await genererImageOpenRouter({ data: { prompt, images: [sketchupOptimise].filter(Boolean), model: "google/gemini-2.5-flash-image" } });
         await enregistrerRealisticSketchup({ ...formulaire, ...imagesChamps, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
         setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Rendu Realistic SketchUp corrigé et enregistré avec succès." : "Rendu Realistic SketchUp généré et enregistré avec succès."); return;
+      }
+      if (config.type === "fiche_employe") {
+        const typeFiche = formulaire.typeFiche || "individuelle";
+        if (!employesSelectionnes.length) return alert("Veuillez sélectionner au moins un employé.");
+        if (typeFiche === "individuelle" && employesSelectionnes.length !== 1) return alert("La fiche individuelle nécessite un seul employé.");
+        const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
+        const selection = employes.filter((employe) => employesSelectionnes.includes(employe.id));
+        const pdf = await creerPdfFicheEmploye(typeFiche, selection, numero, sceauBase64);
+        await enregistrerFicheEmploye({ typeFiche, titre: typeFiche === "collective" ? "Fiche collective employés" : selection[0]?.nom_complet || "Fiche employé", employeIds: employesSelectionnes, employes: selection, sceauBase64 }, pdf, numero, documentEdite?.id);
+        setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Fiche employé modifiée avec succès." : "Fiche employé générée et enregistrée avec succès."); return;
       }
       const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
       const signatureBase64 = estCommunication ? undefined : await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
