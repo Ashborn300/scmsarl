@@ -1166,3 +1166,305 @@ export function voirImage(base64: string) {
 export async function mockupCarteServiceBase64() {
   return imageVersBase64(carteServiceMockupUrl);
 }
+
+type DonneesCarteService = {
+  nomComplet: string;
+  matricule: string;
+  genre: string;
+  poste: string;
+  telephone: string;
+  adresse: string;
+  photoProfil: string;
+  qrCode: string;
+  numero: string;
+  dateEmission?: string;
+};
+
+function dessinerCarteServiceRecto(pdf: jsPDF, data: DonneesCarteService, logo: string, drapeau: string, x: number, y: number, w: number, h: number) {
+  const couleurPrincipale: [number, number, number] = [10, 65, 130];
+  const couleurAccent: [number, number, number] = [212, 175, 55];
+  const couleurTexte: [number, number, number] = [25, 35, 55];
+  const couleurDouce: [number, number, number] = [241, 245, 252];
+
+  // Ombre portée
+  pdf.setFillColor(0, 0, 0);
+  pdf.setGState(pdf.GState({ opacity: 0.18 }));
+  pdf.roundedRect(x + 1.6, y + 2.4, w, h, 4, 4, "F");
+  pdf.setGState(pdf.GState({ opacity: 1 }));
+
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(x, y, w, h, 4, 4, "F");
+
+  // Bandeau supérieur dégradé (en bandes)
+  const bandeauH = h * 0.26;
+  for (let i = 0; i < 30; i += 1) {
+    const t = i / 29;
+    const r = Math.round(couleurPrincipale[0] + (35 - couleurPrincipale[0]) * t);
+    const g = Math.round(couleurPrincipale[1] + (95 - couleurPrincipale[1]) * t);
+    const b = Math.round(couleurPrincipale[2] + (175 - couleurPrincipale[2]) * t);
+    pdf.setFillColor(r, g, b);
+    pdf.rect(x, y + (bandeauH * i) / 30, w, bandeauH / 30 + 0.2, "F");
+  }
+  pdf.setFillColor(...couleurAccent);
+  pdf.rect(x, y + bandeauH, w, 0.9, "F");
+
+  // Logo dans rond blanc
+  pdf.setFillColor(255, 255, 255);
+  pdf.circle(x + 11, y + bandeauH / 2, 8, "F");
+  try { pdf.addImage(logo, "JPEG", x + 4, y + bandeauH / 2 - 7, 14, 14, undefined, "FAST"); } catch { /* ignore */ }
+
+  // Titres bandeau
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(13);
+  pdf.text("SCM SARL", x + 22, y + bandeauH / 2 - 1);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.text("Société Civile et Minière", x + 22, y + bandeauH / 2 + 3);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.text("CARTE DE SERVICE", x + 22, y + bandeauH / 2 + 7.5);
+
+  // Drapeau RDC en haut à droite
+  try { pdf.addImage(drapeau, "PNG", x + w - 18, y + 4, 14, 9, undefined, "FAST"); } catch { /* ignore */ }
+  pdf.setFontSize(6.2);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text("R.D. CONGO", x + w - 18, y + 16);
+
+  // Photo de profil avec cadre doré
+  const photoX = x + 6;
+  const photoY = y + bandeauH + 5;
+  const photoW = 30;
+  const photoH = 36;
+  pdf.setFillColor(...couleurAccent);
+  pdf.roundedRect(photoX - 0.8, photoY - 0.8, photoW + 1.6, photoH + 1.6, 2, 2, "F");
+  pdf.setFillColor(...couleurDouce);
+  pdf.roundedRect(photoX, photoY, photoW, photoH, 1.5, 1.5, "F");
+  if (data.photoProfil) {
+    try { pdf.addImage(data.photoProfil, "JPEG", photoX, photoY, photoW, photoH, undefined, "FAST"); }
+    catch { try { pdf.addImage(data.photoProfil, "PNG", photoX, photoY, photoW, photoH, undefined, "FAST"); } catch { /* ignore */ } }
+  } else {
+    pdf.setTextColor(150, 150, 150);
+    pdf.setFontSize(7);
+    pdf.text("Photo", photoX + photoW / 2, photoY + photoH / 2, { align: "center" });
+  }
+
+  // Bloc informations
+  const infoX = photoX + photoW + 5;
+  const infoY = y + bandeauH + 6;
+  const infoLargeur = w - (infoX - x) - 30;
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(11.5);
+  pdf.setTextColor(...couleurPrincipale);
+  const nomLignes = pdf.splitTextToSize((data.nomComplet || "—").toUpperCase(), infoLargeur);
+  pdf.text(nomLignes, infoX, infoY);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(...couleurAccent);
+  pdf.text((data.poste || "—").toUpperCase(), infoX, infoY + 4.5 + (nomLignes.length - 1) * 4);
+
+  pdf.setDrawColor(...couleurAccent);
+  pdf.setLineWidth(0.25);
+  pdf.line(infoX, infoY + 7 + (nomLignes.length - 1) * 4, infoX + infoLargeur, infoY + 7 + (nomLignes.length - 1) * 4);
+
+  const champs: Array<[string, string]> = [
+    ["MATRICULE", data.matricule || "—"],
+    ["GENRE", data.genre || "—"],
+    ["TÉLÉPHONE", data.telephone || "—"],
+    ["ADRESSE", data.adresse || "—"],
+  ];
+  let cy = infoY + 11 + (nomLignes.length - 1) * 4;
+  champs.forEach(([label, valeur]) => {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(5.8);
+    pdf.setTextColor(120, 130, 150);
+    pdf.text(label, infoX, cy);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7.8);
+    pdf.setTextColor(...couleurTexte);
+    const valeurLignes = pdf.splitTextToSize(valeur, infoLargeur);
+    pdf.text(valeurLignes.slice(0, 2), infoX, cy + 3);
+    cy += 3 + Math.min(valeurLignes.length, 2) * 3 + 1.2;
+  });
+
+  // QR code en bas à droite
+  const qrTaille = 24;
+  const qrX = x + w - qrTaille - 5;
+  const qrY = y + h - qrTaille - 9;
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(qrX - 1, qrY - 1, qrTaille + 2, qrTaille + 2, 1, 1, "F");
+  if (data.qrCode) {
+    try { pdf.addImage(data.qrCode, "PNG", qrX, qrY, qrTaille, qrTaille, undefined, "FAST"); }
+    catch { try { pdf.addImage(data.qrCode, "JPEG", qrX, qrY, qrTaille, qrTaille, undefined, "FAST"); } catch { /* ignore */ } }
+  }
+  pdf.setFontSize(5.8);
+  pdf.setTextColor(120, 130, 150);
+  pdf.text("Scanner pour vérifier", qrX + qrTaille / 2, qrY + qrTaille + 3, { align: "center" });
+
+  // Pied
+  pdf.setFillColor(...couleurPrincipale);
+  pdf.rect(x, y + h - 5, w, 5, "F");
+  pdf.setFillColor(...couleurAccent);
+  pdf.rect(x, y + h - 5, w, 0.6, "F");
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(6.5);
+  pdf.text(`N° ${data.numero}`, x + 4, y + h - 1.6);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(6);
+  pdf.text("RÉPUBLIQUE DÉMOCRATIQUE DU CONGO", x + w / 2, y + h - 1.6, { align: "center" });
+}
+
+function dessinerCarteServiceVerso(pdf: jsPDF, data: DonneesCarteService, logo: string, drapeau: string, x: number, y: number, w: number, h: number) {
+  const couleurPrincipale: [number, number, number] = [10, 65, 130];
+  const couleurAccent: [number, number, number] = [212, 175, 55];
+  const couleurTexte: [number, number, number] = [25, 35, 55];
+
+  pdf.setFillColor(0, 0, 0);
+  pdf.setGState(pdf.GState({ opacity: 0.18 }));
+  pdf.roundedRect(x + 1.6, y + 2.4, w, h, 4, 4, "F");
+  pdf.setGState(pdf.GState({ opacity: 1 }));
+
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(x, y, w, h, 4, 4, "F");
+
+  // Bandeau latéral gauche dégradé vertical
+  const bandeauW = w * 0.22;
+  for (let i = 0; i < 30; i += 1) {
+    const t = i / 29;
+    const r = Math.round(couleurPrincipale[0] + (35 - couleurPrincipale[0]) * t);
+    const g = Math.round(couleurPrincipale[1] + (95 - couleurPrincipale[1]) * t);
+    const b = Math.round(couleurPrincipale[2] + (175 - couleurPrincipale[2]) * t);
+    pdf.setFillColor(r, g, b);
+    pdf.rect(x, y + (h * i) / 30, bandeauW, h / 30 + 0.2, "F");
+  }
+  pdf.setFillColor(...couleurAccent);
+  pdf.rect(x + bandeauW, y, 0.7, h, "F");
+
+  pdf.setFillColor(255, 255, 255);
+  pdf.circle(x + bandeauW / 2, y + 16, 9, "F");
+  try { pdf.addImage(logo, "JPEG", x + bandeauW / 2 - 7.5, y + 8.5, 15, 15, undefined, "FAST"); } catch { /* ignore */ }
+  try { pdf.addImage(drapeau, "PNG", x + bandeauW / 2 - 8, y + h - 22, 16, 11, undefined, "FAST"); } catch { /* ignore */ }
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(7);
+  pdf.text("R.D.C.", x + bandeauW / 2, y + h - 7, { align: "center" });
+
+  const cx = x + bandeauW + 6;
+  const cw = w - bandeauW - 12;
+
+  pdf.setTextColor(...couleurPrincipale);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(11);
+  pdf.text("INFORMATIONS LÉGALES", cx, y + 9);
+  pdf.setDrawColor(...couleurAccent);
+  pdf.setLineWidth(0.4);
+  pdf.line(cx, y + 11, cx + 30, y + 11);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.2);
+  pdf.setTextColor(...couleurTexte);
+  const intro = "Le détenteur de cette carte est un employé agréé de SCM SARL, société de droit congolais.";
+  pdf.text(pdf.splitTextToSize(intro, cw), cx, y + 17);
+
+  const legales: Array<[string, string]> = [
+    ["RCCM", "CD/KNM/RCCM/24-B-01256"],
+    ["IDNAT", "01-F4200-N55523N"],
+    ["N° IMPÔT", "A2442 173S"],
+  ];
+  let ly = y + 28;
+  legales.forEach(([label, valeur]) => {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(6.5);
+    pdf.setTextColor(120, 130, 150);
+    pdf.text(label, cx, ly);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...couleurTexte);
+    pdf.text(valeur, cx + 22, ly);
+    ly += 5.5;
+  });
+
+  pdf.setFillColor(248, 240, 220);
+  pdf.roundedRect(cx, ly + 1, cw, 12, 1.5, 1.5, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(6.5);
+  pdf.setTextColor(...couleurAccent);
+  pdf.text("EN CAS DE PERTE", cx + 2, ly + 5);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(6.2);
+  pdf.setTextColor(...couleurTexte);
+  pdf.text(pdf.splitTextToSize("Merci de retourner cette carte au siège SCM SARL ou au commissariat le plus proche.", cw - 4), cx + 2, ly + 8.5);
+
+  // Signatures
+  const sy = y + h - 18;
+  pdf.setDrawColor(...couleurPrincipale);
+  pdf.setLineWidth(0.3);
+  pdf.line(cx, sy, cx + cw / 2 - 4, sy);
+  pdf.line(cx + cw / 2 + 4, sy, cx + cw, sy);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(6);
+  pdf.setTextColor(...couleurPrincipale);
+  pdf.text("Signature du titulaire", cx + (cw / 2 - 4) / 2, sy + 3, { align: "center" });
+  pdf.text("Direction SCM SARL", cx + cw / 2 + 4 + (cw / 2 - 4) / 2, sy + 3, { align: "center" });
+
+  pdf.setFillColor(...couleurPrincipale);
+  pdf.rect(cx - 2, y + h - 5, cw + 4, 5, "F");
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(6);
+  pdf.text(`Carte N° ${data.numero}`, cx, y + h - 1.6);
+  pdf.setFont("helvetica", "normal");
+  pdf.text(`Émise le ${new Date(data.dateEmission || new Date()).toLocaleDateString("fr-FR")}`, cx + cw, y + h - 1.6, { align: "right" });
+}
+
+export async function creerPdfCarteService(data: DonneesCarteService) {
+  const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const logo = await imageVersBase64(logoUrl);
+  const drapeau = await drapeauRdcVersPng();
+
+  const pageW = 297;
+  const pageH = 210;
+  // Carte agrandie (~×1.4 du CR80) pour lisibilité PDF
+  const carteW = 120;
+  const carteH = 76;
+  const cx = (pageW - carteW) / 2;
+  const cy = (pageH - carteH) / 2;
+
+  // Recto
+  pdf.setFillColor(238, 242, 248);
+  pdf.rect(0, 0, pageW, pageH, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.setTextColor(60, 70, 90);
+  pdf.text("CARTE DE SERVICE — RECTO", pageW / 2, 14, { align: "center" });
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7);
+  pdf.setTextColor(120, 130, 150);
+  pdf.text(`SCM SARL · Document officiel · N° ${data.numero}`, pageW / 2, 19, { align: "center" });
+  dessinerCarteServiceRecto(pdf, data, logo, drapeau, cx, cy, carteW, carteH);
+  pdf.setFontSize(6.5);
+  pdf.setTextColor(120, 130, 150);
+  pdf.text("Format CR80 (85,6 × 54 mm) recto·verso · SCM SARL · République Démocratique du Congo", pageW / 2, pageH - 8, { align: "center" });
+
+  // Verso
+  pdf.addPage("a4", "landscape");
+  pdf.setFillColor(238, 242, 248);
+  pdf.rect(0, 0, pageW, pageH, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.setTextColor(60, 70, 90);
+  pdf.text("CARTE DE SERVICE — VERSO", pageW / 2, 14, { align: "center" });
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7);
+  pdf.setTextColor(120, 130, 150);
+  pdf.text(`SCM SARL · Document officiel · N° ${data.numero}`, pageW / 2, 19, { align: "center" });
+  dessinerCarteServiceVerso(pdf, data, logo, drapeau, cx, cy, carteW, carteH);
+  pdf.setFontSize(6.5);
+  pdf.setTextColor(120, 130, 150);
+  pdf.text("Format CR80 (85,6 × 54 mm) recto·verso · SCM SARL · République Démocratique du Congo", pageW / 2, pageH - 8, { align: "center" });
+
+  return pdf.output("datauristring");
+}
