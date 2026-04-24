@@ -50,7 +50,7 @@ export const Route = createFileRoute("/employe")({
 });
 
 type RoleSession = "admin" | "employe" | "chef_chantier";
-type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante" | "gestion_materiel";
+type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante" | "gestion_materiel" | "incident_chantier";
 type StatutPresence = "présent" | "absent" | "en retard" | "excusé";
 type ModeEdition = { type: "projets" | "employes" | "chantiers"; id?: string } | null;
 type Detail = { type: "projets" | "employes" | "chantiers" | "presences" | "annonces"; id: string } | null;
@@ -195,6 +195,7 @@ function EmployePage() {
   const [demandesConges, setDemandesConges] = useState<DemandeConge[]>([]);
   const [bilansSante, setBilansSante] = useState<BilanSanteEmploye[]>([]);
   const [rapportsMateriel, setRapportsMateriel] = useState<RapportMateriel[]>([]);
+  const [incidentsChantier, setIncidentsChantier] = useState<IncidentChantier[]>([]);
   const [jourPopup, setJourPopup] = useState<JourNonTravaille | null>(null);
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
@@ -214,6 +215,7 @@ function EmployePage() {
   const [formConge, setFormConge] = useState(congeInitial);
   const [formBilanSante, setFormBilanSante] = useState(bilanSanteInitial);
   const [formMateriel, setFormMateriel] = useState(materielInitial);
+  const [formIncident, setFormIncident] = useState(incidentInitial);
   const [presenceDate, setPresenceDate] = useState(new Date().toISOString().slice(0, 10));
   const [presenceChantier, setPresenceChantier] = useState("");
   const [presenceNotes, setPresenceNotes] = useState("");
