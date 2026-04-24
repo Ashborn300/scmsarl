@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, televerserImageOrganigramme, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, televerserImageOrganigramme, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
@@ -55,6 +55,7 @@ export const configs: Config[] = [
   { type: "organigramme_entreprise", titre: "Organigramme de l’entreprise", theme: "organization-chart", description: "Créez et publiez l’organigramme SCM SARL visible sur tous les dashboards employés.", showTotal: false, fields: [] },
   { type: "demandes_conges", titre: "Demandes de Congés", theme: "leave-requests", description: "Consultez toutes les demandes de congé envoyées par les employés.", showTotal: false, fields: [] },
   { type: "bilans_sante", titre: "Bilan de santé des employé", theme: "health-report", description: "Consultez les états de santé hebdomadaires complétés par les employés.", showTotal: false, fields: [] },
+  { type: "gestion_materiel", titre: "Gestion de Matériel", theme: "material-management", description: "Consultez les rapports hebdomadaires des chefs de chantier avec matériel récupéré et perdu.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
