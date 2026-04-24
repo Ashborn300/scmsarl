@@ -174,6 +174,8 @@ function EmployePage() {
   const [presences, setPresences] = useState<Presence[]>([]);
   const [annonces, setAnnonces] = useState<Annonce[]>([]);
   const [annoncesMasquees, setAnnoncesMasquees] = useState<AnnonceMasquee[]>([]);
+  const [joursNonTravailles, setJoursNonTravailles] = useState<JourNonTravaille[]>([]);
+  const [jourPopup, setJourPopup] = useState<JourNonTravaille | null>(null);
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
   const [message, setMessage] = useState("");
@@ -239,6 +241,7 @@ function EmployePage() {
     return annonces.filter((a) => a.publiee && !masquees.has(a.id));
   }, [annonces, annoncesMasquees, isAdmin, session]);
 
+  const joursVisibles = useMemo(() => joursNonTravailles.filter((jour) => jour.actif), [joursNonTravailles]);
   const stats = useMemo(() => ({
     totalProjets: projetsVisibles.length,
     totalEmployes: employesVisibles.length,
@@ -247,7 +250,8 @@ function EmployePage() {
     chantiersActifs: chantiersVisibles.filter((c) => c.statut === "Actif").length,
     presences: presencesVisibles.length,
     annonces: annoncesVisibles.length,
-  }), [projetsVisibles, employesVisibles, chantiersVisibles, presencesVisibles, annoncesVisibles]);
+    jours: joursVisibles.length,
+  }), [projetsVisibles, employesVisibles, chantiersVisibles, presencesVisibles, annoncesVisibles, joursVisibles]);
 
   const projetsFiltres = useMemo(() => filtrer(projetsVisibles, recherche, ["nom_projet", "client", "localisation", "statut"]), [projetsVisibles, recherche]);
   const employesFiltres = useMemo(() => filtrer(employesVisibles, recherche, ["nom_complet", "poste", "matricule", "telephone", "statut"]), [employesVisibles, recherche]);
