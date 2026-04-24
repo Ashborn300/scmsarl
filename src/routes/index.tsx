@@ -154,8 +154,8 @@ function Index() {
           </div>
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {configs.map((config) => {
-              const Icone = icones[config.type];
-              const visual = stylesOutils[config.type];
+              const Icone = icones[config.type] ?? FileText;
+              const visual = stylesOutils[config.type] ?? stylesOutils.communiquer;
               return (
                 <button key={config.type} type="button" onClick={() => setOutilActif(config.type)} style={visual.card} className="tool-card group relative overflow-hidden rounded-3xl border p-5 text-left shadow-document transition hover:-translate-y-1 hover:shadow-tool">
                   <div style={visual.banner} className="tool-card-banner -mx-5 -mt-5 mb-5 flex items-center justify-between px-5 py-4">
