@@ -433,6 +433,23 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
         await enregistrerRealisticSketchup({ ...formulaire, ...imagesChamps, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
         setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Rendu Realistic SketchUp corrigé et enregistré avec succès." : "Rendu Realistic SketchUp généré et enregistré avec succès."); return;
       }
+      if (config.type === "plan_architectural") {
+        const correction = formulaire.correctionPrompt?.trim();
+        const descriptionParts = [
+          formulaire.typeBatiment && `Building type: ${formulaire.typeBatiment}`,
+          formulaire.nombreNiveaux && `Levels: ${formulaire.nombreNiveaux}`,
+          formulaire.dimensions && `Overall dimensions: ${formulaire.dimensions}`,
+          formulaire.superficie && `Total area: ${formulaire.superficie} m²`,
+          formulaire.pieces && `Rooms layout (must respect every room and dimension): ${formulaire.pieces}`,
+          formulaire.orientation && `Orientation and main entrance: ${formulaire.orientation}`,
+          formulaire.exigencesSpeciales && `Special requirements: ${formulaire.exigencesSpeciales}`,
+          formulaire.styleTrait && `Drawing style: ${formulaire.styleTrait}`,
+        ].filter(Boolean).join(". ");
+        const prompt = `Generate a professional 2D architectural floor plan, top-down orthographic view, as faithfully as possible to the description. Strictly respect all room counts, dimensions, proportions, and adjacencies. Include clear wall thickness, doors with swing arcs, windows, stairs, fixtures (toilets, sinks, kitchen counters, beds indicated by furniture symbols), dimension lines with measurements in meters, room name labels in French, scale bar, and a north arrow. Clean technical line drawing on white background, precise geometry, architectural standard symbols. ${descriptionParts}. Output a single high-resolution square architectural plan image, sharp lines, legible labels.${correction ? ` Correction request: ${correction}` : ""}`;
+        const image = await genererImageOpenRouter({ data: { prompt, images: [], model: "google/gemini-3.1-flash-image-preview" } });
+        await enregistrerPlanArchitectural({ ...formulaire, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
+        setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Plan architectural corrigé et enregistré avec succès." : "Plan architectural généré et enregistré avec succès."); return;
+      }
       if (config.type === "fiche_employe") {
         const typeFiche = formulaire.typeFiche || "individuelle";
         if (!employesSelectionnes.length) return alert("Veuillez sélectionner au moins un employé.");
