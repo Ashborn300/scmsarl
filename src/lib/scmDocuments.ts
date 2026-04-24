@@ -321,7 +321,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     pdf.text(`TOTAL : ${options.total.toLocaleString("fr-FR")} $`, 130, 229);
   }
 
-  type === "communiquer" ? piedDePageCommunication(pdf, options.sceau, options.libelleSceau) : piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
+  type === "communiquer" ? piedDePageCommunication(pdf, couleurs.principal, options.sceau, options.libelleSceau) : piedDePage(pdf, couleurs.principal, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
   return pdf.output("datauristring");
 }
 
