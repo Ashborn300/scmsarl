@@ -190,17 +190,20 @@
   .org-logo { position: relative; z-index: 1; margin: 0 auto 1rem; height: 5.5rem; width: 8.5rem; object-fit: contain; }
   .org-chart h2 { position: relative; z-index: 1; font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 950; letter-spacing: .26em; color: var(--primary); }
   .org-line { position: relative; z-index: 1; margin: .75rem auto 1.5rem; height: .24rem; width: min(22rem, 70%); border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--chart-2), var(--chart-3), var(--chart-4)); }
+  .org-scroll { position: relative; z-index: 1; overflow-x: auto; padding-bottom: .6rem; }
   .org-roots, .org-children, .org-side-children, .org-node-row { position: relative; z-index: 1; display: flex; justify-content: center; gap: 1.1rem; }
+  .org-roots { min-width: max-content; padding-inline: min(6vw, 2rem); }
   .org-children { align-items: flex-start; padding-top: 2.1rem; }
-  .org-node-row { align-items: center; }
-  .org-side-children { align-items: flex-start; }
-  .org-side-left { border-right: .22rem solid color-mix(in oklab, var(--primary) 38%, var(--border)); margin-right: .4rem; padding-right: 1.6rem; }
-  .org-side-right { border-left: .22rem solid color-mix(in oklab, var(--primary) 38%, var(--border)); margin-left: .4rem; padding-left: 1.6rem; }
-  .org-side-children > .org-branch { flex: 0 1 min(18rem, 100%); }
-  .org-side-children > .org-branch::before { content: ""; position: absolute; top: 2.2rem; width: 1.35rem; height: .2rem; border-radius: 999px; background: color-mix(in oklab, var(--primary) 38%, var(--border)); }
-  .org-side-left > .org-branch::before { right: -1.6rem; }
-  .org-side-right > .org-branch::before { left: -1.6rem; }
-  .org-branch { position: relative; display: flex; min-width: min(20rem, 100%); flex: 1 1 0; flex-direction: column; align-items: center; }
+  .org-node-row { align-items: center; justify-content: center; }
+  .org-side-children { flex: 0 0 auto; align-items: center; justify-content: center; gap: 1.35rem; }
+  .org-side-left, .org-side-right { position: relative; min-width: max-content; }
+  .org-side-left { padding-right: 2.2rem; }
+  .org-side-right { padding-left: 2.2rem; }
+  .org-side-left::after, .org-side-right::after { content: ""; position: absolute; top: 50%; width: 1.45rem; height: .2rem; border-radius: 999px; background: color-mix(in oklab, var(--primary) 38%, var(--border)); transform: translateY(-50%); }
+  .org-side-left::after { right: .5rem; }
+  .org-side-right::after { left: .5rem; }
+  .org-side-children > .org-branch { flex: 0 0 18rem; min-width: 18rem; }
+  .org-branch { position: relative; display: flex; min-width: min(20rem, 100%); flex: 0 0 auto; flex-direction: column; align-items: center; }
   .org-children::before { content: ""; position: absolute; left: 12%; right: 12%; top: .9rem; height: .2rem; border-radius: 999px; background: color-mix(in oklab, var(--primary) 38%, var(--border)); }
   .org-children > .org-branch::before { content: ""; position: absolute; top: -1.2rem; height: 1.2rem; width: .2rem; border-radius: 999px; background: color-mix(in oklab, var(--primary) 38%, var(--border)); }
   .org-node { display: flex; min-height: 4.5rem; width: min(20rem, 100%); align-items: center; gap: 1rem; border: .24rem solid var(--org-color); border-radius: 1.25rem; background: var(--card); padding: .7rem 1.1rem; color: var(--org-color); box-shadow: var(--shadow-document); }
@@ -210,12 +213,13 @@
 }
 
 @media (max-width: 760px) {
-  .org-roots, .org-children, .org-node-row, .org-side-children { flex-direction: column; align-items: center; }
+  .org-scroll { overflow-x: visible; }
+  .org-roots, .org-children, .org-node-row, .org-side-children { flex-direction: column; align-items: center; min-width: 100%; }
   .org-branch { width: 100%; }
   .org-children { width: 100%; padding-top: 1.4rem; }
-  .org-side-children, .org-side-left, .org-side-right { width: 100%; border-left: 0; border-right: 0; margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; padding-top: 1.2rem; }
+  .org-side-children, .org-side-left, .org-side-right { width: 100%; min-width: 100%; margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; padding-top: 1.2rem; }
+  .org-side-left::after, .org-side-right::after { left: 50%; top: .35rem; width: .2rem; height: .9rem; transform: translateX(-50%); }
   .org-children::before { left: 50%; right: auto; top: 0; bottom: 0; width: .2rem; height: auto; }
-  .org-side-children > .org-branch::before { left: 50%; top: -.9rem; width: .2rem; height: .9rem; }
   .org-children > .org-branch::before { top: -.7rem; height: .8rem; }
 }
 

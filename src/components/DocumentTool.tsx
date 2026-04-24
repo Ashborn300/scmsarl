@@ -303,7 +303,7 @@ function OrgNode({ bloc, blocs }: { bloc: BlocOrganigramme; blocs: BlocOrganigra
 function OrganigrammePreview({ blocs }: { blocs: BlocOrganigramme[] }) {
   const blocsNormalises = normaliserBlocsOrganigramme(blocs);
   const racines = blocsNormalises.filter((bloc) => bloc.niveau === 0 || !bloc.parentId).slice(0, 3);
-  return <div className="org-chart"><img src={scmLogo} alt="Logo SCM SARL" className="org-logo" /><h2>ORGANIGRAMME</h2><div className="org-line" /><div className="org-roots">{racines.map((bloc) => <OrgNode key={bloc.id} bloc={bloc} blocs={blocsNormalises} />)}</div></div>;
+  return <div className="org-chart"><img src={scmLogo} alt="Logo SCM SARL" className="org-logo" /><h2>ORGANIGRAMME</h2><div className="org-line" /><div className="org-scroll"><div className="org-roots">{racines.map((bloc) => <OrgNode key={bloc.id} bloc={bloc} blocs={blocsNormalises} />)}</div></div></div>;
 }
 
 function OrganigrammeTool({ retour }: { retour: () => void }) {
