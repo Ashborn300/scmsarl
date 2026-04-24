@@ -41,6 +41,7 @@ export type DocumentRecord = {
 };
 
 export type LignePrestation = { description: string; quantite: number; prix: number };
+export type LigneDeduction = { libelle: string; pourcentage: number };
 
 export type EmployeRecord = {
   id: string;
@@ -219,7 +220,7 @@ export async function enregistrerDocument(type: OutilType, payload: Record<strin
   const ligne = {
     ...ligneBase,
     ...(type === "facture" || type === "devis" || type === "recu"
-      ? { montant_total: Number(payload.total || payload.montant || payload.budget || 0) }
+      ? { montant_total: Number(payload.totalFinal || payload.total || payload.montant || payload.budget || 0) }
       : {}),
     ...(type === "facture" || type === "devis" || type === "recu" || type === "contrat_construction" ? { client: String(payload.client || payload.nomClient || "") } : {}),
     ...(type === "contrat_employe" ? { employe: String(payload.employe || "") } : {}),
