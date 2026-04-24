@@ -339,6 +339,8 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   if (config.type === "demandes_conges") return <DemandesCongesTool retour={retour} />;
   if (config.type === "bilans_sante") return <BilansSanteTool retour={retour} />;
   if (config.type === "gestion_materiel") return <GestionMaterielTool retour={retour} />;
+  if (config.type === "incidents_chantier") return <IncidentsChantierTool retour={retour} />;
+  if (config.type === "archives_chantiers") return <ArchivesChantiersTool retour={retour} />;
   if (config.type === "organigramme_entreprise") return <OrganigrammeTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
 }
