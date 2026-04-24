@@ -183,7 +183,7 @@ async function supprimerFichierStockage(bucket: string, url?: string) { const pa
 
 function EmployePage() {
   const [session, setSession] = useState<Session | null>(null);
-  const [loginMode, setLoginMode] = useState<"admin" | "matricule">("matricule");
+  
   const [identifiant, setIdentifiant] = useState("");
   const [onglet, setOnglet] = useState<Onglet>("dashboard");
   const [menuOuvert, setMenuOuvert] = useState(false);
@@ -308,15 +308,19 @@ function EmployePage() {
     event.preventDefault();
     setMessage("");
     const saisie = identifiant.trim();
-    if (!saisie) { setIdentifiant(""); setMessage(loginMode === "admin" ? "Entrez l’identifiant admin." : "Entrez le matricule employé."); return; }
+    if (!saisie) { setIdentifiant(""); setMessage("Entrez votre identifiant de connexion."); return; }
     setSauvegarde(true);
     const token = crypto.randomUUID() + crypto.randomUUID();
     const tokenHash = await sha256(token);
-    const { data, error } = loginMode === "admin"
-      ? await db.rpc("scm_login_admin", { _username: saisie, _token_hash: tokenHash })
-      : await db.rpc("scm_login_employe", { _matricule: saisie, _token_hash: tokenHash });
+    let data: any = null;
+    let error: any = null;
+    const adminRes = await db.rpc("scm_login_admin", { _username: saisie, _token_hash: tokenHash });
+    if (adminRes.data?.success) { data = adminRes.data; } else {
+      const empRes = await db.rpc("scm_login_employe", { _matricule: saisie, _token_hash: tokenHash });
+      data = empRes.data; error = empRes.error || adminRes.error;
+    }
     setSauvegarde(false);
-    if (error || !data?.success) { setIdentifiant(""); setMessage(data?.message || "Connexion impossible pour le moment."); return; }
+    if (error || !data?.success) { setIdentifiant(""); setMessage(data?.message || "Identifiant invalide."); return; }
     localStorage.setItem(SESSION_KEY, token);
     setIdentifiant("");
     setSession({ token, role: data.role, nom: data.nom, employeId: data.employeId, adminId: data.adminId });
@@ -654,7 +658,7 @@ function EmployePage() {
 
   function changerOnglet(tab: Onglet) { setOnglet(tab); setRecherche(""); setMenuOuvert(false); }
 
-  if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
+  if (!session) return <LoginScreen identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
   const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "arrivage_materiel" ? "Rapport arrivage de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
@@ -714,8 +718,8 @@ function EmployePage() {
   );
 }
 
-function LoginScreen({ mode, setMode, identifiant, setIdentifiant, connecter, saving, message, chargement }: any) {
-  return <main className="construction-grid flex min-h-screen items-center justify-center bg-background p-4"><section className="w-full max-w-5xl overflow-hidden rounded-3xl border border-border bg-card shadow-document lg:grid lg:grid-cols-[.95fr_1.05fr]"><div className="tool-blue hidden bg-tool-gradient p-8 text-tool-foreground lg:flex lg:flex-col lg:justify-between"><div><img src={scmCompanyLogo} alt="Logo SCM SARL" className="h-28 w-28 rounded-3xl bg-card object-contain p-3 shadow-document" /><h1 className="mt-8 text-5xl font-black leading-none">SCM SARL</h1><p className="mt-4 max-w-sm text-sm font-semibold opacity-90">Espace moderne de gestion des employés, chantiers, projets et présences quotidiennes.</p></div><div className="grid grid-cols-3 gap-3 text-center text-xs font-black"><span className="rounded-2xl bg-tool-foreground/15 p-3">Admin</span><span className="rounded-2xl bg-tool-foreground/15 p-3">Employés</span><span className="rounded-2xl bg-tool-foreground/15 p-3">Chantiers</span></div></div><div className="p-6 sm:p-8"><div className="flex items-center gap-4 lg:hidden"><img src={scmCompanyLogo} alt="Logo SCM SARL" className="h-20 w-20 rounded-2xl border border-border bg-card object-contain p-2 shadow-document" /><div><h1 className="text-3xl font-black">SCM SARL</h1><p className="text-sm text-muted-foreground">Connexion entreprise</p></div></div><div className="hidden lg:block"><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Connexion sécurisée</p><h2 className="mt-2 text-3xl font-black">Accéder au tableau de bord</h2></div><div className="mt-8 grid grid-cols-2 gap-2 rounded-2xl bg-muted p-1"><button type="button" className={`rounded-xl px-3 py-3 text-sm font-black ${mode === "matricule" ? "bg-card shadow-document" : "text-muted-foreground"}`} onClick={() => setMode("matricule")}>Employés</button><button type="button" className={`rounded-xl px-3 py-3 text-sm font-black ${mode === "admin" ? "bg-card shadow-document" : "text-muted-foreground"}`} onClick={() => setMode("admin")}>Admin</button></div><form className="mt-6 space-y-4" onSubmit={connecter}><Champ label={mode === "admin" ? "Identifiant admin" : "Matricule employé"}><input type="text" className="form-control" value={identifiant} onChange={(e) => setIdentifiant(e.target.value)} placeholder="xxxxx" /></Champ>{message && <p className="rounded-xl bg-muted p-3 text-sm font-bold text-foreground">{message}</p>}<button className="primary-action w-full" disabled={saving || chargement}>{saving || chargement ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />} Se connecter</button></form></div></section></main>;
+function LoginScreen({ identifiant, setIdentifiant, connecter, saving, message, chargement }: any) {
+  return <main className="construction-grid flex min-h-screen items-center justify-center bg-background p-4"><section className="w-full max-w-5xl overflow-hidden rounded-3xl border border-border bg-card shadow-document lg:grid lg:grid-cols-[.95fr_1.05fr]"><div className="tool-blue hidden bg-tool-gradient p-8 text-tool-foreground lg:flex lg:flex-col lg:justify-between"><div><img src={scmCompanyLogo} alt="Logo SCM SARL" className="h-28 w-28 rounded-3xl bg-card object-contain p-3 shadow-document" /><h1 className="mt-8 text-5xl font-black leading-none">SCM SARL</h1><p className="mt-4 max-w-sm text-sm font-semibold opacity-90">Espace moderne de gestion des employés, chantiers, projets et présences quotidiennes.</p></div><div className="grid grid-cols-3 gap-3 text-center text-xs font-black"><span className="rounded-2xl bg-tool-foreground/15 p-3">Admin</span><span className="rounded-2xl bg-tool-foreground/15 p-3">Employés</span><span className="rounded-2xl bg-tool-foreground/15 p-3">Chantiers</span></div></div><div className="p-6 sm:p-8"><div className="flex items-center gap-4 lg:hidden"><img src={scmCompanyLogo} alt="Logo SCM SARL" className="h-20 w-20 rounded-2xl border border-border bg-card object-contain p-2 shadow-document" /><div><h1 className="text-3xl font-black">SCM SARL</h1><p className="text-sm text-muted-foreground">Connexion entreprise</p></div></div><div className="hidden lg:block"><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Connexion sécurisée</p><h2 className="mt-2 text-3xl font-black">Accéder au tableau de bord</h2></div><form className="mt-8 space-y-4" onSubmit={connecter}><Champ label="Identifiant de connexion"><input type="text" className="form-control" value={identifiant} onChange={(e) => setIdentifiant(e.target.value)} placeholder="Entrez votre identifiant" autoFocus /></Champ>{message && <p className="rounded-xl bg-muted p-3 text-sm font-bold text-foreground">{message}</p>}<button className="primary-action w-full" disabled={saving || chargement}>{saving || chargement ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />} Se connecter</button></form></div></section></main>;
 }
 
 function filtrer<T extends Record<string, unknown>>(items: T[], recherche: string, champs: (keyof T)[]) { const q = recherche.trim().toLowerCase(); return q ? items.filter((item) => champs.some((champ) => String(item[champ] ?? "").toLowerCase().includes(q))) : items; }
