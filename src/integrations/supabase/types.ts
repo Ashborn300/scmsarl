@@ -1441,6 +1441,42 @@ export type Database = {
         }
         Relationships: []
       }
+      versions_nuit: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          image_base64: string
+          nom_fichier: string
+          numero: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64: string
+          nom_fichier: string
+          numero: string
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64?: string
+          nom_fichier?: string
+          numero?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
