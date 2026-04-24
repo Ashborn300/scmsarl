@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, Building2, CalendarDays, ClipboardList, Cuboid, HeartPulse, FileClock, FileText, FilePlus2, Hammer, HardHat, IdCard, Megaphone, Network, PackageCheck, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Warehouse } from "lucide-react";
+import { AlertTriangle, Archive, Award, Building2, CalendarDays, ClipboardList, Cuboid, HeartPulse, FileClock, FileText, FilePlus2, Hammer, HardHat, IdCard, Megaphone, Network, PackageCheck, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Warehouse } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -38,6 +38,8 @@ const icones: Record<OutilType, React.ElementType> = {
   demandes_conges: FilePlus2,
   bilans_sante: HeartPulse,
   gestion_materiel: PackageCheck,
+  incidents_chantier: AlertTriangle,
+  archives_chantiers: Archive,
 };
 
 type ToolVisual = {
@@ -201,6 +203,22 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(71,85,105,0.08)", border: "1px solid rgba(202,138,4,0.16)" },
     action: { background: "rgba(202,138,4,0.12)", border: "1px solid rgba(71,85,105,0.16)" },
     icon: { background: "linear-gradient(135deg, #475569, #ca8a04)", color: "white" },
+  },
+  incidents_chantier: {
+    card: { background: "linear-gradient(180deg, rgba(185,28,28,0.14) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(234,88,12,0.28)" },
+    banner: { background: "linear-gradient(135deg, #b91c1c, #ea580c)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(185,28,28,0.08)", border: "1px solid rgba(234,88,12,0.16)" },
+    action: { background: "rgba(234,88,12,0.12)", border: "1px solid rgba(185,28,28,0.16)" },
+    icon: { background: "linear-gradient(135deg, #b91c1c, #ea580c)", color: "white" },
+  },
+  archives_chantiers: {
+    card: { background: "linear-gradient(180deg, rgba(52,88,74,0.14) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(180,83,9,0.28)" },
+    banner: { background: "linear-gradient(135deg, #34584a, #b45309)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(52,88,74,0.08)", border: "1px solid rgba(180,83,9,0.16)" },
+    action: { background: "rgba(180,83,9,0.12)", border: "1px solid rgba(52,88,74,0.16)" },
+    icon: { background: "linear-gradient(135deg, #34584a, #b45309)", color: "white" },
   },
   organigramme_entreprise: {
     card: { background: "linear-gradient(180deg, rgba(13,42,148,0.14) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(20,184,166,0.26)" },
