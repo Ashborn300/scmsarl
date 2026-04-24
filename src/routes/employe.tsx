@@ -182,6 +182,7 @@ function EmployePage() {
   const [filtreEmploye, setFiltreEmploye] = useState("");
   const [filtreChef, setFiltreChef] = useState("");
   const [edition, setEdition] = useState<ModeEdition>(null);
+  const [annonceModal, setAnnonceModal] = useState<"creation" | null>(null);
   const [detail, setDetail] = useState<Detail>(null);
   const [formProjet, setFormProjet] = useState<ProjetForm>(projetInitial);
   const [formEmploye, setFormEmploye] = useState<EmployeForm>(employeInitial);
@@ -318,7 +319,7 @@ function EmployePage() {
 
   const ouvrirCreation = (type: Exclude<ModeEdition, null>["type"] | "annonces") => {
     if (!isAdmin) return;
-    if (type === "annonces") { setFormAnnonce(annonceInitial); setDetail(null); setMessage(""); return; }
+    if (type === "annonces") { setAnnonceModal("creation"); setFormAnnonce(annonceInitial); setDetail(null); setMessage(""); return; }
     setEdition({ type }); setDetail(null); setMessage("");
     if (type === "projets") setFormProjet(projetInitial);
     if (type === "employes") setFormEmploye(employeInitial);
@@ -332,6 +333,51 @@ function EmployePage() {
     if (type === "employes") { const item = employes.find((e) => e.id === id); if (item) setFormEmploye({ ...item, salaire_total: String(item.salaire_total ?? item.salaire ?? ""), salaire_recu: String(item.salaire_recu || 0), chantier_assigne: item.chantier_assigne || "", role: item.role || "employe", peut_voir_budget: !!item.peut_voir_budget, photo_profil: item.photo_profil || "", genre: item.genre || "", date_admission: item.date_admission || "", date_naissance: item.date_naissance || "", email: item.email || "", numero_piece_identite: item.numero_piece_identite || "", contact_urgence: item.contact_urgence || "" }); }
     if (type === "chantiers") { const item = chantiers.find((c) => c.id === id); if (item) setFormChantier({ ...item, projet_lie: item.projet_lie || "", chef_chantier: item.chef_chantier || "", employes_assignes: item.employes_assignes || [], budget_global: String(item.budget_global || ""), images_chantier: item.images_chantier || [], date_debut: item.date_debut || "", date_fin_prevue: item.date_fin_prevue || "", autoriser_budget_chef: !!item.autoriser_budget_chef }); }
   };
+
+  async function enregistrerAnnonce(event: React.FormEvent) {
+    event.preventDefault();
+    if (!isAdmin) return;
+    if (!formAnnonce.titre.trim()) return setMessage("Le titre de l’annonce est obligatoire.");
+    if (!formAnnonce.contenu.trim()) return setMessage("Le texte de l’annonce est obligatoire.");
+    setSauvegarde(true);
+    const payload = { ...formAnnonce, titre: formAnnonce.titre.trim(), contenu: formAnnonce.contenu.trim(), auteur_admin_id: session?.adminId || null };
+    const { error } = await db.from("annonces").insert(payload);
+    setSauvegarde(false);
+    if (error) { setMessage(error.message || "Annonce non envoyée."); return; }
+    setMessage("Annonce envoyée à tous les employés.");
+    setAnnonceModal(null);
+    setFormAnnonce(annonceInitial);
+    await chargerDonnees();
+  }
+
+  async function televerserImageAnnonce(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    setSauvegarde(true);
+    const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+    if (formAnnonce.image_url) await supprimerFichierStockage("annonce-images", formAnnonce.image_url);
+    const { error } = await supabase.storage.from("annonce-images").upload(path, file, { upsert: false });
+    if (error) { setMessage("Téléversement de l’image impossible."); setSauvegarde(false); return; }
+    const { data } = supabase.storage.from("annonce-images").getPublicUrl(path);
+    setFormAnnonce({ ...formAnnonce, image_url: data.publicUrl });
+    setSauvegarde(false);
+  }
+
+  async function retirerImageAnnonce() { await supprimerFichierStockage("annonce-images", formAnnonce.image_url); setFormAnnonce({ ...formAnnonce, image_url: "" }); }
+
+  async function masquerAnnonce(id: string) {
+    if (!session?.employeId) return;
+    const { error } = await db.from("annonces_masquees").insert({ annonce_id: id, employe_id: session.employeId });
+    if (error) setMessage(error.message || "Annonce non retirée du tableau de bord."); else await chargerDonnees();
+  }
+
+  async function supprimerAnnonce(id: string) {
+    if (!isAdmin) return;
+    if (!confirm("Voulez-vous vraiment supprimer cette annonce pour tout le monde ?")) return;
+    await supprimerFichierStockage("annonce-images", annonces.find((a) => a.id === id)?.image_url);
+    const { error } = await db.from("annonces").delete().eq("id", id);
+    if (error) setMessage(error.message || "Suppression impossible."); else { setMessage("Annonce supprimée."); setDetail(null); await chargerDonnees(); }
+  }
 
   async function enregistrerProjet(event: React.FormEvent) {
     event.preventDefault(); if (!formProjet.nom_projet.trim()) return setMessage("Le nom du projet est obligatoire.");
@@ -428,7 +474,7 @@ function EmployePage() {
 
   if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
-  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : "Présences";
+  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
   const chantierPresence = chantiersVisibles.find((c) => c.id === presenceChantier) || chantiersVisibles[0];
   const employesPresence = chantierPresence ? employes.filter((e) => (chantierPresence.employes_assignes || []).includes(e.id)) : [];
@@ -445,25 +491,28 @@ function EmployePage() {
             <BoutonNav actif={onglet === "employes"} icone={UsersRound} label={isAdmin ? "Employés" : "Mon profil"} onClick={() => changerOnglet("employes")} />
             <BoutonNav actif={onglet === "chantiers"} icone={HardHat} label="Chantiers" onClick={() => changerOnglet("chantiers")} />
             {(isAdmin || isChef) && <BoutonNav actif={onglet === "presences"} icone={ClipboardCheck} label="Présences" onClick={() => changerOnglet("presences")} />}
+            <BoutonNav actif={onglet === "annonces"} icone={Megaphone} label="Annonces" onClick={() => changerOnglet("annonces")} />
           </nav>
           <div className="dashboard-hero mt-10 rounded-3xl p-4 shadow-tool"><Building2 className="mb-3 size-8" /><p className="text-sm font-black">{session.nom}</p><p className="mt-1 text-xs font-semibold leading-5 opacity-90">Accès filtré automatiquement selon le rôle connecté.</p><button className="mini-button mt-4 w-full bg-card/20 text-primary-foreground" onClick={deconnecter}><LogOut className="size-4" /> Déconnexion</button></div>
         </aside>
         {menuOuvert && <button className="fixed inset-0 z-30 bg-foreground/25 lg:hidden" onClick={() => setMenuOuvert(false)} aria-label="Fermer le menu" />}
         <section className="flex-1 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-8">
-          <header className="dashboard-card mb-6 flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><button className="tool-action lg:hidden" onClick={() => setMenuOuvert(true)} aria-label="Ouvrir"><Menu className="size-5" /></button><div className="tool-blue inline-flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><UserRound className="size-6" /></div><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Espace entreprise</p><h2 className="text-2xl font-black sm:text-3xl">{titreOnglet}</h2></div></div>{isAdmin && ["projets", "employes", "chantiers"].includes(onglet) && <button className="primary-action" onClick={() => ouvrirCreation(onglet as any)}><Plus className="size-4" /> Nouveau</button>}</header>
+          <header className="dashboard-card mb-6 flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><button className="tool-action lg:hidden" onClick={() => setMenuOuvert(true)} aria-label="Ouvrir"><Menu className="size-5" /></button><div className="tool-blue inline-flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><UserRound className="size-6" /></div><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Espace entreprise</p><h2 className="text-2xl font-black sm:text-3xl">{titreOnglet}</h2></div></div>{isAdmin && ["projets", "employes", "chantiers", "annonces"].includes(onglet) && <button className="primary-action" onClick={() => ouvrirCreation(onglet as any)}><Plus className="size-4" /> Nouveau</button>}</header>
           {message && <div className="mb-5 rounded-2xl border border-border bg-card p-4 text-sm font-semibold shadow-document">{message}</div>}
-          {chargement ? <div className="flex min-h-[50vh] items-center justify-center rounded-3xl border border-border bg-card"><Loader2 className="size-8 animate-spin text-primary" /></div> : onglet === "dashboard" ? <Dashboard role={session.role} stats={stats} employe={employeConnecte} chantiers={chantiersVisibles} presences={presencesVisibles} setOnglet={setOnglet} /> : <div className="space-y-5">
+          {chargement ? <div className="flex min-h-[50vh] items-center justify-center rounded-3xl border border-border bg-card"><Loader2 className="size-8 animate-spin text-primary" /></div> : onglet === "dashboard" ? <Dashboard role={session.role} stats={stats} employe={employeConnecte} chantiers={chantiersVisibles} presences={presencesVisibles} annonces={annoncesVisibles} setOnglet={setOnglet} voirAnnonce={(id: string) => setDetail({ type: "annonces", id })} masquerAnnonce={masquerAnnonce} admin={isAdmin} /> : <div className="space-y-5">
             <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-document sm:flex-row sm:items-center sm:justify-between"><div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input className="form-control pl-10" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder={`Rechercher dans ${titreOnglet.toLowerCase()}...`} /></div><p className="text-sm font-bold text-muted-foreground">{onglet === "projets" ? projetsFiltres.length : onglet === "employes" ? employesFiltres.length : onglet === "chantiers" ? chantiersFiltres.length : presencesFiltrees.length} résultat(s)</p></div>
             {onglet === "projets" && <ListeProjets projets={projetsFiltres} admin={isAdmin} voir={(id: string) => setDetail({ type: "projets", id })} modifier={(id: string) => ouvrirEdition("projets", id)} supprimer={(id: string) => supprimer("projets", id)} />}
             {onglet === "employes" && <ListeEmployes employes={employesFiltres} chantiers={chantiers} admin={isAdmin} showSalary={isAdmin || !isChef} voir={(id: string) => setDetail({ type: "employes", id })} modifier={(id: string) => ouvrirEdition("employes", id)} supprimer={(id: string) => supprimer("employes", id)} />}
             {onglet === "chantiers" && <ListeChantiers chantiers={chantiersFiltres} projets={projets} employes={employes} admin={isAdmin} viewerRole={session.role} viewerId={session.employeId} voir={(id: string) => setDetail({ type: "chantiers", id })} modifier={(id: string) => ouvrirEdition("chantiers", id)} supprimer={(id: string) => supprimer("chantiers", id)} />}
+            {onglet === "annonces" && <AnnoncesSection annonces={annoncesVisibles} admin={isAdmin} voir={(id: string) => setDetail({ type: "annonces", id })} masquer={masquerAnnonce} supprimer={supprimerAnnonce} />}
             {onglet === "presences" && <PresencesSection admin={isAdmin} chef={isChef} presences={presencesFiltrees} chantiers={chantiers} employes={employes} chefs={chefOptions} filtreDate={filtreDate} setFiltreDate={setFiltreDate} filtreChantier={filtreChantier} setFiltreChantier={setFiltreChantier} filtreEmploye={filtreEmploye} setFiltreEmploye={setFiltreEmploye} filtreChef={filtreChef} setFiltreChef={setFiltreChef} voir={(id: string) => setDetail({ type: "presences", id })} presenceDate={presenceDate} setPresenceDate={setPresenceDate} presenceChantier={presenceChantier || chantierPresence?.id || ""} setPresenceChantier={setPresenceChantier} presenceNotes={presenceNotes} setPresenceNotes={setPresenceNotes} employesPresence={employesPresence} presenceStatuts={presenceStatuts} setPresenceStatuts={setPresenceStatuts} submit={enregistrerPresence} saving={sauvegarde} chantiersVisibles={chantiersVisibles} />}
           </div>}
         </section>
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-border bg-card/95 p-2 shadow-document backdrop-blur lg:hidden"><BoutonMobile actif={onglet === "dashboard"} icone={LayoutDashboard} label="Accueil" onClick={() => changerOnglet("dashboard")} /><BoutonMobile actif={onglet === "employes"} icone={UsersRound} label="Profil" onClick={() => changerOnglet("employes")} /><BoutonMobile actif={onglet === "chantiers"} icone={HardHat} label="Chantiers" onClick={() => changerOnglet("chantiers")} /><BoutonMobile actif={onglet === "presences"} icone={ClipboardCheck} label="Présences" onClick={() => changerOnglet(isAdmin || isChef ? "presences" : "dashboard")} /></nav>
+      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-border bg-card/95 p-2 shadow-document backdrop-blur lg:hidden"><BoutonMobile actif={onglet === "dashboard"} icone={LayoutDashboard} label="Accueil" onClick={() => changerOnglet("dashboard")} /><BoutonMobile actif={onglet === "annonces"} icone={Megaphone} label="Annonces" onClick={() => changerOnglet("annonces")} /><BoutonMobile actif={onglet === "employes"} icone={UsersRound} label="Profil" onClick={() => changerOnglet("employes")} /><BoutonMobile actif={onglet === "chantiers"} icone={HardHat} label="Chantiers" onClick={() => changerOnglet("chantiers")} /><BoutonMobile actif={onglet === "presences"} icone={ClipboardCheck} label="Présences" onClick={() => changerOnglet(isAdmin || isChef ? "presences" : "dashboard")} /></nav>
+      {annonceModal && <Modal titre="Nouvelle annonce" fermer={() => setAnnonceModal(null)}><FormAnnonce form={formAnnonce} setForm={setFormAnnonce} onSubmit={enregistrerAnnonce} saving={sauvegarde} televerserImage={televerserImageAnnonce} retirerImage={retirerImageAnnonce} /></Modal>}
       {edition && <Modal titre={edition.id ? "Modifier" : "Créer"} fermer={() => setEdition(null)}>{edition.type === "projets" && <FormProjet form={formProjet} setForm={setFormProjet} onSubmit={enregistrerProjet} saving={sauvegarde} />}{edition.type === "employes" && <FormEmploye form={formEmploye} setForm={setFormEmploye} chantiers={chantiers} onSubmit={enregistrerEmploye} saving={sauvegarde} televerserPhoto={televerserPhotoEmploye} retirerPhoto={retirerPhotoEmploye} />}{edition.type === "chantiers" && <FormChantier form={formChantier} setForm={setFormChantier} projets={projets} employes={employes} onSubmit={enregistrerChantier} saving={sauvegarde} televerserImages={televerserImages} retirerImage={retirerImage} />}</Modal>}
-      {detail && <Modal titre="Détails" fermer={() => setDetail(null)}><Details detail={detail} projets={projets} employes={employes} chantiers={chantiers} presences={presences} admin={isAdmin} role={session.role} viewerId={session.employeId} modifier={() => detail.type !== "presences" && ouvrirEdition(detail.type, detail.id)} supprimer={() => detail.type !== "presences" && supprimer(detail.type, detail.id)} /></Modal>}
+      {detail && <Modal titre="Détails" fermer={() => setDetail(null)}><Details detail={detail} projets={projets} employes={employes} chantiers={chantiers} presences={presences} annonces={annonces} admin={isAdmin} role={session.role} viewerId={session.employeId} modifier={() => detail.type !== "presences" && detail.type !== "annonces" && ouvrirEdition(detail.type, detail.id)} supprimer={() => detail.type === "annonces" ? supprimerAnnonce(detail.id) : detail.type !== "presences" && supprimer(detail.type, detail.id)} /></Modal>}
     </main>
   );
 }
