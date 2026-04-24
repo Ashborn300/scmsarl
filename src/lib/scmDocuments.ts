@@ -9,6 +9,8 @@ export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
 export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
 export type ReponseFormulaire = { id: string; formulaire_id: string; reponses: Record<string, string>; fichiers: Record<string, { nom: string; type: string; taille: number; contenu: string }>; created_at: string };
+export type ConnexionScm = { id: string; role: string; nom_utilisateur: string; admin_id: string | null; employe_id: string | null; matricule: string; type_connexion: string; connected_at: string; created_at: string };
+export type JourNonTravaille = { id: string; date_jour: string; titre: string; description: string; type_jour: string; actif: boolean; created_at: string; updated_at: string };
 
 export type DocumentRecord = {
   id: string;
@@ -314,6 +316,32 @@ export async function listerReponsesFormulaire(formulaireId: string) {
   const { data, error } = await db.from("reponses_formulaires").select("*").eq("formulaire_id", formulaireId).order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []) as ReponseFormulaire[];
+}
+
+export async function listerConnexionsScm(dateJour: string) {
+  const debut = `${dateJour}T00:00:00.000Z`;
+  const fin = `${dateJour}T23:59:59.999Z`;
+  const { data, error } = await db.from("connexions_scm").select("*").gte("connected_at", debut).lte("connected_at", fin).order("connected_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ConnexionScm[];
+}
+
+export async function listerJoursNonTravailles() {
+  const { data, error } = await db.from("jours_non_travailles").select("*").order("date_jour", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as JourNonTravaille[];
+}
+
+export async function enregistrerJourNonTravaille(payload: Pick<JourNonTravaille, "date_jour" | "titre" | "description" | "type_jour" | "actif">, id?: string) {
+  const requete = id ? db.from("jours_non_travailles").update(payload).eq("id", id).select().single() : db.from("jours_non_travailles").insert(payload).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as JourNonTravaille;
+}
+
+export async function supprimerJourNonTravaille(id: string) {
+  const { error } = await db.from("jours_non_travailles").delete().eq("id", id);
+  if (error) throw new Error(error.message);
 }
 
 export async function supprimerDocument(type: OutilType, id: string) {
