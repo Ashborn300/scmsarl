@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, FileText, Hammer, HardHat, Megaphone, ReceiptText, ShieldCheck, UsersRound } from "lucide-react";
+import { Award, Building2, FileText, Hammer, HardHat, Megaphone, ReceiptText, ShieldCheck, UsersRound } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -25,6 +25,7 @@ const icones: Record<OutilType, React.ElementType> = {
   contrat_employe: UsersRound,
   description_projet: Building2,
   communiquer: Megaphone,
+  certificat: Award,
 };
 
 type ToolVisual = {
@@ -92,6 +93,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(236,72,153,0.08)", border: "1px solid rgba(236,72,153,0.16)" },
     action: { background: "rgba(236,72,153,0.12)", border: "1px solid rgba(236,72,153,0.18)" },
     icon: { background: "linear-gradient(135deg, #ec4899, #f97316)", color: "white" },
+  },
+  certificat: {
+    card: { background: "linear-gradient(180deg, rgba(3,76,120,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(245,181,72,0.36)" },
+    banner: { background: "linear-gradient(135deg, #034c78, #f5b548)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(3,76,120,0.08)", border: "1px solid rgba(245,181,72,0.22)" },
+    action: { background: "rgba(245,181,72,0.14)", border: "1px solid rgba(3,76,120,0.16)" },
+    icon: { background: "linear-gradient(135deg, #034c78, #f5b548)", color: "white" },
   },
 };
 

@@ -114,6 +114,7 @@
 .tool-teal { --tool-1: oklch(0.58 0.15 190); --tool-2: oklch(0.74 0.13 180); }
 .tool-red { --tool-1: oklch(0.55 0.2 28); --tool-2: oklch(0.67 0.17 18); }
 .tool-coral { --tool-1: var(--dash-coral); --tool-2: var(--dash-amber); }
+.tool-certificate { --tool-1: oklch(0.42 0.12 235); --tool-2: oklch(0.78 0.15 78); }
 
 @layer base {
   * { border-color: var(--color-border); }
