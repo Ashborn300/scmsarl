@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as EmployeRouteImport } from './routes/employe'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as QrEmployeEmployeIdRouteImport } from './routes/qr-employe.$employeId'
 
 const EmployeRoute = EmployeRouteImport.update({
   id: '/employe',
@@ -22,31 +23,40 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QrEmployeEmployeIdRoute = QrEmployeEmployeIdRouteImport.update({
+  id: '/qr-employe/$employeId',
+  path: '/qr-employe/$employeId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/qr-employe/$employeId': typeof QrEmployeEmployeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/qr-employe/$employeId': typeof QrEmployeEmployeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/qr-employe/$employeId': typeof QrEmployeEmployeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/employe'
+  fullPaths: '/' | '/employe' | '/qr-employe/$employeId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/employe'
-  id: '__root__' | '/' | '/employe'
+  to: '/' | '/employe' | '/qr-employe/$employeId'
+  id: '__root__' | '/' | '/employe' | '/qr-employe/$employeId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EmployeRoute: typeof EmployeRoute
+  QrEmployeEmployeIdRoute: typeof QrEmployeEmployeIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,13 +75,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qr-employe/$employeId': {
+      id: '/qr-employe/$employeId'
+      path: '/qr-employe/$employeId'
+      fullPath: '/qr-employe/$employeId'
+      preLoaderRoute: typeof QrEmployeEmployeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EmployeRoute: EmployeRoute,
+  QrEmployeEmployeIdRoute: QrEmployeEmployeIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
