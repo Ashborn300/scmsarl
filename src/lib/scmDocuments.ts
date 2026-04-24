@@ -2,8 +2,9 @@ import { jsPDF } from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
+import carteServiceMockupUrl from "@/assets/carte-service-mockup.png";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service";
 
 export type DocumentRecord = {
   id: string;
@@ -11,10 +12,13 @@ export type DocumentRecord = {
   nom_fichier: string;
   donnees_formulaire: Record<string, unknown>;
   pdf_base64: string;
+  image_base64?: string;
   montant_total?: number;
   client?: string;
   employe?: string;
   projet?: string;
+  nom_complet?: string;
+  matricule?: string;
   date_document: string;
   created_at: string;
 };
@@ -30,6 +34,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   description_projet: { principal: [239, 68, 68], secondaire: [249, 115, 22], doux: [255, 235, 232] },
   communiquer: { principal: [236, 72, 153], secondaire: [249, 115, 22], doux: [255, 232, 243] },
   certificat: { principal: [3, 76, 120], secondaire: [245, 181, 72], doux: [238, 248, 252] },
+  carte_service: { principal: [10, 132, 216], secondaire: [30, 45, 55], doux: [230, 244, 255] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -41,6 +46,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   description_projet: "descriptions_projets",
   communiquer: "communications",
   certificat: "certificats",
+  carte_service: "cartes_service",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -52,6 +58,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   description_projet: "PRJ",
   communiquer: "COM",
   certificat: "CRT",
+  carte_service: "CAR",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -63,6 +70,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   description_projet: ["nom_fichier", "numero", "projet"],
   communiquer: ["nom_fichier", "numero", "titre"],
   certificat: ["nom_fichier", "numero", "beneficiaire"],
+  carte_service: ["nom_fichier", "numero", "nom_complet", "matricule"],
 };
 
 const db = supabase as any;
@@ -122,6 +130,24 @@ export async function enregistrerDocument(type: OutilType, payload: Record<strin
     ...(type === "certificat" ? { beneficiaire: String(payload.beneficiaire || "") } : {}),
   };
   const requete = id ? db.from(table).update(ligne).eq("id", id).select().single() : db.from(table).insert(ligne).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as DocumentRecord;
+}
+
+export async function enregistrerCarteService(payload: Record<string, unknown>, imageBase64: string, numero?: string, id?: string) {
+  const documentNumero = numero || (await genererNumero("carte_service"));
+  const nomFichier = `${documentNumero}-${String(payload.nomComplet || "carte-service").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.png`;
+  const ligne = {
+    numero: documentNumero,
+    nom_fichier: nomFichier,
+    nom_complet: String(payload.nomComplet || ""),
+    matricule: String(payload.matricule || ""),
+    donnees_formulaire: payload,
+    image_base64: imageBase64,
+    date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
+  };
+  const requete = id ? db.from("cartes_service").update(ligne).eq("id", id).select().single() : db.from("cartes_service").insert(ligne).select().single();
   const { data, error } = await requete;
   if (error) throw new Error(error.message);
   return data as DocumentRecord;
@@ -384,4 +410,20 @@ export function telechargerPdf(base64: string, nom: string) {
 export function voirPdf(base64: string) {
   const fenetre = window.open();
   if (fenetre) fenetre.document.write(`<iframe title="PDF" src="${base64}" style="border:0;width:100%;height:100vh"></iframe>`);
+}
+
+export function telechargerImage(base64: string, nom: string) {
+  const lien = document.createElement("a");
+  lien.href = base64;
+  lien.download = nom;
+  lien.click();
+}
+
+export function voirImage(base64: string) {
+  const fenetre = window.open();
+  if (fenetre) fenetre.document.write(`<img alt="Carte de service" src="${base64}" style="display:block;max-width:100%;height:auto;margin:0 auto;background:#c8c8c8" />`);
+}
+
+export async function mockupCarteServiceBase64() {
+  return imageVersBase64(carteServiceMockupUrl);
 }

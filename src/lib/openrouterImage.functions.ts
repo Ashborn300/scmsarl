@@ -6,6 +6,7 @@ const OPENROUTER_MODEL = "google/gemini-3.1-flash-image-preview";
 
 const imageRequestSchema = z.object({
   prompt: z.string().min(3, "La description de l’image est trop courte.").max(4000, "La description de l’image est trop longue."),
+  images: z.array(z.string().min(10)).default([]),
 });
 
 type OpenRouterContentPart =
@@ -52,7 +53,12 @@ export const genererImageOpenRouter = createServerFn({ method: "POST" })
         messages: [
           {
             role: "user",
-            content: `${data.prompt}\n\nGénère une image carrée en 1K, format 1024x1024, nette et exploitable dans un document professionnel.`,
+            content: data.images.length
+              ? [
+                  { type: "text", text: `${data.prompt}\n\nGénère une image en 1K, nette et exploitable dans un document professionnel.` },
+                  ...data.images.map((url) => ({ type: "image_url", image_url: { url } })),
+                ]
+              : `${data.prompt}\n\nGénère une image carrée en 1K, format 1024x1024, nette et exploitable dans un document professionnel.`,
           },
         ],
       }),
