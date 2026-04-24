@@ -11,6 +11,7 @@ import {
   Edit3,
   Eye,
   EyeOff,
+  Megaphone,
   HardHat,
   LayoutDashboard,
   Loader2,
@@ -44,10 +45,10 @@ export const Route = createFileRoute("/employe")({
 });
 
 type RoleSession = "admin" | "employe" | "chef_chantier";
-type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences";
+type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces";
 type StatutPresence = "présent" | "absent" | "en retard" | "excusé";
 type ModeEdition = { type: "projets" | "employes" | "chantiers"; id?: string } | null;
-type Detail = { type: "projets" | "employes" | "chantiers" | "presences"; id: string } | null;
+type Detail = { type: "projets" | "employes" | "chantiers" | "presences" | "annonces"; id: string } | null;
 
 type Session = {
   token: string;
@@ -122,9 +123,22 @@ type Presence = {
   created_at: string;
 };
 
+type Annonce = {
+  id: string;
+  titre: string;
+  contenu: string;
+  image_url: string;
+  publiee: boolean;
+  auteur_admin_id: string | null;
+  created_at: string;
+};
+
+type AnnonceMasquee = { id: string; annonce_id: string; employe_id: string; created_at: string };
+
 type ProjetForm = Omit<Projet, "id" | "created_at" | "budget_estime"> & { budget_estime: string };
 type EmployeForm = Omit<Employe, "id" | "created_at" | "salaire" | "salaire_total" | "salaire_recu" | "salaire_restant"> & { salaire_total: string; salaire_recu: string };
 type ChantierForm = Omit<Chantier, "id" | "created_at" | "budget_global" | "images_chantier"> & { budget_global: string; images_chantier: string[] };
+type AnnonceForm = Pick<Annonce, "titre" | "contenu" | "image_url" | "publiee">;
 
 const db = supabase as any;
 const SESSION_KEY = "scm-session-token";
@@ -136,6 +150,7 @@ const statutsPresence: StatutPresence[] = ["présent", "absent", "en retard", "e
 const projetInitial: ProjetForm = { nom_projet: "", client: "", localisation: "", description: "", budget_estime: "", statut: "Planifié", date_debut: "", date_fin_prevue: "" };
 const employeInitial: EmployeForm = { nom_complet: "", poste: "", matricule: "", telephone: "", adresse: "", salaire_total: "", salaire_recu: "0", role: "employe", statut: "actif", chantier_assigne: "", peut_voir_budget: false, photo_profil: "", genre: "", date_admission: "", date_naissance: "", email: "", numero_piece_identite: "", contact_urgence: "" };
 const chantierInitial: ChantierForm = { nom_chantier: "", localisation: "", chef_chantier: "", projet_lie: "", employes_assignes: [], description: "", budget_global: "", images_chantier: [], autoriser_budget_chef: false, statut: "Planifié", date_debut: "", date_fin_prevue: "" };
+const annonceInitial: AnnonceForm = { titre: "", contenu: "", image_url: "", publiee: true };
 
 function nombre(value: number) { return new Intl.NumberFormat("fr-FR").format(value || 0); }
 function devise(value: number) { return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value || 0); }
@@ -156,6 +171,8 @@ function EmployePage() {
   const [employes, setEmployes] = useState<Employe[]>([]);
   const [chantiers, setChantiers] = useState<Chantier[]>([]);
   const [presences, setPresences] = useState<Presence[]>([]);
+  const [annonces, setAnnonces] = useState<Annonce[]>([]);
+  const [annoncesMasquees, setAnnoncesMasquees] = useState<AnnonceMasquee[]>([]);
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
   const [message, setMessage] = useState("");
@@ -169,6 +186,7 @@ function EmployePage() {
   const [formProjet, setFormProjet] = useState<ProjetForm>(projetInitial);
   const [formEmploye, setFormEmploye] = useState<EmployeForm>(employeInitial);
   const [formChantier, setFormChantier] = useState<ChantierForm>(chantierInitial);
+  const [formAnnonce, setFormAnnonce] = useState<AnnonceForm>(annonceInitial);
   const [presenceDate, setPresenceDate] = useState(new Date().toISOString().slice(0, 10));
   const [presenceChantier, setPresenceChantier] = useState("");
   const [presenceNotes, setPresenceNotes] = useState("");
@@ -213,6 +231,12 @@ function EmployePage() {
     return presences.filter((p) => p.employes_presence.some((e) => e.employe_id === session?.employeId));
   }, [presences, isAdmin, isChef, session]);
 
+  const annoncesVisibles = useMemo(() => {
+    if (isAdmin) return annonces;
+    const masquees = new Set(annoncesMasquees.filter((a) => a.employe_id === session?.employeId).map((a) => a.annonce_id));
+    return annonces.filter((a) => a.publiee && !masquees.has(a.id));
+  }, [annonces, annoncesMasquees, isAdmin, session]);
+
   const stats = useMemo(() => ({
     totalProjets: projetsVisibles.length,
     totalEmployes: employesVisibles.length,
@@ -220,7 +244,8 @@ function EmployePage() {
     projetsActifs: projetsVisibles.filter((p) => p.statut === "Actif").length,
     chantiersActifs: chantiersVisibles.filter((c) => c.statut === "Actif").length,
     presences: presencesVisibles.length,
-  }), [projetsVisibles, employesVisibles, chantiersVisibles, presencesVisibles]);
+    annonces: annoncesVisibles.length,
+  }), [projetsVisibles, employesVisibles, chantiersVisibles, presencesVisibles, annoncesVisibles]);
 
   const projetsFiltres = useMemo(() => filtrer(projetsVisibles, recherche, ["nom_projet", "client", "localisation", "statut"]), [projetsVisibles, recherche]);
   const employesFiltres = useMemo(() => filtrer(employesVisibles, recherche, ["nom_complet", "poste", "matricule", "telephone", "statut"]), [employesVisibles, recherche]);
@@ -266,29 +291,34 @@ function EmployePage() {
     if (session?.token) await db.rpc("scm_logout", { _token_hash: await sha256(session.token) });
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
-    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setMessage(""); setOnglet("dashboard");
+    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setAnnonces([]); setAnnoncesMasquees([]); setMessage(""); setOnglet("dashboard");
   }
 
   async function chargerDonnees(currentSession = session) {
     if (!currentSession) return;
     setChargement(true);
     setMessage("");
-    const [projetsRes, employesRes, chantiersRes, presencesRes] = await Promise.all([
+    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes] = await Promise.all([
       db.from("projets").select("*").order("created_at", { ascending: false }),
       db.from("employes").select("*").order("created_at", { ascending: false }),
       db.from("chantiers").select("*").order("created_at", { ascending: false }),
       db.from("presences").select("*").order("date", { ascending: false }),
+      db.from("annonces").select("*").order("created_at", { ascending: false }),
+      db.from("annonces_masquees").select("*").order("created_at", { ascending: false }),
     ]);
-    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
+    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
     setProjets(projetsRes.data || []);
     setEmployes(projetsRes.error ? [] : (employesRes.data || []));
     setChantiers(chantiersRes.data || []);
     setPresences(presencesRes.data || []);
+    setAnnonces(annoncesRes.data || []);
+    setAnnoncesMasquees(masqueesRes.data || []);
     setChargement(false);
   }
 
-  const ouvrirCreation = (type: Exclude<ModeEdition, null>["type"]) => {
+  const ouvrirCreation = (type: Exclude<ModeEdition, null>["type"] | "annonces") => {
     if (!isAdmin) return;
+    if (type === "annonces") { setFormAnnonce(annonceInitial); setDetail(null); setMessage(""); return; }
     setEdition({ type }); setDetail(null); setMessage("");
     if (type === "projets") setFormProjet(projetInitial);
     if (type === "employes") setFormEmploye(employeInitial);
