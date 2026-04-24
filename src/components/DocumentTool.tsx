@@ -1,7 +1,7 @@
 import { ArrowLeft, FileCheck2, Plus, Save, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerPdf, enregistrerCarteService, enregistrerDocument, enregistrerRealisticSketchup, enregistrerRendu3D, mockupCarteServiceBase64, type DocumentRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
+import { creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerDocument, enregistrerFicheEmploye, enregistrerRealisticSketchup, enregistrerRendu3D, listerEmployes, mockupCarteServiceBase64, type DocumentRecord, type EmployeRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea" | "image"; required?: boolean; defaultValue?: string };
@@ -43,6 +43,7 @@ export const configs: Config[] = [
   { type: "realistic_sketchup", titre: "Realistic SketchUp", theme: "realistic-sketchup", description: "Transformation Nano Banana d’un modèle SketchUp en rendu architectural hyperréaliste.", showTotal: false, fields: [
     { name: "sketchupImage", label: "Image du modèle SketchUp", type: "image", required: true }, { name: "titre", label: "Titre du rendu", defaultValue: "Realistic SketchUp" }, { name: "correctionPrompt", label: "Correction à appliquer au résultat", type: "textarea" },
   ]},
+  { type: "fiche_employe", titre: "Générateur de fiche d’employé", theme: "employee-sheet", description: "Fiche individuelle complète ou fiche collective avec photo, nom, matricule et genre.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
@@ -84,8 +85,12 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   const [chargement, setChargement] = useState(false);
   const [actualisation, setActualisation] = useState(0);
   const [documentEdite, setDocumentEdite] = useState<DocumentRecord | null>(null);
+  const [employes, setEmployes] = useState<EmployeRecord[]>([]);
+  const [employesSelectionnes, setEmployesSelectionnes] = useState<string[]>([]);
 
   const total = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
+
+  useEffect(() => { if (config.type === "fiche_employe") listerEmployes().then(setEmployes).catch((erreur) => alert(erreur instanceof Error ? erreur.message : "Impossible de charger les employés.")); }, [config.type]);
 
   function changer(name: string, value: string) { setFormulaire((actuel) => ({ ...actuel, [name]: value })); }
   function changerImage(name: string, file?: File) { setImagesFormulaire((actuel) => ({ ...actuel, [name]: file })); }
@@ -126,6 +131,16 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
         await enregistrerRealisticSketchup({ ...formulaire, ...imagesChamps, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
         setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Rendu Realistic SketchUp corrigé et enregistré avec succès." : "Rendu Realistic SketchUp généré et enregistré avec succès."); return;
       }
+      if (config.type === "fiche_employe") {
+        const typeFiche = formulaire.typeFiche || "individuelle";
+        if (!employesSelectionnes.length) return alert("Veuillez sélectionner au moins un employé.");
+        if (typeFiche === "individuelle" && employesSelectionnes.length !== 1) return alert("La fiche individuelle nécessite un seul employé.");
+        const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
+        const selection = employes.filter((employe) => employesSelectionnes.includes(employe.id));
+        const pdf = await creerPdfFicheEmploye(typeFiche, selection, numero, sceauBase64);
+        await enregistrerFicheEmploye({ typeFiche, titre: typeFiche === "collective" ? "Fiche collective employés" : selection[0]?.nom_complet || "Fiche employé", employeIds: employesSelectionnes, employes: selection, sceauBase64 }, pdf, numero, documentEdite?.id);
+        setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Fiche employé modifiée avec succès." : "Fiche employé générée et enregistrée avec succès."); return;
+      }
       const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
       const signatureBase64 = estCommunication ? undefined : await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
       const champs: Array<[string, string]> = config.fields.map((field) => [field.label, field.type === "image" ? imagesChamps[field.name] || "—" : formulaire[field.name] || "—"]);
@@ -150,6 +165,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
     setImagesFormulaire({});
     setSceau(undefined);
     setSignature(undefined);
+    setEmployesSelectionnes(Array.isArray(donnees.employeIds) ? donnees.employeIds as string[] : []);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -165,6 +181,10 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
         <div className="grid gap-6 lg:grid-cols-[1.05fr_.95fr]">
           <form onSubmit={soumettre} className="rounded-2xl border border-border bg-card/95 p-4 shadow-document lg:p-6">
             <div className="grid gap-4 sm:grid-cols-2">
+              {config.type === "fiche_employe" && <>
+                <label><span className="mb-1 block text-sm font-semibold text-foreground">Type de fiche</span><select value={formulaire.typeFiche || "individuelle"} onChange={(e) => { changer("typeFiche", e.target.value); setEmployesSelectionnes([]); }} className="form-control"><option value="individuelle">Fiche individuelle</option><option value="collective">Fiche collective</option></select></label>
+                <div className="sm:col-span-2 rounded-xl border border-border bg-muted/60 p-3"><span className="mb-3 block text-sm font-semibold text-foreground">Sélectionner les employés</span><div className="grid max-h-72 gap-2 overflow-auto sm:grid-cols-2">{employes.map((employe) => <label key={employe.id} className="flex items-center gap-3 rounded-lg bg-card p-3 text-sm font-semibold text-foreground"><input type={formulaire.typeFiche === "collective" ? "checkbox" : "radio"} checked={employesSelectionnes.includes(employe.id)} onChange={(e) => setEmployesSelectionnes(formulaire.typeFiche === "collective" ? (e.target.checked ? [...employesSelectionnes, employe.id] : employesSelectionnes.filter((id) => id !== employe.id)) : [employe.id])} /> <span className="min-w-0"><span className="block truncate">{employe.nom_complet || "Employé sans nom"}</span><span className="block text-xs text-muted-foreground">{employe.matricule || "—"} · {employe.genre || "—"}</span></span></label>)}</div></div>
+              </>}
               {config.fields.map((field) => (
                 <label key={field.name} className={field.type === "textarea" ? "sm:col-span-2" : ""}>
                   <span className="mb-1 block text-sm font-semibold text-foreground">{field.label}{field.required ? " *" : ""}</span>
@@ -178,9 +198,9 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
             </div>}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {config.type !== "carte_service" && config.type !== "rendu_3d" && config.type !== "realistic_sketchup" && <><label><span className="mb-1 block text-sm font-semibold text-foreground">{estCommunication ? "Dénominateur de celui qui impose le sceau" : "Texte au-dessus du sceau"}</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
-              {!estCommunication && <label><span className="mb-1 block text-sm font-semibold text-foreground">Texte au-dessus de la signature</span><input value={libelleSignature} onChange={(e) => setLibelleSignature(e.target.value)} className="form-control" /></label>}
+              {!estCommunication && config.type !== "fiche_employe" && <label><span className="mb-1 block text-sm font-semibold text-foreground">Texte au-dessus de la signature</span><input value={libelleSignature} onChange={(e) => setLibelleSignature(e.target.value)} className="form-control" /></label>}
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer le sceau de l’entreprise</span><input type="file" accept="image/*" onChange={(e) => setSceau(e.target.files?.[0])} className="file-input" /></label>
-              {!estCommunication && <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer la signature du client</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label>}</>}
+              {!estCommunication && config.type !== "fiche_employe" && <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer la signature du client</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label>}</>}
             </div>
             <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">{config.showTotal === false ? <span className="text-sm font-semibold text-foreground">{documentEdite ? `Modification de ${documentEdite.numero}` : "Fiche prête à générer"}</span> : <strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong>}<button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : documentEdite ? (config.type === "carte_service" || config.type === "rendu_3d" || config.type === "realistic_sketchup" ? "Réenregistrer l’image" : "Réenregistrer le PDF") : (config.type === "carte_service" || config.type === "rendu_3d" || config.type === "realistic_sketchup" ? "Générer et enregistrer l’image" : "Générer et enregistrer le PDF")}</button></div>
           </form>

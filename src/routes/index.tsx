@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, Building2, Cuboid, FileText, Hammer, HardHat, IdCard, Megaphone, ReceiptText, ShieldCheck, UsersRound, Warehouse } from "lucide-react";
+import { Award, Building2, ClipboardList, Cuboid, FileText, Hammer, HardHat, IdCard, Megaphone, ReceiptText, ShieldCheck, UsersRound, Warehouse } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -29,6 +29,7 @@ const icones: Record<OutilType, React.ElementType> = {
   carte_service: IdCard,
   rendu_3d: Cuboid,
   realistic_sketchup: Warehouse,
+  fiche_employe: ClipboardList,
 };
 
 type ToolVisual = {
@@ -128,6 +129,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(88,77,66,0.08)", border: "1px solid rgba(46,125,92,0.18)" },
     action: { background: "rgba(46,125,92,0.12)", border: "1px solid rgba(88,77,66,0.16)" },
     icon: { background: "linear-gradient(135deg, #584d42, #2e7d5c)", color: "white" },
+  },
+  fiche_employe: {
+    card: { background: "linear-gradient(180deg, rgba(22,101,52,0.15) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(37,99,235,0.24)" },
+    banner: { background: "linear-gradient(135deg, #166534, #2563eb)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(22,101,52,0.08)", border: "1px solid rgba(37,99,235,0.16)" },
+    action: { background: "rgba(22,101,52,0.12)", border: "1px solid rgba(37,99,235,0.16)" },
+    icon: { background: "linear-gradient(135deg, #166534, #2563eb)", color: "white" },
   },
 };
 

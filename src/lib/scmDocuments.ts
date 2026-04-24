@@ -4,7 +4,7 @@ import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe";
 
 export type DocumentRecord = {
   id: string;
@@ -25,6 +25,25 @@ export type DocumentRecord = {
 
 export type LignePrestation = { description: string; quantite: number; prix: number };
 
+export type EmployeRecord = {
+  id: string;
+  nom_complet: string;
+  matricule: string;
+  genre: string;
+  poste: string;
+  telephone: string;
+  email: string;
+  adresse: string;
+  date_naissance: string | null;
+  date_admission: string | null;
+  numero_piece_identite: string;
+  contact_urgence: string;
+  chantier_assigne: string | null;
+  statut: string;
+  role: string;
+  photo_profil: string;
+};
+
 const couleursPdfParOutil: Record<OutilType, { principal: [number, number, number]; secondaire: [number, number, number]; doux: [number, number, number] }> = {
   facture: { principal: [37, 99, 235], secondaire: [8, 145, 178], doux: [230, 240, 255] },
   devis: { principal: [245, 158, 11], secondaire: [250, 204, 21], doux: [255, 247, 214] },
@@ -37,6 +56,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   carte_service: { principal: [10, 132, 216], secondaire: [30, 45, 55], doux: [230, 244, 255] },
   rendu_3d: { principal: [85, 107, 47], secondaire: [196, 126, 66], doux: [242, 246, 232] },
   realistic_sketchup: { principal: [88, 77, 66], secondaire: [46, 125, 92], doux: [241, 238, 233] },
+  fiche_employe: { principal: [22, 101, 52], secondaire: [37, 99, 235], doux: [232, 246, 237] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -51,6 +71,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   carte_service: "cartes_service",
   rendu_3d: "rendus_3d",
   realistic_sketchup: "realistic_sketchup",
+  fiche_employe: "fiches_employes",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -65,6 +86,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   carte_service: "CAR",
   rendu_3d: "R3D",
   realistic_sketchup: "RSK",
+  fiche_employe: "FEM",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -79,6 +101,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   carte_service: ["nom_fichier", "numero", "nom_complet", "matricule"],
   rendu_3d: ["nom_fichier", "numero", "titre"],
   realistic_sketchup: ["nom_fichier", "numero", "titre"],
+  fiche_employe: ["nom_fichier", "numero", "titre", "type_fiche"],
 };
 
 const db = supabase as any;
@@ -112,6 +135,12 @@ export async function listerDocumentsRecents() {
     }),
   );
   return resultats.flat().sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 8);
+}
+
+export async function listerEmployes() {
+  const { data, error } = await db.from("employes").select("id, nom_complet, matricule, genre, poste, telephone, email, adresse, date_naissance, date_admission, numero_piece_identite, contact_urgence, chantier_assigne, statut, role, photo_profil").order("nom_complet", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as EmployeRecord[];
 }
 
 export async function enregistrerDocument(type: OutilType, payload: Record<string, unknown>, pdfBase64: string, numero?: string, id?: string) {
@@ -190,6 +219,24 @@ export async function enregistrerRealisticSketchup(payload: Record<string, unkno
     date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
   };
   const requete = id ? db.from("realistic_sketchup").update(ligne).eq("id", id).select().single() : db.from("realistic_sketchup").insert(ligne).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as DocumentRecord;
+}
+
+export async function enregistrerFicheEmploye(payload: Record<string, unknown>, pdfBase64: string, numero?: string, id?: string) {
+  const documentNumero = numero || (await genererNumero("fiche_employe"));
+  const nomFichier = `${documentNumero}-${String(payload.titre || payload.typeFiche || "fiche-employe").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
+  const ligne = {
+    numero: documentNumero,
+    nom_fichier: nomFichier,
+    type_fiche: String(payload.typeFiche || "individuelle"),
+    titre: String(payload.titre || "Fiche employé"),
+    donnees_formulaire: payload,
+    pdf_base64: pdfBase64,
+    date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
+  };
+  const requete = id ? db.from("fiches_employes").update(ligne).eq("id", id).select().single() : db.from("fiches_employes").insert(ligne).select().single();
   const { data, error } = await requete;
   if (error) throw new Error(error.message);
   return data as DocumentRecord;
@@ -360,6 +407,57 @@ function creerPdfCertificat(pdf: jsPDF, champs: Array<[string, string]>, numero:
   ajouterImageSiValide(pdf, options.signature, 132, 196, 40, 18);
   pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(32, 40, 58); pdf.text(options.libelleSceau || "DATE", 58, 228, { align: "center" }); pdf.text(options.libelleSignature || "SIGNATURE", 152, 228, { align: "center" });
   ajouterImageSiValide(pdf, options.sceau, 88, 40, 34, 34);
+}
+
+function ajouterEnteteFicheEmploye(pdf: jsPDF, logo: string, drapeauRdc: string, titre: string, numero: string, couleur: [number, number, number]) {
+  pdf.setFillColor(247, 249, 252);
+  pdf.rect(0, 0, 210, 297, "F");
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(12, 12, 186, 273, 3, 3, "F");
+  pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST");
+  pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST");
+  pdf.setTextColor(...couleur);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(18);
+  pdf.text(titre.toUpperCase(), 18, 58);
+  pdf.setFontSize(10);
+  pdf.text(`N° ${numero}`, 18, 65);
+  pdf.text(`Date : ${new Date().toLocaleDateString("fr-FR")}`, 158, 65);
+  pdf.setDrawColor(...couleur);
+  pdf.line(18, 70, 192, 70);
+}
+
+export async function creerPdfFicheEmploye(typeFiche: string, employes: EmployeRecord[], numero: string, sceau?: string) {
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const couleurs = couleursPdfParOutil.fiche_employe;
+  const logo = await imageVersBase64(logoUrl);
+  const drapeauRdc = await drapeauRdcVersPng();
+  ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, typeFiche === "collective" ? "Fiche collective des employés" : "Fiche individuelle de l’employé", numero, couleurs.principal);
+
+  if (typeFiche === "collective") {
+    let y = 84;
+    employes.forEach((employe, index) => {
+      if (y > 238) { piedDePage(pdf, couleurs.principal, sceau, undefined, "Sceau de l’entreprise", ""); pdf.addPage(); ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche collective des employés", numero, couleurs.principal); y = 84; }
+      pdf.setFillColor(...couleurs.doux);
+      pdf.roundedRect(20, y - 8, 168, 28, 2, 2, "F");
+      ajouterImageSiValide(pdf, employe.photo_profil, 24, y - 5, 20, 20);
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(...couleurs.principal);
+      pdf.text(`${index + 1}. ${employe.nom_complet || "—"}`, 50, y);
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(45, 55, 72);
+      pdf.text(`Matricule : ${employe.matricule || "—"}`, 50, y + 7);
+      pdf.text(`Genre : ${employe.genre || "—"}`, 120, y + 7);
+      y += 34;
+    });
+    piedDePage(pdf, couleurs.principal, sceau, undefined, "Sceau de l’entreprise", "");
+    return pdf.output("datauristring");
+  }
+
+  const employe = employes[0];
+  ajouterImageSiValide(pdf, employe?.photo_profil, 150, 82, 34, 34);
+  let y = 86;
+  [["Nom complet", employe?.nom_complet], ["Matricule", employe?.matricule], ["Genre", employe?.genre], ["Poste", employe?.poste], ["Téléphone", employe?.telephone], ["Email", employe?.email], ["Adresse", employe?.adresse], ["Date de naissance", employe?.date_naissance || "—"], ["Date d’admission", employe?.date_admission || "—"], ["N° pièce d’identité", employe?.numero_piece_identite], ["Contact d’urgence", employe?.contact_urgence], ["Statut", employe?.statut], ["Rôle", employe?.role]].forEach(([label, valeur]) => { y = texteMultiligne(pdf, String(label), String(valeur || "—"), 22, y, 118, couleurs.principal); });
+  piedDePage(pdf, couleurs.principal, sceau, undefined, "Sceau de l’entreprise", "");
+  return pdf.output("datauristring");
 }
 
 export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string; lignes?: LignePrestation[]; total?: number }) {
