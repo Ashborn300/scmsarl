@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerRealisticSketchup, enregistrerRendu3D, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerPlanArchitectural, enregistrerRealisticSketchup, enregistrerRendu3D, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
@@ -46,6 +46,18 @@ export const configs: Config[] = [
   ]},
   { type: "realistic_sketchup", titre: "Realistic SketchUp", theme: "realistic-sketchup", description: "Transformation Nano Banana d’un modèle SketchUp en rendu architectural hyperréaliste.", showTotal: false, fields: [
     { name: "sketchupImage", label: "Image du modèle SketchUp", type: "image", required: true }, { name: "titre", label: "Titre du rendu", defaultValue: "Realistic SketchUp" }, { name: "correctionPrompt", label: "Correction à appliquer au résultat", type: "textarea" },
+  ]},
+  { type: "plan_architectural", titre: "Génération de plan architectural", theme: "plan-architectural", description: "Génération Nano Banana d’un plan d’architecture 2D fidèle à partir d’une description textuelle complète.", showTotal: false, fields: [
+    { name: "titre", label: "Titre du plan", defaultValue: "Plan architectural" },
+    { name: "typeBatiment", label: "Type de bâtiment (maison, villa, immeuble, bureau...)", required: true },
+    { name: "nombreNiveaux", label: "Nombre de niveaux (RDC, R+1, R+2...)", defaultValue: "RDC" },
+    { name: "dimensions", label: "Dimensions globales (ex: 12m x 10m)" },
+    { name: "superficie", label: "Superficie totale en m²" },
+    { name: "pieces", label: "Liste des pièces avec dimensions (ex: 3 chambres 4x4m, salon 6x5m, cuisine 3x4m, 2 salles de bain, terrasse...)", type: "textarea", required: true },
+    { name: "orientation", label: "Orientation et entrée principale (ex: entrée au sud, salon orienté nord)" },
+    { name: "exigencesSpeciales", label: "Exigences spéciales (garage, piscine, escalier, balcon, mobilier indicatif...)", type: "textarea" },
+    { name: "styleTrait", label: "Style du plan (technique noir et blanc, coloré, blueprint, top-down...)", defaultValue: "Plan d’architecte technique noir et blanc, top-down 2D, cotes et annotations" },
+    { name: "correctionPrompt", label: "Correction à appliquer au résultat", type: "textarea" },
   ]},
   { type: "fiche_employe", titre: "Générateur de fiche d’employé", theme: "employee-sheet", description: "Fiche individuelle complète ou fiche collective avec photo, nom, matricule et genre.", showTotal: false, fields: [] },
   { type: "code_qr", titre: "Générateur Code QR", theme: "qr-code", description: "Code QR public menant vers une fiche web accessible avec les informations personnelles d’un employé.", showTotal: false, fields: [] },
