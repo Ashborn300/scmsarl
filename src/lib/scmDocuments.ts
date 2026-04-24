@@ -275,7 +275,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   pdf.line(18, 70, 192, 70);
 
   if (type === "description_projet") {
-    creerPdfDescriptionProjet(pdf, champs, couleurs.principal, options);
+    creerPdfDescriptionProjet(pdf, champs, couleurs.principal, couleurs.doux, options);
     return pdf.output("datauristring");
   }
 
