@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, Building2, CalendarDays, ClipboardList, Cuboid, FileClock, FileText, Hammer, HardHat, IdCard, Megaphone, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Warehouse } from "lucide-react";
+import { Award, Building2, CalendarDays, ClipboardList, Cuboid, FileClock, FileText, Hammer, HardHat, IdCard, Megaphone, Network, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Warehouse } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -34,6 +34,7 @@ const icones: Record<OutilType, React.ElementType> = {
   formulaire_personnalise: SquarePen,
   historique_connexion: FileClock,
   calendrier_feries: CalendarDays,
+  organigramme_entreprise: Network,
 };
 
 type ToolVisual = {
@@ -173,6 +174,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(194,120,3,0.08)", border: "1px solid rgba(125,71,10,0.16)" },
     action: { background: "rgba(194,120,3,0.12)", border: "1px solid rgba(125,71,10,0.16)" },
     icon: { background: "linear-gradient(135deg, #7d470a, #c27803)", color: "white" },
+  },
+  organigramme_entreprise: {
+    card: { background: "linear-gradient(180deg, rgba(13,42,148,0.14) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(20,184,166,0.26)" },
+    banner: { background: "linear-gradient(135deg, #0d2a94, #14b8a6)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(13,42,148,0.08)", border: "1px solid rgba(20,184,166,0.16)" },
+    action: { background: "rgba(20,184,166,0.12)", border: "1px solid rgba(13,42,148,0.16)" },
+    icon: { background: "linear-gradient(135deg, #0d2a94, #14b8a6)", color: "white" },
   },
 };
 

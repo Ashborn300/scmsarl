@@ -1,9 +1,9 @@
-import { ArrowLeft, CalendarDays, Copy, Eye, FileCheck2, FileDown, Link2, Plus, Save, Trash2, UsersRound } from "lucide-react";
+import { ArrowLeft, CalendarDays, Copy, Eye, FileCheck2, FileDown, Link2, Network, Pencil, Plus, Save, Trash2, UsersRound } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerJoursNonTravailles, listerReponsesFormulaire, mockupCarteServiceBase64, supprimerJourNonTravaille, type ChampPersonnalise, type ConnexionScm, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, type BlocOrganigramme, type ChampPersonnalise, type ConnexionScm, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
@@ -52,6 +52,7 @@ export const configs: Config[] = [
   { type: "formulaire_personnalise", titre: "Créateur de formulaire personnalisable", theme: "custom-form", description: "Formulaire champ par champ avec lien public externe et consultation des réponses.", showTotal: false, fields: [] },
   { type: "historique_connexion", titre: "Historique de connexion", theme: "login-history", description: "Consultez les connexions par date et téléchargez le rapport journalier en PDF.", showTotal: false, fields: [] },
   { type: "calendrier_feries", titre: "Calendrier des jours fériés", theme: "holiday-calendar", description: "Définissez les jours fériés et non travaillés visibles sur les dashboards employés.", showTotal: false, fields: [] },
+  { type: "organigramme_entreprise", titre: "Organigramme de l’entreprise", theme: "organization-chart", description: "Créez et publiez l’organigramme SCM SARL visible sur tous les dashboards employés.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
@@ -108,6 +109,7 @@ function CustomFormTool({ retour }: { retour: () => void }) {
   const [formulaireActif, setFormulaireActif] = useState<FormulairePersonnalise | null>(null);
   const [reponses, setReponses] = useState<ReponseFormulaire[]>([]);
   const [chargement, setChargement] = useState(false);
+  const [editionId, setEditionId] = useState<string | null>(null);
 
   useEffect(() => { listerFormulairesPersonnalises().then(setFormulaires).catch((e) => alert(e instanceof Error ? e.message : "Impossible de charger les formulaires.")); }, []);
 
@@ -116,12 +118,13 @@ function CustomFormTool({ retour }: { retour: () => void }) {
     const donnees = formulairePersonnaliseSchema.parse({ titre, description, champs: champs.map((champ) => ({ ...champ, label: champ.label.trim() })) });
     setChargement(true);
     try {
-      const formulaire = await creerFormulairePersonnalise(donnees.titre, donnees.description, donnees.champs);
-      setFormulaires((liste) => [formulaire, ...liste]);
+      const formulaire = editionId ? await modifierFormulairePersonnalise(editionId, donnees.titre, donnees.description, donnees.champs) : await creerFormulairePersonnalise(donnees.titre, donnees.description, donnees.champs);
+      setFormulaires((liste) => editionId ? liste.map((item) => item.id === formulaire.id ? formulaire : item) : [formulaire, ...liste]);
       setFormulaireActif(formulaire);
       setReponses([]);
-      await navigator.clipboard?.writeText(formulaire.url_publique);
-      alert("Formulaire créé. Le lien public externe a été copié.");
+      if (!editionId) await navigator.clipboard?.writeText(formulaire.url_publique);
+      setEditionId(null);
+      alert(editionId ? "Formulaire modifié avec succès." : "Formulaire créé. Le lien public externe a été copié.");
     } catch (erreur) {
       alert(erreur instanceof Error ? erreur.message : "Impossible de créer le formulaire.");
     } finally { setChargement(false); }
@@ -130,6 +133,21 @@ function CustomFormTool({ retour }: { retour: () => void }) {
   async function ouvrirReponses(formulaire: FormulairePersonnalise) {
     setFormulaireActif(formulaire);
     setReponses(await listerReponsesFormulaire(formulaire.id));
+  }
+
+  function editerFormulaire(formulaire: FormulairePersonnalise) {
+    setEditionId(formulaire.id);
+    setTitre(formulaire.titre);
+    setDescription(formulaire.description || "");
+    setChamps(formulaire.champs?.length ? formulaire.champs : [nouveauChampPersonnalise()]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function supprimerFormulaire(id: string) {
+    if (!confirm("Supprimer ce formulaire personnalisé ?")) return;
+    await supprimerFormulairePersonnalise(id);
+    setFormulaires((liste) => liste.filter((item) => item.id !== id));
+    if (formulaireActif?.id === id) { setFormulaireActif(null); setReponses([]); }
   }
 
   return (
@@ -141,9 +159,9 @@ function CustomFormTool({ retour }: { retour: () => void }) {
           <form onSubmit={creer} className="rounded-2xl border border-border bg-card/95 p-4 shadow-document lg:p-6">
             <div className="grid gap-4"><label><span className="mb-1 block text-sm font-semibold text-foreground">Titre *</span><input value={titre} onChange={(e) => setTitre(e.target.value.slice(0, 120))} className="form-control" /></label><label><span className="mb-1 block text-sm font-semibold text-foreground">Description</span><textarea value={description} onChange={(e) => setDescription(e.target.value.slice(0, 1000))} rows={3} className="form-control" /></label></div>
             <div className="mt-5 rounded-xl bg-muted p-3"><div className="mb-3 flex items-center justify-between gap-3"><h2 className="font-bold text-foreground">Champs du formulaire</h2><button type="button" onClick={() => setChamps([...champs, nouveauChampPersonnalise()])} className="mini-button"><Plus className="size-4" /> Ajouter</button></div><div className="space-y-3">{champs.map((champ, index) => <div key={champ.id} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_130px_90px_40px]"><input value={champ.label} onChange={(e) => setChamps(champs.map((item) => item.id === champ.id ? { ...item, label: e.target.value.slice(0, 80) } : item))} className="form-control" /><select value={champ.type} onChange={(e) => setChamps(champs.map((item) => item.id === champ.id ? { ...item, type: e.target.value as TypeChampPersonnalise } : item))} className="form-control">{typesChampsPersonnalises.map((type) => <option key={type} value={type}>{type}</option>)}</select><label className="flex items-center gap-2 rounded-lg border border-border px-3 text-sm font-bold"><input type="checkbox" checked={champ.requis} onChange={(e) => setChamps(champs.map((item) => item.id === champ.id ? { ...item, requis: e.target.checked } : item))} /> Requis</label><button type="button" onClick={() => setChamps(champs.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button></div>)}</div></div>
-            <div className="mt-6 flex justify-end"><button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Création…" : "Créer et copier le lien"}</button></div>
+            <div className="mt-6 flex justify-end"><button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Enregistrement…" : editionId ? "Modifier le formulaire" : "Créer et copier le lien"}</button></div>
           </form>
-          <section className="space-y-6"><div className="rounded-2xl border border-border bg-card p-5 shadow-document"><Link2 className="mb-3 size-8 text-primary" /><h2 className="text-xl font-bold text-foreground">Liens et réponses</h2><p className="mt-2 text-sm text-muted-foreground">Les liens générés utilisent le domaine public publié et restent accessibles aux personnes externes.</p></div><div className="rounded-2xl border border-border bg-card/95 p-4 shadow-document"><h2 className="mb-3 text-lg font-black text-foreground">Formulaires créés</h2><div className="space-y-3">{formulaires.length === 0 ? <p className="rounded-xl border border-dashed border-border bg-muted/60 p-5 text-sm text-muted-foreground">Aucun formulaire pour le moment.</p> : formulaires.map((formulaire) => <article key={formulaire.id} className="rounded-xl border border-border bg-background p-3"><h3 className="font-bold text-foreground">{formulaire.titre}</h3><p className="mt-1 break-all text-xs text-primary">{formulaire.url_publique}</p><div className="mt-3 grid grid-cols-3 gap-2"><button type="button" onClick={() => window.open(formulaire.url_publique, "_blank", "noopener,noreferrer")} className="tool-action"><Eye className="size-4" /></button><button type="button" onClick={() => navigator.clipboard?.writeText(formulaire.url_publique)} className="tool-action"><Copy className="size-4" /></button><button type="button" onClick={() => ouvrirReponses(formulaire)} className="tool-action"><FileDown className="size-4" /></button></div></article>)}</div></div>{formulaireActif && <div className="rounded-2xl border border-border bg-card/95 p-4 shadow-document"><h2 className="text-lg font-black text-foreground">Réponses · {formulaireActif.titre}</h2><div className="mt-3 space-y-3">{reponses.length === 0 ? <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">Aucune réponse reçue.</p> : reponses.map((reponse) => <article key={reponse.id} className="rounded-xl border border-border bg-background p-3"><p className="mb-2 text-xs font-bold text-muted-foreground">{new Date(reponse.created_at).toLocaleString("fr-FR")}</p>{Object.entries(reponse.reponses).map(([key, value]) => <p key={key} className="text-sm"><strong>{key} :</strong> {String(value || "—")}</p>)}{Object.entries(reponse.fichiers).map(([key, file]) => <a key={key} href={file.contenu} download={file.nom} className="mt-2 block text-sm font-bold text-primary">Télécharger {key} · {file.nom}</a>)}</article>)}</div></div>}</section>
+          <section className="space-y-6"><div className="rounded-2xl border border-border bg-card p-5 shadow-document"><Link2 className="mb-3 size-8 text-primary" /><h2 className="text-xl font-bold text-foreground">Liens et réponses</h2><p className="mt-2 text-sm text-muted-foreground">Les liens générés utilisent le domaine public publié et restent accessibles aux personnes externes.</p></div><div className="rounded-2xl border border-border bg-card/95 p-4 shadow-document"><h2 className="mb-3 text-lg font-black text-foreground">Formulaires créés</h2><div className="space-y-3">{formulaires.length === 0 ? <p className="rounded-xl border border-dashed border-border bg-muted/60 p-5 text-sm text-muted-foreground">Aucun formulaire pour le moment.</p> : formulaires.map((formulaire) => <article key={formulaire.id} className="rounded-xl border border-border bg-background p-3"><h3 className="font-bold text-foreground">{formulaire.titre}</h3><p className="mt-1 break-all text-xs text-primary">{formulaire.url_publique}</p><div className="mt-3 grid grid-cols-5 gap-2"><button type="button" onClick={() => window.open(formulaire.url_publique, "_blank", "noopener,noreferrer")} className="tool-action"><Eye className="size-4" /></button><button type="button" onClick={() => navigator.clipboard?.writeText(formulaire.url_publique)} className="tool-action"><Copy className="size-4" /></button><button type="button" onClick={() => ouvrirReponses(formulaire)} className="tool-action"><FileDown className="size-4" /></button><button type="button" onClick={() => editerFormulaire(formulaire)} className="tool-action"><Pencil className="size-4" /></button><button type="button" onClick={() => supprimerFormulaire(formulaire.id)} className="tool-action danger"><Trash2 className="size-4" /></button></div></article>)}</div></div>{formulaireActif && <div className="rounded-2xl border border-border bg-card/95 p-4 shadow-document"><h2 className="text-lg font-black text-foreground">Réponses · {formulaireActif.titre}</h2><div className="mt-3 space-y-3">{reponses.length === 0 ? <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">Aucune réponse reçue.</p> : reponses.map((reponse) => <article key={reponse.id} className="rounded-xl border border-border bg-background p-3"><p className="mb-2 text-xs font-bold text-muted-foreground">{new Date(reponse.created_at).toLocaleString("fr-FR")}</p>{Object.entries(reponse.reponses).map(([key, value]) => <p key={key} className="text-sm"><strong>{key} :</strong> {String(value || "—")}</p>)}{Object.entries(reponse.fichiers).map(([key, file]) => <a key={key} href={file.contenu} download={file.nom} className="mt-2 block text-sm font-bold text-primary">Télécharger {key} · {file.nom}</a>)}</article>)}</div></div>}</section>
         </div>
       </div>
     </main>
@@ -254,10 +272,38 @@ function CalendrierFeriesTool({ retour }: { retour: () => void }) {
   );
 }
 
+const blocsOrganigrammeDefaut: BlocOrganigramme[] = [
+  { id: crypto.randomUUID(), titre: "Directeur Général", niveau: 0, couleur: "bleu" },
+  { id: crypto.randomUUID(), titre: "Directeur / Directrice Technique", niveau: 1, couleur: "vert" },
+  { id: crypto.randomUUID(), titre: "Secrétaire G.", niveau: 2, couleur: "orange" },
+  { id: crypto.randomUUID(), titre: "Secrétaire A.D.", niveau: 2, couleur: "violet" },
+  { id: crypto.randomUUID(), titre: "Chef d’équipe", niveau: 3, couleur: "turquoise" },
+  { id: crypto.randomUUID(), titre: "Disciplinaire", niveau: 4, couleur: "bleu" },
+];
+
+function OrganigrammePreview({ blocs }: { blocs: BlocOrganigramme[] }) {
+  const groupes = [0, 1, 2, 3, 4].map((niveau) => blocs.filter((bloc) => bloc.niveau === niveau));
+  return <div className="org-chart"><img src={scmLogo} alt="Logo SCM SARL" className="org-logo" /><h2>ORGANIGRAMME</h2><div className="org-line" />{groupes.map((groupe, index) => groupe.length > 0 && <div key={index} className={`org-level ${groupe.length > 1 ? "org-level-split" : ""}`}>{groupe.map((bloc) => <div key={bloc.id} className={`org-node org-${bloc.couleur}`}><span className="org-icon"><UsersRound className="size-6" /></span><strong>{bloc.titre}</strong></div>)}</div>)}</div>;
+}
+
+function OrganigrammeTool({ retour }: { retour: () => void }) {
+  const [organigrammes, setOrganigrammes] = useState<OrganigrammeEntreprise[]>([]);
+  const [editionId, setEditionId] = useState<string | undefined>();
+  const [titre, setTitre] = useState("Organigramme SCM SARL");
+  const [description, setDescription] = useState("Compétence · Engagement · Performance");
+  const [blocs, setBlocs] = useState<BlocOrganigramme[]>(blocsOrganigrammeDefaut);
+  useEffect(() => { listerOrganigrammesEntreprise().then(setOrganigrammes).catch((e) => alert(e instanceof Error ? e.message : "Chargement impossible.")); }, []);
+  async function enregistrer(event: React.FormEvent) { event.preventDefault(); const item = await enregistrerOrganigrammeEntreprise({ titre, description, blocs, actif: true }, editionId); setOrganigrammes((liste) => editionId ? liste.map((o) => o.id === item.id ? item : o) : [item, ...liste]); setEditionId(item.id); alert("Organigramme enregistré et publié sur les dashboards employés."); }
+  async function retirer(id: string) { if (!confirm("Supprimer cet organigramme ?")) return; await supprimerOrganigrammeEntreprise(id); setOrganigrammes((liste) => liste.filter((item) => item.id !== id)); }
+  function modifier(item: OrganigrammeEntreprise) { setEditionId(item.id); setTitre(item.titre); setDescription(item.description); setBlocs(item.blocs?.length ? item.blocs : blocsOrganigrammeDefaut); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  return <main className="min-h-screen bg-background px-4 py-5 sm:px-6 lg:px-8 tool-organization-chart"><div className="mx-auto max-w-7xl"><button type="button" onClick={retour} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Retour au tableau de bord</button><div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-8"><span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span><h1 className="max-w-3xl text-3xl font-black lg:text-5xl">Organigramme de l’entreprise</h1><p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">Composez les blocs et publiez le résultat chez tous les employés.</p></div><div className="grid gap-6 xl:grid-cols-[.9fr_1.1fr]"><form onSubmit={enregistrer} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="grid gap-4"><label><span className="mb-1 block text-sm font-semibold">Titre</span><input className="form-control" value={titre} onChange={(e) => setTitre(e.target.value)} /></label><label><span className="mb-1 block text-sm font-semibold">Signature</span><input className="form-control" value={description} onChange={(e) => setDescription(e.target.value)} /></label></div><div className="mt-5 rounded-xl bg-muted p-3"><div className="mb-3 flex items-center justify-between"><h2 className="font-black">Blocs</h2><button type="button" className="mini-button" onClick={() => setBlocs([...blocs, { id: crypto.randomUUID(), titre: "Nouveau bloc", niveau: 2, couleur: "bleu" }])}><Plus className="size-4" /> Ajouter</button></div><div className="space-y-3">{blocs.map((bloc) => <div key={bloc.id} className="grid gap-2 rounded-xl bg-card p-3 sm:grid-cols-[1fr_90px_120px_40px]"><input className="form-control" value={bloc.titre} onChange={(e) => setBlocs(blocs.map((b) => b.id === bloc.id ? { ...b, titre: e.target.value } : b))} /><input className="form-control" type="number" min={0} max={4} value={bloc.niveau} onChange={(e) => setBlocs(blocs.map((b) => b.id === bloc.id ? { ...b, niveau: Number(e.target.value) } : b))} /><select className="form-control" value={bloc.couleur} onChange={(e) => setBlocs(blocs.map((b) => b.id === bloc.id ? { ...b, couleur: e.target.value as BlocOrganigramme["couleur"] } : b))}><option value="bleu">Bleu</option><option value="vert">Vert</option><option value="orange">Orange</option><option value="violet">Violet</option><option value="turquoise">Turquoise</option></select><button type="button" className="tool-action danger" onClick={() => setBlocs(blocs.filter((b) => b.id !== bloc.id))}><Trash2 className="size-4" /></button></div>)}</div></div><button className="primary-action mt-5 w-full"><Save className="size-4" /> {editionId ? "Modifier" : "Publier"}</button><div className="mt-5 space-y-3">{organigrammes.map((item) => <article key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3"><strong className="text-sm">{item.titre}</strong><div className="flex gap-2"><button type="button" className="tool-action" onClick={() => modifier(item)}><Pencil className="size-4" /></button><button type="button" className="tool-action danger" onClick={() => retirer(item.id)}><Trash2 className="size-4" /></button></div></article>)}</div></form><section className="rounded-2xl border border-border bg-card p-4 shadow-document"><OrganigrammePreview blocs={blocs} /><p className="mt-4 text-center text-sm font-black text-muted-foreground">{description}</p></section></div></div></main>;
+}
+
 export function DocumentTool({ config, retour }: { config: Config; retour: () => void }) {
   if (config.type === "formulaire_personnalise") return <CustomFormTool retour={retour} />;
   if (config.type === "historique_connexion") return <HistoriqueConnexionTool retour={retour} />;
   if (config.type === "calendrier_feries") return <CalendrierFeriesTool retour={retour} />;
+  if (config.type === "organigramme_entreprise") return <OrganigrammeTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
 }
 

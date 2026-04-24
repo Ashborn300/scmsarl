@@ -123,6 +123,7 @@
 .tool-custom-form { --tool-1: oklch(0.52 0.2 285); --tool-2: oklch(0.58 0.13 185); }
 .tool-login-history { --tool-1: oklch(0.44 0.09 230); --tool-2: oklch(0.48 0.13 150); }
 .tool-holiday-calendar { --tool-1: oklch(0.46 0.11 70); --tool-2: oklch(0.68 0.16 78); }
+.tool-organization-chart { --tool-1: oklch(0.34 0.16 260); --tool-2: oklch(0.68 0.14 190); }
 
 @layer base {
   * { border-color: var(--color-border); }
@@ -183,6 +184,19 @@
   }
   .dashboard-sidebar { background: oklch(1 0 0 / 86%); backdrop-filter: blur(18px); }
   .dashboard-hero { background: linear-gradient(135deg, var(--dash-violet), var(--dash-cyan) 48%, var(--dash-emerald)); color: var(--primary-foreground); }
+  .org-chart { position: relative; overflow: hidden; border-radius: var(--radius-3xl); background: linear-gradient(145deg, var(--card), color-mix(in oklab, var(--primary) 5%, var(--card))); padding: 1.5rem; text-align: center; }
+  .org-chart::before, .org-chart::after { content: ""; position: absolute; width: 12rem; height: 12rem; border-radius: 999px; background: color-mix(in oklab, var(--primary) 14%, transparent); }
+  .org-chart::before { left: -7rem; top: -7rem; } .org-chart::after { right: -7rem; bottom: -7rem; }
+  .org-logo { position: relative; z-index: 1; margin: 0 auto 1rem; height: 5.5rem; width: 8.5rem; object-fit: contain; }
+  .org-chart h2 { position: relative; z-index: 1; font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 950; letter-spacing: .26em; color: var(--primary); }
+  .org-line { position: relative; z-index: 1; margin: .75rem auto 1.5rem; height: .24rem; width: min(22rem, 70%); border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--chart-2), var(--chart-3), var(--chart-4)); }
+  .org-level { position: relative; z-index: 1; display: flex; justify-content: center; gap: 1.25rem; margin-top: 1.05rem; }
+  .org-level-split { flex-wrap: wrap; justify-content: space-around; }
+  .org-node { display: flex; min-height: 4.5rem; width: min(31rem, 100%); align-items: center; gap: 1rem; border: .24rem solid var(--org-color); border-radius: 1.25rem; background: var(--card); padding: .7rem 1.1rem; color: var(--org-color); box-shadow: var(--shadow-document); }
+  .org-level-split .org-node { width: min(23rem, 100%); }
+  .org-icon { display: inline-flex; min-height: 3.35rem; min-width: 3.35rem; align-items: center; justify-content: center; border-radius: 999px; background: var(--org-color); color: var(--primary-foreground); }
+  .org-node strong { flex: 1; font-size: clamp(1rem, 2vw, 1.45rem); font-weight: 950; text-transform: uppercase; }
+  .org-bleu { --org-color: oklch(0.34 0.16 260); } .org-vert { --org-color: oklch(0.55 0.16 145); } .org-orange { --org-color: oklch(0.68 0.18 55); } .org-violet { --org-color: oklch(0.48 0.19 305); } .org-turquoise { --org-color: oklch(0.63 0.14 190); }
 }
 
 @layer components {

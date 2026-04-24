@@ -18,6 +18,7 @@ import {
   LogOut,
   MapPin,
   Menu,
+  Network,
   Plus,
   Search,
   ShieldCheck,
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/employe")({
 });
 
 type RoleSession = "admin" | "employe" | "chef_chantier";
-type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier";
+type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme";
 type StatutPresence = "présent" | "absent" | "en retard" | "excusé";
 type ModeEdition = { type: "projets" | "employes" | "chantiers"; id?: string } | null;
 type Detail = { type: "projets" | "employes" | "chantiers" | "presences" | "annonces"; id: string } | null;
@@ -135,6 +136,8 @@ type Annonce = {
 
 type AnnonceMasquee = { id: string; annonce_id: string; employe_id: string; created_at: string };
 type JourNonTravaille = { id: string; date_jour: string; titre: string; description: string; type_jour: string; actif: boolean; created_at: string; updated_at: string };
+type BlocOrganigramme = { id: string; titre: string; niveau: number; couleur: "bleu" | "vert" | "orange" | "violet" | "turquoise" };
+type OrganigrammeEntreprise = { id: string; titre: string; description: string; blocs: BlocOrganigramme[]; actif: boolean; created_at: string; updated_at: string };
 
 type ProjetForm = Omit<Projet, "id" | "created_at" | "budget_estime"> & { budget_estime: string };
 type EmployeForm = Omit<Employe, "id" | "created_at" | "salaire" | "salaire_total" | "salaire_recu" | "salaire_restant"> & { salaire_total: string; salaire_recu: string };
@@ -175,6 +178,7 @@ function EmployePage() {
   const [annonces, setAnnonces] = useState<Annonce[]>([]);
   const [annoncesMasquees, setAnnoncesMasquees] = useState<AnnonceMasquee[]>([]);
   const [joursNonTravailles, setJoursNonTravailles] = useState<JourNonTravaille[]>([]);
+  const [organigrammes, setOrganigrammes] = useState<OrganigrammeEntreprise[]>([]);
   const [jourPopup, setJourPopup] = useState<JourNonTravaille | null>(null);
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
@@ -304,7 +308,7 @@ function EmployePage() {
     if (!currentSession) return;
     setChargement(true);
     setMessage("");
-    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes] = await Promise.all([
+    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes, orgRes] = await Promise.all([
       db.from("projets").select("*").order("created_at", { ascending: false }),
       db.from("employes").select("*").order("created_at", { ascending: false }),
       db.from("chantiers").select("*").order("created_at", { ascending: false }),
@@ -312,8 +316,9 @@ function EmployePage() {
       db.from("annonces").select("*").order("created_at", { ascending: false }),
       db.from("annonces_masquees").select("*").order("created_at", { ascending: false }),
       db.from("jours_non_travailles").select("*").order("date_jour", { ascending: false }),
+      db.from("organigrammes_entreprise").select("*").eq("actif", true).order("created_at", { ascending: false }).limit(1),
     ]);
-    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
+    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error || orgRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
     setProjets(projetsRes.data || []);
     setEmployes(projetsRes.error ? [] : (employesRes.data || []));
     setChantiers(chantiersRes.data || []);
@@ -321,6 +326,7 @@ function EmployePage() {
     setAnnonces(annoncesRes.data || []);
     setAnnoncesMasquees(masqueesRes.data || []);
     setJoursNonTravailles(joursRes.data || []);
+    setOrganigrammes(orgRes.data || []);
     if (currentSession.role !== "admin") {
       const today = new Date().toISOString().slice(0, 10);
       const jour = (joursRes.data || []).find((item: JourNonTravaille) => item.actif && item.date_jour === today);
@@ -486,7 +492,7 @@ function EmployePage() {
 
   if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
-  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : "Présences";
+  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
   const chantierPresence = chantiersVisibles.find((c) => c.id === presenceChantier) || chantiersVisibles[0];
   const employesPresence = chantierPresence ? employes.filter((e) => (chantierPresence.employes_assignes || []).includes(e.id)) : [];
@@ -505,6 +511,7 @@ function EmployePage() {
             {(isAdmin || isChef) && <BoutonNav actif={onglet === "presences"} icone={ClipboardCheck} label="Présences" onClick={() => changerOnglet("presences")} />}
             <BoutonNav actif={onglet === "annonces"} icone={Megaphone} label="Annonces" onClick={() => changerOnglet("annonces")} />
             <BoutonNav actif={onglet === "calendrier"} icone={CalendarDays} label="Jours fériés" onClick={() => changerOnglet("calendrier")} />
+            <BoutonNav actif={onglet === "organigramme"} icone={Network} label="Organigramme" onClick={() => changerOnglet("organigramme")} />
           </nav>
           <div className="dashboard-hero mt-10 rounded-3xl p-4 shadow-tool"><Building2 className="mb-3 size-8" /><p className="text-sm font-black">{session.nom}</p><p className="mt-1 text-xs font-semibold leading-5 opacity-90">Accès filtré automatiquement selon le rôle connecté.</p><button className="mini-button mt-4 w-full bg-card/20 text-primary-foreground" onClick={deconnecter}><LogOut className="size-4" /> Déconnexion</button></div>
         </aside>
@@ -513,17 +520,18 @@ function EmployePage() {
           <header className="dashboard-card mb-6 flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><button className="tool-action lg:hidden" onClick={() => setMenuOuvert(true)} aria-label="Ouvrir"><Menu className="size-5" /></button><div className="tool-blue inline-flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><UserRound className="size-6" /></div><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Espace entreprise</p><h2 className="text-2xl font-black sm:text-3xl">{titreOnglet}</h2></div></div>{isAdmin && ["projets", "employes", "chantiers", "annonces"].includes(onglet) && <button className="primary-action" onClick={() => ouvrirCreation(onglet as any)}><Plus className="size-4" /> Nouveau</button>}</header>
           {message && <div className="mb-5 rounded-2xl border border-border bg-card p-4 text-sm font-semibold shadow-document">{message}</div>}
           {chargement ? <div className="flex min-h-[50vh] items-center justify-center rounded-3xl border border-border bg-card"><Loader2 className="size-8 animate-spin text-primary" /></div> : onglet === "dashboard" ? <Dashboard role={session.role} stats={stats} employe={employeConnecte} chantiers={chantiersVisibles} presences={presencesVisibles} annonces={annoncesVisibles} jours={joursVisibles} setOnglet={setOnglet} voirAnnonce={(id: string) => setDetail({ type: "annonces", id })} masquerAnnonce={masquerAnnonce} admin={isAdmin} /> : <div className="space-y-5">
-            <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-document sm:flex-row sm:items-center sm:justify-between"><div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input className="form-control pl-10" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder={`Rechercher dans ${titreOnglet.toLowerCase()}...`} /></div><p className="text-sm font-bold text-muted-foreground">{onglet === "projets" ? projetsFiltres.length : onglet === "employes" ? employesFiltres.length : onglet === "chantiers" ? chantiersFiltres.length : presencesFiltrees.length} résultat(s)</p></div>
+            {onglet !== "organigramme" && <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-document sm:flex-row sm:items-center sm:justify-between"><div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input className="form-control pl-10" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder={`Rechercher dans ${titreOnglet.toLowerCase()}...`} /></div><p className="text-sm font-bold text-muted-foreground">{onglet === "projets" ? projetsFiltres.length : onglet === "employes" ? employesFiltres.length : onglet === "chantiers" ? chantiersFiltres.length : presencesFiltrees.length} résultat(s)</p></div>}
             {onglet === "projets" && <ListeProjets projets={projetsFiltres} admin={isAdmin} voir={(id: string) => setDetail({ type: "projets", id })} modifier={(id: string) => ouvrirEdition("projets", id)} supprimer={(id: string) => supprimer("projets", id)} />}
             {onglet === "employes" && <ListeEmployes employes={employesFiltres} chantiers={chantiers} admin={isAdmin} showSalary={isAdmin || !isChef} voir={(id: string) => setDetail({ type: "employes", id })} modifier={(id: string) => ouvrirEdition("employes", id)} supprimer={(id: string) => supprimer("employes", id)} />}
             {onglet === "chantiers" && <ListeChantiers chantiers={chantiersFiltres} projets={projets} employes={employes} admin={isAdmin} viewerRole={session.role} viewerId={session.employeId} voir={(id: string) => setDetail({ type: "chantiers", id })} modifier={(id: string) => ouvrirEdition("chantiers", id)} supprimer={(id: string) => supprimer("chantiers", id)} />}
             {onglet === "annonces" && <AnnoncesSection annonces={annoncesVisibles} admin={isAdmin} voir={(id: string) => setDetail({ type: "annonces", id })} masquer={masquerAnnonce} supprimer={supprimerAnnonce} />}
             {onglet === "calendrier" && <CalendrierEmployes jours={joursVisibles} />}
+            {onglet === "organigramme" && <OrganigrammeEmployes organigramme={organigrammes[0]} />}
             {onglet === "presences" && <PresencesSection admin={isAdmin} chef={isChef} presences={presencesFiltrees} chantiers={chantiers} employes={employes} chefs={chefOptions} filtreDate={filtreDate} setFiltreDate={setFiltreDate} filtreChantier={filtreChantier} setFiltreChantier={setFiltreChantier} filtreEmploye={filtreEmploye} setFiltreEmploye={setFiltreEmploye} filtreChef={filtreChef} setFiltreChef={setFiltreChef} voir={(id: string) => setDetail({ type: "presences", id })} presenceDate={presenceDate} setPresenceDate={setPresenceDate} presenceChantier={presenceChantier || chantierPresence?.id || ""} setPresenceChantier={setPresenceChantier} presenceNotes={presenceNotes} setPresenceNotes={setPresenceNotes} employesPresence={employesPresence} presenceStatuts={presenceStatuts} setPresenceStatuts={setPresenceStatuts} submit={enregistrerPresence} saving={sauvegarde} chantiersVisibles={chantiersVisibles} />}
           </div>}
         </section>
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-border bg-card/95 p-2 shadow-document backdrop-blur lg:hidden"><BoutonMobile actif={onglet === "dashboard"} icone={LayoutDashboard} label="Accueil" onClick={() => changerOnglet("dashboard")} /><BoutonMobile actif={onglet === "annonces"} icone={Megaphone} label="Annonces" onClick={() => changerOnglet("annonces")} /><BoutonMobile actif={onglet === "employes"} icone={UsersRound} label="Profil" onClick={() => changerOnglet("employes")} /><BoutonMobile actif={onglet === "chantiers"} icone={HardHat} label="Chantiers" onClick={() => changerOnglet("chantiers")} /><BoutonMobile actif={onglet === "calendrier"} icone={CalendarDays} label="Fériés" onClick={() => changerOnglet("calendrier")} /></nav>
+      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-border bg-card/95 p-2 shadow-document backdrop-blur lg:hidden"><BoutonMobile actif={onglet === "dashboard"} icone={LayoutDashboard} label="Accueil" onClick={() => changerOnglet("dashboard")} /><BoutonMobile actif={onglet === "annonces"} icone={Megaphone} label="Annonces" onClick={() => changerOnglet("annonces")} /><BoutonMobile actif={onglet === "employes"} icone={UsersRound} label="Profil" onClick={() => changerOnglet("employes")} /><BoutonMobile actif={onglet === "calendrier"} icone={CalendarDays} label="Fériés" onClick={() => changerOnglet("calendrier")} /><BoutonMobile actif={onglet === "organigramme"} icone={Network} label="Org." onClick={() => changerOnglet("organigramme")} /></nav>
       {annonceModal && <Modal titre="Nouvelle annonce" fermer={() => setAnnonceModal(null)}><FormAnnonce form={formAnnonce} setForm={setFormAnnonce} onSubmit={enregistrerAnnonce} saving={sauvegarde} televerserImage={televerserImageAnnonce} retirerImage={retirerImageAnnonce} /></Modal>}
       {edition && <Modal titre={edition.id ? "Modifier" : "Créer"} fermer={() => setEdition(null)}>{edition.type === "projets" && <FormProjet form={formProjet} setForm={setFormProjet} onSubmit={enregistrerProjet} saving={sauvegarde} />}{edition.type === "employes" && <FormEmploye form={formEmploye} setForm={setFormEmploye} chantiers={chantiers} onSubmit={enregistrerEmploye} saving={sauvegarde} televerserPhoto={televerserPhotoEmploye} retirerPhoto={retirerPhotoEmploye} />}{edition.type === "chantiers" && <FormChantier form={formChantier} setForm={setFormChantier} projets={projets} employes={employes} onSubmit={enregistrerChantier} saving={sauvegarde} televerserImages={televerserImages} retirerImage={retirerImage} />}</Modal>}
       {detail && <Modal titre="Détails" fermer={() => setDetail(null)}><Details detail={detail} projets={projets} employes={employes} chantiers={chantiers} presences={presences} annonces={annonces} admin={isAdmin} role={session.role} viewerId={session.employeId} modifier={() => detail.type !== "presences" && detail.type !== "annonces" && ouvrirEdition(detail.type, detail.id)} supprimer={() => detail.type === "annonces" ? supprimerAnnonce(detail.id) : detail.type !== "presences" && supprimer(detail.type, detail.id)} /></Modal>}
@@ -540,6 +548,7 @@ function filtrer<T extends Record<string, unknown>>(items: T[], recherche: strin
 function BoutonNav({ actif, icone: Icon, label, onClick }: { actif: boolean; icone: typeof LayoutDashboard; label: string; onClick: () => void }) { return <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-black transition ${actif ? "bg-primary text-primary-foreground shadow-tool" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}><Icon className="size-5" />{label}</button>; }
 function BoutonMobile({ actif, icone: Icon, label, onClick }: { actif: boolean; icone: typeof LayoutDashboard; label: string; onClick: () => void }) { return <button onClick={onClick} className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-black ${actif ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}><Icon className="size-5" />{label}</button>; }
 function CarteStat({ titre, valeur, icone: Icon, tone = "tool-blue" }: { titre: string; valeur: number | string; icone: typeof LayoutDashboard; tone?: string }) { return <article className={`${tone} dashboard-card rounded-3xl p-5`}><div className="flex items-center justify-between"><span className="flex size-14 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><Icon className="size-6" /></span><span className="text-2xl text-muted-foreground">•••</span></div><p className="mt-5 text-3xl font-black">{typeof valeur === "number" ? nombre(valeur) : valeur}</p><p className="mt-1 text-sm font-bold text-muted-foreground">{titre}</p></article>; }
+function OrganigrammeEmployes({ organigramme }: { organigramme?: OrganigrammeEntreprise }) { const blocs = organigramme?.blocs || []; const groupes = [0, 1, 2, 3, 4].map((niveau) => blocs.filter((bloc) => bloc.niveau === niveau)); return <section className="dashboard-card rounded-3xl p-4 sm:p-6"><div className="mb-5 flex items-center gap-3"><span className="tool-organization-chart flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><Network className="size-6" /></span><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">SCM SARL</p><h3 className="text-2xl font-black">{organigramme?.titre || "Organigramme de l’entreprise"}</h3></div></div>{blocs.length ? <><div className="org-chart"><img src={scmCompanyLogo} alt="Logo SCM SARL" className="org-logo" /><h2>ORGANIGRAMME</h2><div className="org-line" />{groupes.map((groupe, index) => groupe.length > 0 && <div key={index} className={`org-level ${groupe.length > 1 ? "org-level-split" : ""}`}>{groupe.map((bloc) => <div key={bloc.id} className={`org-node org-${bloc.couleur}`}><span className="org-icon"><UsersRound className="size-6" /></span><strong>{bloc.titre}</strong></div>)}</div>)}</div><p className="mt-4 text-center text-sm font-black text-muted-foreground">{organigramme?.description}</p></> : <p className="rounded-2xl bg-muted p-5 text-sm font-bold text-muted-foreground">Aucun organigramme publié pour le moment.</p>}</section>; }
 function Dashboard({ role, stats, employe, chantiers, presences, annonces, setOnglet, voirAnnonce, masquerAnnonce, admin }: any) { return <div className="space-y-6"><section className="dashboard-hero overflow-hidden rounded-3xl p-6 shadow-tool"><p className="text-sm font-black uppercase opacity-85">{role === "admin" ? "Vue direction" : "Espace personnel"}</p><h3 className="mt-2 text-3xl font-black sm:text-4xl">SCM SARL — Tableau de bord</h3><div className="mt-6 grid gap-3 sm:grid-cols-4"><div className="rounded-2xl bg-card/18 p-4"><p className="text-2xl font-black">{stats.totalChantiers}</p><p className="text-xs font-bold opacity-85">Chantiers suivis</p></div><div className="rounded-2xl bg-card/18 p-4"><p className="text-2xl font-black">{stats.chantiersActifs}</p><p className="text-xs font-bold opacity-85">Actifs</p></div><div className="rounded-2xl bg-card/18 p-4"><p className="text-2xl font-black">{stats.presences}</p><p className="text-xs font-bold opacity-85">Présences</p></div><div className="rounded-2xl bg-card/18 p-4"><p className="text-2xl font-black">{stats.annonces}</p><p className="text-xs font-bold opacity-85">Annonces</p></div></div></section><AnnoncesDashboard annonces={annonces} admin={admin} voir={voirAnnonce} masquer={masquerAnnonce} setOnglet={setOnglet} /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><CarteStat tone="tool-blue" titre="Projets" valeur={stats.totalProjets} icone={BriefcaseBusiness} /><CarteStat tone="tool-purple" titre="Employés" valeur={stats.totalEmployes} icone={UsersRound} /><CarteStat tone="tool-orange" titre="Chantiers" valeur={stats.totalChantiers} icone={HardHat} /><CarteStat tone="tool-green" titre="Chantiers actifs" valeur={stats.chantiersActifs} icone={CheckCircle2} /><CarteStat tone="tool-coral" titre="Annonces" valeur={stats.annonces} icone={Megaphone} /></div>{role === "admin" && <AdminPresenceCharts presences={presences} chantiers={chantiers} />}{employe && <div className="grid gap-4 lg:grid-cols-3"><CarteStat tone="tool-teal" titre="Salaire total" valeur={devise(employe.salaire_total ?? employe.salaire)} icone={ClipboardList} /><CarteStat tone="tool-green" titre="Salaire reçu" valeur={devise(employe.salaire_recu || 0)} icone={CheckCircle2} /><CarteStat tone="tool-orange" titre="Salaire restant" valeur={devise(employe.salaire_restant ?? 0)} icone={CalendarDays} /></div>}<div className="grid gap-5 xl:grid-cols-2"><Apercu titre={role === "admin" ? "Chantiers récents" : "Mes chantiers"} action="Voir les chantiers" onClick={() => setOnglet("chantiers")} items={chantiers.slice(0, 4).map((c: Chantier) => ({ titre: c.nom_chantier, meta: `${c.localisation || "Localisation non définie"} • ${c.statut}` }))} /><Apercu titre="Présences récentes" action="Voir les présences" onClick={() => setOnglet("presences")} items={presences.slice(0, 4).map((p: Presence) => ({ titre: dateFr(p.date), meta: p.notes || "Rapport quotidien" }))} /></div></div>; }
 function AdminPresenceCharts({ presences, chantiers }: { presences: Presence[]; chantiers: Chantier[] }) {
   const palette = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)"];
