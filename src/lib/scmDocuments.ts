@@ -137,6 +137,12 @@ export async function listerDocumentsRecents() {
   return resultats.flat().sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 8);
 }
 
+export async function listerEmployes() {
+  const { data, error } = await db.from("employes").select("id, nom_complet, matricule, genre, poste, telephone, email, adresse, date_naissance, date_admission, numero_piece_identite, contact_urgence, chantier_assigne, statut, role, photo_profil").order("nom_complet", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as EmployeRecord[];
+}
+
 export async function enregistrerDocument(type: OutilType, payload: Record<string, unknown>, pdfBase64: string, numero?: string, id?: string) {
   const table = tablesParOutil[type];
   const documentNumero = numero || (await genererNumero(type));
@@ -213,6 +219,24 @@ export async function enregistrerRealisticSketchup(payload: Record<string, unkno
     date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
   };
   const requete = id ? db.from("realistic_sketchup").update(ligne).eq("id", id).select().single() : db.from("realistic_sketchup").insert(ligne).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as DocumentRecord;
+}
+
+export async function enregistrerFicheEmploye(payload: Record<string, unknown>, pdfBase64: string, numero?: string, id?: string) {
+  const documentNumero = numero || (await genererNumero("fiche_employe"));
+  const nomFichier = `${documentNumero}-${String(payload.titre || payload.typeFiche || "fiche-employe").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
+  const ligne = {
+    numero: documentNumero,
+    nom_fichier: nomFichier,
+    type_fiche: String(payload.typeFiche || "individuelle"),
+    titre: String(payload.titre || "Fiche employé"),
+    donnees_formulaire: payload,
+    pdf_base64: pdfBase64,
+    date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
+  };
+  const requete = id ? db.from("fiches_employes").update(ligne).eq("id", id).select().single() : db.from("fiches_employes").insert(ligne).select().single();
   const { data, error } = await requete;
   if (error) throw new Error(error.message);
   return data as DocumentRecord;
