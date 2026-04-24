@@ -512,6 +512,34 @@ function EmployePage() {
 
   async function retirerPhotoEmploye() { await supprimerFichierStockage("employe-photos", formEmploye.photo_profil); setFormEmploye({ ...formEmploye, photo_profil: "" }); }
 
+  async function televerserMaPhotoProfil(files: FileList | null) {
+    const file = files?.[0];
+    if (!file || !session?.token || !employeConnecte) return;
+    setSauvegarde(true);
+    const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+    const { error } = await supabase.storage.from("employe-photos").upload(path, file, { upsert: false });
+    if (error) { setMessage("Téléversement de la photo impossible."); setSauvegarde(false); return; }
+    const photoUrl = supabase.storage.from("employe-photos").getPublicUrl(path).data.publicUrl;
+    const { data, error: updateError } = await db.rpc("scm_update_own_profile_photo", { _token_hash: await sha256(session.token), _photo_profil: photoUrl });
+    if (updateError) { await supprimerFichierStockage("employe-photos", photoUrl); setMessage(updateError.message || "Photo non enregistrée."); setSauvegarde(false); return; }
+    await supprimerFichierStockage("employe-photos", employeConnecte.photo_profil);
+    setEmployes((liste) => liste.map((employe) => employe.id === data.id ? data : employe));
+    setMessage("Photo de profil mise à jour.");
+    setSauvegarde(false);
+  }
+
+  async function retirerMaPhotoProfil() {
+    if (!session?.token || !employeConnecte) return;
+    setSauvegarde(true);
+    const anciennePhoto = employeConnecte.photo_profil;
+    const { data, error } = await db.rpc("scm_update_own_profile_photo", { _token_hash: await sha256(session.token), _photo_profil: "" });
+    if (error) { setMessage(error.message || "Photo non retirée."); setSauvegarde(false); return; }
+    await supprimerFichierStockage("employe-photos", anciennePhoto);
+    setEmployes((liste) => liste.map((employe) => employe.id === data.id ? data : employe));
+    setMessage("Photo de profil retirée.");
+    setSauvegarde(false);
+  }
+
   async function enregistrerPresence(event: React.FormEvent) {
     event.preventDefault();
     if (!session?.employeId) return;
