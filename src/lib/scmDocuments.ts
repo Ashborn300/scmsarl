@@ -188,9 +188,9 @@ function piedDePageCommunication(pdf: jsPDF, couleur: [number, number, number], 
   if (sceau) pdf.addImage(sceau, "JPEG", 118, y + 7, 52, 28, undefined, "FAST");
 }
 
-function texteValeur(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170, interligne = 4.5) {
+function texteValeur(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170, interligne = 4.5, couleur: [number, number, number] = [16, 42, 88]) {
   pdf.setFont("helvetica", "bold");
-  pdf.setTextColor(16, 42, 88);
+  pdf.setTextColor(...couleur);
   pdf.text(label.toUpperCase(), x, y);
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(36, 45, 64);
@@ -203,17 +203,17 @@ function valeurChamp(champs: Array<[string, string]>, label: string) {
   return champs.find(([nom]) => nom === label)?.[1] || "—";
 }
 
-function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, couleur: [number, number, number], options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string }) {
+function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, couleur: [number, number, number], couleurDouce: [number, number, number], options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string }) {
   let y = 82;
-  pdf.setTextColor(16, 42, 88);
+  pdf.setTextColor(...couleur);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
-  pdf.setFillColor(230, 238, 250);
+  pdf.setFillColor(...couleurDouce);
   pdf.rect(20, y - 5, 168, 8, "F");
   pdf.text("INFORMATIONS GÉNÉRALES", 23, y);
   y += 12;
-  y = texteValeur(pdf, "Titre du projet", valeurChamp(champs, "Titre du projet"), 20, y, 78, 3.8);
-  y = texteValeur(pdf, "Nom du client", valeurChamp(champs, "Nom du client"), 110, y - 13, 78, 3.8) + 2;
+  y = texteValeur(pdf, "Titre du projet", valeurChamp(champs, "Titre du projet"), 20, y, 78, 3.8, couleur);
+  y = texteValeur(pdf, "Nom du client", valeurChamp(champs, "Nom du client"), 110, y - 13, 78, 3.8, couleur) + 2;
   pdf.setFont("helvetica", "bold");
   pdf.setFillColor(230, 238, 250);
   pdf.rect(20, y - 5, 168, 8, "F");
