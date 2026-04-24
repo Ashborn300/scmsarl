@@ -227,7 +227,7 @@ export async function enregistrerDocument(type: OutilType, payload: Record<strin
       ? { montant_total: Number(payload.totalFinal || payload.total || payload.montant || payload.budget || 0) }
       : {}),
     ...(type === "facture" || type === "devis" || type === "recu" || type === "contrat_construction" ? { client: String(payload.client || payload.nomClient || "") } : {}),
-    ...(type === "contrat_employe" ? { employe: String(payload.employe || "") } : {}),
+    ...(type === "contrat_employe" || type === "lettre_licenciement" ? { employe: String(payload.employe || "") } : {}),
     ...(type === "description_projet" ? { projet: String(payload.projet || payload.nomProjet || "") } : {}),
     ...(type === "communiquer" ? { titre: String(payload.titre || payload.objet || "") } : {}),
     ...(type === "certificat" ? { beneficiaire: String(payload.beneficiaire || "") } : {}),
