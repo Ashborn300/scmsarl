@@ -11,6 +11,8 @@ import {
   Edit3,
   Eye,
   EyeOff,
+  FilePlus2,
+  HeartPulse,
   Megaphone,
   HardHat,
   LayoutDashboard,
@@ -46,7 +48,7 @@ export const Route = createFileRoute("/employe")({
 });
 
 type RoleSession = "admin" | "employe" | "chef_chantier";
-type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme";
+type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante";
 type StatutPresence = "présent" | "absent" | "en retard" | "excusé";
 type ModeEdition = { type: "projets" | "employes" | "chantiers"; id?: string } | null;
 type Detail = { type: "projets" | "employes" | "chantiers" | "presences" | "annonces"; id: string } | null;
@@ -138,6 +140,8 @@ type AnnonceMasquee = { id: string; annonce_id: string; employe_id: string; crea
 type JourNonTravaille = { id: string; date_jour: string; titre: string; description: string; type_jour: string; actif: boolean; created_at: string; updated_at: string };
 type BlocOrganigramme = { id: string; titre: string; niveau: number; couleur: "bleu" | "vert" | "orange" | "violet" | "turquoise"; parentId?: string; position?: "bas" | "cote"; image_url?: string };
 type OrganigrammeEntreprise = { id: string; titre: string; description: string; blocs: BlocOrganigramme[]; actif: boolean; created_at: string; updated_at: string };
+type DemandeConge = { id: string; employe_id: string; employe_nom: string; raison: string; image_url: string; statut: string; created_at: string; updated_at: string };
+type BilanSanteEmploye = { id: string; employe_id: string; employe_nom: string; semaine: string; etat_global: string; groupe_sanguin: string; allergies: string; blessure: boolean; details_blessure: string; created_at: string; updated_at: string };
 
 type ProjetForm = Omit<Projet, "id" | "created_at" | "budget_estime"> & { budget_estime: string };
 type EmployeForm = Omit<Employe, "id" | "created_at" | "salaire" | "salaire_total" | "salaire_recu" | "salaire_restant"> & { salaire_total: string; salaire_recu: string };
@@ -155,6 +159,8 @@ const projetInitial: ProjetForm = { nom_projet: "", client: "", localisation: ""
 const employeInitial: EmployeForm = { nom_complet: "", poste: "", matricule: "", telephone: "", adresse: "", salaire_total: "", salaire_recu: "0", role: "employe", statut: "actif", chantier_assigne: "", peut_voir_budget: false, photo_profil: "", genre: "", date_admission: "", date_naissance: "", email: "", numero_piece_identite: "", contact_urgence: "" };
 const chantierInitial: ChantierForm = { nom_chantier: "", localisation: "", chef_chantier: "", projet_lie: "", employes_assignes: [], description: "", budget_global: "", images_chantier: [], autoriser_budget_chef: false, statut: "Planifié", date_debut: "", date_fin_prevue: "" };
 const annonceInitial: AnnonceForm = { titre: "", contenu: "", image_url: "", publiee: true };
+const congeInitial = { raison: "", image_url: "" };
+const bilanSanteInitial = { semaine: new Date().toISOString().slice(0, 10), etat_global: "", groupe_sanguin: "", allergies: "", blessure: false, details_blessure: "" };
 
 function nombre(value: number) { return new Intl.NumberFormat("fr-FR").format(value || 0); }
 function devise(value: number) { return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value || 0); }
@@ -179,6 +185,8 @@ function EmployePage() {
   const [annoncesMasquees, setAnnoncesMasquees] = useState<AnnonceMasquee[]>([]);
   const [joursNonTravailles, setJoursNonTravailles] = useState<JourNonTravaille[]>([]);
   const [organigrammes, setOrganigrammes] = useState<OrganigrammeEntreprise[]>([]);
+  const [demandesConges, setDemandesConges] = useState<DemandeConge[]>([]);
+  const [bilansSante, setBilansSante] = useState<BilanSanteEmploye[]>([]);
   const [jourPopup, setJourPopup] = useState<JourNonTravaille | null>(null);
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
@@ -195,6 +203,8 @@ function EmployePage() {
   const [formEmploye, setFormEmploye] = useState<EmployeForm>(employeInitial);
   const [formChantier, setFormChantier] = useState<ChantierForm>(chantierInitial);
   const [formAnnonce, setFormAnnonce] = useState<AnnonceForm>(annonceInitial);
+  const [formConge, setFormConge] = useState(congeInitial);
+  const [formBilanSante, setFormBilanSante] = useState(bilanSanteInitial);
   const [presenceDate, setPresenceDate] = useState(new Date().toISOString().slice(0, 10));
   const [presenceChantier, setPresenceChantier] = useState("");
   const [presenceNotes, setPresenceNotes] = useState("");
@@ -301,14 +311,14 @@ function EmployePage() {
     if (session?.token) await db.rpc("scm_logout", { _token_hash: await sha256(session.token) });
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
-    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setAnnonces([]); setAnnoncesMasquees([]); setMessage(""); setOnglet("dashboard");
+    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setAnnonces([]); setAnnoncesMasquees([]); setDemandesConges([]); setBilansSante([]); setMessage(""); setOnglet("dashboard");
   }
 
   async function chargerDonnees(currentSession = session) {
     if (!currentSession) return;
     setChargement(true);
     setMessage("");
-    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes, orgRes] = await Promise.all([
+    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes, orgRes, congesRes, santeRes] = await Promise.all([
       db.from("projets").select("*").order("created_at", { ascending: false }),
       db.from("employes").select("*").order("created_at", { ascending: false }),
       db.from("chantiers").select("*").order("created_at", { ascending: false }),
@@ -317,8 +327,10 @@ function EmployePage() {
       db.from("annonces_masquees").select("*").order("created_at", { ascending: false }),
       db.from("jours_non_travailles").select("*").order("date_jour", { ascending: false }),
       db.from("organigrammes_entreprise").select("*").eq("actif", true).order("created_at", { ascending: false }).limit(1),
+      db.from("demandes_conges").select("*").order("created_at", { ascending: false }),
+      db.from("bilans_sante_employes").select("*").order("semaine", { ascending: false }),
     ]);
-    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error || orgRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
+    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error || orgRes.error || congesRes.error || santeRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
     setProjets(projetsRes.data || []);
     setEmployes(projetsRes.error ? [] : (employesRes.data || []));
     setChantiers(chantiersRes.data || []);
@@ -327,6 +339,8 @@ function EmployePage() {
     setAnnoncesMasquees(masqueesRes.data || []);
     setJoursNonTravailles(joursRes.data || []);
     setOrganigrammes(orgRes.data || []);
+    setDemandesConges(congesRes.data || []);
+    setBilansSante(santeRes.data || []);
     if (currentSession.role !== "admin") {
       const today = new Date().toISOString().slice(0, 10);
       const jour = (joursRes.data || []).find((item: JourNonTravaille) => item.actif && item.date_jour === today);
@@ -488,11 +502,45 @@ function EmployePage() {
     if (error) setMessage(error.message || "Présence non enregistrée."); else { setMessage("Présence quotidienne enregistrée."); setPresenceNotes(""); await chargerDonnees(); }
   }
 
+  async function televerserImageConge(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    setSauvegarde(true);
+    const path = `demandes-conges/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+    const { error } = await supabase.storage.from("scm-images").upload(path, file, { upsert: false });
+    if (error) { setMessage("Téléversement de l’image impossible."); setSauvegarde(false); return; }
+    const { data } = supabase.storage.from("scm-images").getPublicUrl(path);
+    setFormConge({ ...formConge, image_url: data.publicUrl });
+    setSauvegarde(false);
+  }
+
+  async function envoyerDemandeConge(event: React.FormEvent) {
+    event.preventDefault();
+    if (!session?.employeId || !employeConnecte) return setMessage("Employé introuvable.");
+    if (!formConge.raison.trim()) return setMessage("La raison de la demande est obligatoire.");
+    setSauvegarde(true);
+    const { error } = await db.from("demandes_conges").insert({ employe_id: session.employeId, employe_nom: employeConnecte.nom_complet, raison: formConge.raison.trim(), image_url: formConge.image_url, statut: "En attente" });
+    setSauvegarde(false);
+    if (error) setMessage(error.message || "Demande non envoyée."); else { setMessage("Demande de congé envoyée à l’admin."); setFormConge(congeInitial); await chargerDonnees(); }
+  }
+
+  async function envoyerBilanSante(event: React.FormEvent) {
+    event.preventDefault();
+    if (!session?.employeId || !employeConnecte) return setMessage("Employé introuvable.");
+    if (!formBilanSante.etat_global.trim()) return setMessage("L’état de santé global est obligatoire.");
+    if (!formBilanSante.groupe_sanguin.trim()) return setMessage("Le groupe sanguin est obligatoire.");
+    setSauvegarde(true);
+    const payload = { ...formBilanSante, employe_id: session.employeId, employe_nom: employeConnecte.nom_complet, etat_global: formBilanSante.etat_global.trim(), groupe_sanguin: formBilanSante.groupe_sanguin.trim(), allergies: formBilanSante.allergies.trim(), details_blessure: formBilanSante.details_blessure.trim() };
+    const { error } = await db.from("bilans_sante_employes").insert(payload);
+    setSauvegarde(false);
+    if (error) setMessage(error.message || "Bilan non envoyé."); else { setMessage("Bilan de santé hebdomadaire envoyé."); setFormBilanSante({ ...bilanSanteInitial, semaine: new Date().toISOString().slice(0, 10) }); await chargerDonnees(); }
+  }
+
   function changerOnglet(tab: Onglet) { setOnglet(tab); setRecherche(""); setMenuOuvert(false); }
 
   if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
-  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : "Présences";
+  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
   const chantierPresence = chantiersVisibles.find((c) => c.id === presenceChantier) || chantiersVisibles[0];
   const employesPresence = chantierPresence ? employes.filter((e) => (chantierPresence.employes_assignes || []).includes(e.id)) : [];
@@ -512,6 +560,8 @@ function EmployePage() {
             <BoutonNav actif={onglet === "annonces"} icone={Megaphone} label="Annonces" onClick={() => changerOnglet("annonces")} />
             <BoutonNav actif={onglet === "calendrier"} icone={CalendarDays} label="Jours fériés" onClick={() => changerOnglet("calendrier")} />
             <BoutonNav actif={onglet === "organigramme"} icone={Network} label="Organigramme" onClick={() => changerOnglet("organigramme")} />
+            {!isAdmin && <BoutonNav actif={onglet === "demande_conge"} icone={FilePlus2} label="Demande de Congé" onClick={() => changerOnglet("demande_conge")} />}
+            {!isAdmin && <BoutonNav actif={onglet === "bilan_sante"} icone={HeartPulse} label="Bilan de santé" onClick={() => changerOnglet("bilan_sante")} />}
           </nav>
           <div className="dashboard-hero mt-10 rounded-3xl p-4 shadow-tool"><Building2 className="mb-3 size-8" /><p className="text-sm font-black">{session.nom}</p><p className="mt-1 text-xs font-semibold leading-5 opacity-90">Accès filtré automatiquement selon le rôle connecté.</p><button className="mini-button mt-4 w-full bg-card/20 text-primary-foreground" onClick={deconnecter}><LogOut className="size-4" /> Déconnexion</button></div>
         </aside>
@@ -520,18 +570,20 @@ function EmployePage() {
           <header className="dashboard-card mb-6 flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><button className="tool-action lg:hidden" onClick={() => setMenuOuvert(true)} aria-label="Ouvrir"><Menu className="size-5" /></button><div className="tool-blue inline-flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><UserRound className="size-6" /></div><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Espace entreprise</p><h2 className="text-2xl font-black sm:text-3xl">{titreOnglet}</h2></div></div>{isAdmin && ["projets", "employes", "chantiers", "annonces"].includes(onglet) && <button className="primary-action" onClick={() => ouvrirCreation(onglet as any)}><Plus className="size-4" /> Nouveau</button>}</header>
           {message && <div className="mb-5 rounded-2xl border border-border bg-card p-4 text-sm font-semibold shadow-document">{message}</div>}
           {chargement ? <div className="flex min-h-[50vh] items-center justify-center rounded-3xl border border-border bg-card"><Loader2 className="size-8 animate-spin text-primary" /></div> : onglet === "dashboard" ? <Dashboard role={session.role} stats={stats} employe={employeConnecte} chantiers={chantiersVisibles} presences={presencesVisibles} annonces={annoncesVisibles} jours={joursVisibles} setOnglet={setOnglet} voirAnnonce={(id: string) => setDetail({ type: "annonces", id })} masquerAnnonce={masquerAnnonce} admin={isAdmin} /> : <div className="space-y-5">
-            {onglet !== "organigramme" && <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-document sm:flex-row sm:items-center sm:justify-between"><div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input className="form-control pl-10" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder={`Rechercher dans ${titreOnglet.toLowerCase()}...`} /></div><p className="text-sm font-bold text-muted-foreground">{onglet === "projets" ? projetsFiltres.length : onglet === "employes" ? employesFiltres.length : onglet === "chantiers" ? chantiersFiltres.length : presencesFiltrees.length} résultat(s)</p></div>}
+            {!["organigramme", "demande_conge", "bilan_sante"].includes(onglet) && <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-document sm:flex-row sm:items-center sm:justify-between"><div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input className="form-control pl-10" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder={`Rechercher dans ${titreOnglet.toLowerCase()}...`} /></div><p className="text-sm font-bold text-muted-foreground">{onglet === "projets" ? projetsFiltres.length : onglet === "employes" ? employesFiltres.length : onglet === "chantiers" ? chantiersFiltres.length : presencesFiltrees.length} résultat(s)</p></div>}
             {onglet === "projets" && <ListeProjets projets={projetsFiltres} admin={isAdmin} voir={(id: string) => setDetail({ type: "projets", id })} modifier={(id: string) => ouvrirEdition("projets", id)} supprimer={(id: string) => supprimer("projets", id)} />}
             {onglet === "employes" && <ListeEmployes employes={employesFiltres} chantiers={chantiers} admin={isAdmin} showSalary={isAdmin || !isChef} voir={(id: string) => setDetail({ type: "employes", id })} modifier={(id: string) => ouvrirEdition("employes", id)} supprimer={(id: string) => supprimer("employes", id)} />}
             {onglet === "chantiers" && <ListeChantiers chantiers={chantiersFiltres} projets={projets} employes={employes} admin={isAdmin} viewerRole={session.role} viewerId={session.employeId} voir={(id: string) => setDetail({ type: "chantiers", id })} modifier={(id: string) => ouvrirEdition("chantiers", id)} supprimer={(id: string) => supprimer("chantiers", id)} />}
             {onglet === "annonces" && <AnnoncesSection annonces={annoncesVisibles} admin={isAdmin} voir={(id: string) => setDetail({ type: "annonces", id })} masquer={masquerAnnonce} supprimer={supprimerAnnonce} />}
             {onglet === "calendrier" && <CalendrierEmployes jours={joursVisibles} />}
             {onglet === "organigramme" && <OrganigrammeEmployes organigramme={organigrammes[0]} />}
+            {onglet === "demande_conge" && <DemandeCongeEmploye form={formConge} setForm={setFormConge} submit={envoyerDemandeConge} saving={sauvegarde} televerserImage={televerserImageConge} demandes={demandesConges.filter((d) => d.employe_id === session.employeId)} />}
+            {onglet === "bilan_sante" && <BilanSanteEmployeForm form={formBilanSante} setForm={setFormBilanSante} submit={envoyerBilanSante} saving={sauvegarde} bilans={bilansSante.filter((b) => b.employe_id === session.employeId)} />}
             {onglet === "presences" && <PresencesSection admin={isAdmin} chef={isChef} presences={presencesFiltrees} chantiers={chantiers} employes={employes} chefs={chefOptions} filtreDate={filtreDate} setFiltreDate={setFiltreDate} filtreChantier={filtreChantier} setFiltreChantier={setFiltreChantier} filtreEmploye={filtreEmploye} setFiltreEmploye={setFiltreEmploye} filtreChef={filtreChef} setFiltreChef={setFiltreChef} voir={(id: string) => setDetail({ type: "presences", id })} presenceDate={presenceDate} setPresenceDate={setPresenceDate} presenceChantier={presenceChantier || chantierPresence?.id || ""} setPresenceChantier={setPresenceChantier} presenceNotes={presenceNotes} setPresenceNotes={setPresenceNotes} employesPresence={employesPresence} presenceStatuts={presenceStatuts} setPresenceStatuts={setPresenceStatuts} submit={enregistrerPresence} saving={sauvegarde} chantiersVisibles={chantiersVisibles} />}
           </div>}
         </section>
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-border bg-card/95 p-2 shadow-document backdrop-blur lg:hidden"><BoutonMobile actif={onglet === "dashboard"} icone={LayoutDashboard} label="Accueil" onClick={() => changerOnglet("dashboard")} /><BoutonMobile actif={onglet === "annonces"} icone={Megaphone} label="Annonces" onClick={() => changerOnglet("annonces")} /><BoutonMobile actif={onglet === "employes"} icone={UsersRound} label="Profil" onClick={() => changerOnglet("employes")} /><BoutonMobile actif={onglet === "calendrier"} icone={CalendarDays} label="Fériés" onClick={() => changerOnglet("calendrier")} /><BoutonMobile actif={onglet === "organigramme"} icone={Network} label="Org." onClick={() => changerOnglet("organigramme")} /></nav>
+      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-border bg-card/95 p-2 shadow-document backdrop-blur lg:hidden"><BoutonMobile actif={onglet === "dashboard"} icone={LayoutDashboard} label="Accueil" onClick={() => changerOnglet("dashboard")} /><BoutonMobile actif={onglet === "annonces"} icone={Megaphone} label="Annonces" onClick={() => changerOnglet("annonces")} /><BoutonMobile actif={onglet === "employes"} icone={UsersRound} label="Profil" onClick={() => changerOnglet("employes")} /><BoutonMobile actif={onglet === "calendrier"} icone={CalendarDays} label="Fériés" onClick={() => changerOnglet("calendrier")} /><BoutonMobile actif={onglet === "bilan_sante"} icone={HeartPulse} label="Santé" onClick={() => changerOnglet("bilan_sante")} /></nav>
       {annonceModal && <Modal titre="Nouvelle annonce" fermer={() => setAnnonceModal(null)}><FormAnnonce form={formAnnonce} setForm={setFormAnnonce} onSubmit={enregistrerAnnonce} saving={sauvegarde} televerserImage={televerserImageAnnonce} retirerImage={retirerImageAnnonce} /></Modal>}
       {edition && <Modal titre={edition.id ? "Modifier" : "Créer"} fermer={() => setEdition(null)}>{edition.type === "projets" && <FormProjet form={formProjet} setForm={setFormProjet} onSubmit={enregistrerProjet} saving={sauvegarde} />}{edition.type === "employes" && <FormEmploye form={formEmploye} setForm={setFormEmploye} chantiers={chantiers} onSubmit={enregistrerEmploye} saving={sauvegarde} televerserPhoto={televerserPhotoEmploye} retirerPhoto={retirerPhotoEmploye} />}{edition.type === "chantiers" && <FormChantier form={formChantier} setForm={setFormChantier} projets={projets} employes={employes} onSubmit={enregistrerChantier} saving={sauvegarde} televerserImages={televerserImages} retirerImage={retirerImage} />}</Modal>}
       {detail && <Modal titre="Détails" fermer={() => setDetail(null)}><Details detail={detail} projets={projets} employes={employes} chantiers={chantiers} presences={presences} annonces={annonces} admin={isAdmin} role={session.role} viewerId={session.employeId} modifier={() => detail.type !== "presences" && detail.type !== "annonces" && ouvrirEdition(detail.type, detail.id)} supprimer={() => detail.type === "annonces" ? supprimerAnnonce(detail.id) : detail.type !== "presences" && supprimer(detail.type, detail.id)} /></Modal>}
