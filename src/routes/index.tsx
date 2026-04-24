@@ -146,18 +146,19 @@ function Index() {
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {configs.map((config) => {
               const Icone = icones[config.type];
+              const visual = stylesOutils[config.type];
               return (
-                <button key={config.type} type="button" onClick={() => setOutilActif(config.type)} style={stylesOutils[config.type]} className="tool-card group relative overflow-hidden rounded-3xl border p-5 text-left shadow-document transition hover:-translate-y-1 hover:shadow-tool">
-                  <div className="tool-card-banner -mx-5 -mt-5 mb-5 flex items-center justify-between px-5 py-4">
-                    <span className="flex size-14 items-center justify-center rounded-2xl bg-card/15 text-tool-foreground transition group-hover:scale-105"><Icone className="size-7" /></span>
-                    <span className="rounded-full bg-card/15 px-3 py-1 text-xs font-black uppercase text-tool-foreground">SCM</span>
+                <button key={config.type} type="button" onClick={() => setOutilActif(config.type)} style={visual.card} className="tool-card group relative overflow-hidden rounded-3xl border p-5 text-left shadow-document transition hover:-translate-y-1 hover:shadow-tool">
+                  <div style={visual.banner} className="tool-card-banner -mx-5 -mt-5 mb-5 flex items-center justify-between px-5 py-4">
+                    <span style={visual.badge} className="flex size-14 items-center justify-center rounded-2xl transition group-hover:scale-105"><Icone className="size-7" /></span>
+                    <span style={visual.badge} className="rounded-full px-3 py-1 text-xs font-black uppercase">SCM</span>
                   </div>
                   <h3 className="mt-6 text-xl font-black text-foreground">{config.titre.replace("Générateur de ", "")}</h3>
                   <p className="mt-2 min-h-14 text-sm leading-6 text-muted-foreground">{config.description}</p>
-                  <div className="tool-card-soft mt-5 rounded-2xl p-3">
-                    <div className="tool-card-action flex items-center justify-between rounded-2xl p-2 pl-4">
+                  <div style={visual.footer} className="tool-card-soft mt-5 rounded-2xl p-3">
+                    <div style={visual.action} className="tool-card-action flex items-center justify-between rounded-2xl p-2 pl-4">
                     <span className="text-xs font-black text-foreground">Ouvrir l’outil</span>
-                    <span className="flex size-9 items-center justify-center rounded-xl bg-tool-gradient text-tool-foreground shadow-tool">→</span>
+                    <span style={visual.icon} className="flex size-9 items-center justify-center rounded-xl shadow-tool">→</span>
                     </div>
                   </div>
                 </button>
