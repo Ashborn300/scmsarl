@@ -21,6 +21,16 @@ export type DocumentRecord = {
 
 export type LignePrestation = { description: string; quantite: number; prix: number };
 
+const couleursPdfParOutil: Record<OutilType, { principal: [number, number, number]; secondaire: [number, number, number]; doux: [number, number, number] }> = {
+  facture: { principal: [37, 99, 235], secondaire: [8, 145, 178], doux: [230, 240, 255] },
+  devis: { principal: [245, 158, 11], secondaire: [250, 204, 21], doux: [255, 247, 214] },
+  recu: { principal: [16, 185, 129], secondaire: [34, 197, 94], doux: [225, 250, 240] },
+  contrat_construction: { principal: [124, 58, 237], secondaire: [168, 85, 247], doux: [242, 232, 255] },
+  contrat_employe: { principal: [20, 184, 166], secondaire: [6, 182, 212], doux: [224, 250, 247] },
+  description_projet: { principal: [239, 68, 68], secondaire: [249, 115, 22], doux: [255, 235, 232] },
+  communiquer: { principal: [236, 72, 153], secondaire: [249, 115, 22], doux: [255, 232, 243] },
+};
+
 export const tablesParOutil: Record<OutilType, string> = {
   facture: "factures",
   devis: "devis",
@@ -156,9 +166,9 @@ function texteMultiligne(pdf: jsPDF, label: string, valeur: string, x: number, y
   return y + 10 + lignes.length * 5;
 }
 
-function piedDePage(pdf: jsPDF, sceau?: string, signature?: string, libelleSceau = "Sceau de l’entreprise", libelleSignature = "Signature du client") {
+function piedDePage(pdf: jsPDF, couleur: [number, number, number], sceau?: string, signature?: string, libelleSceau = "Sceau de l’entreprise", libelleSignature = "Signature du client") {
   const y = 244;
-  pdf.setDrawColor(25, 55, 109);
+  pdf.setDrawColor(...couleur);
   pdf.line(18, y - 8, 192, y - 8);
   pdf.setFontSize(9);
   pdf.setTextColor(90, 98, 115);
@@ -168,9 +178,9 @@ function piedDePage(pdf: jsPDF, sceau?: string, signature?: string, libelleSceau
   if (signature) pdf.addImage(signature, "JPEG", 117, y + 7, 48, 24, undefined, "FAST");
 }
 
-function piedDePageCommunication(pdf: jsPDF, sceau?: string, libelleSceau = "Nom / fonction de celui qui impose le sceau") {
+function piedDePageCommunication(pdf: jsPDF, couleur: [number, number, number], sceau?: string, libelleSceau = "Nom / fonction de celui qui impose le sceau") {
   const y = 238;
-  pdf.setDrawColor(25, 55, 109);
+  pdf.setDrawColor(...couleur);
   pdf.line(18, y - 8, 192, y - 8);
   pdf.setFontSize(9);
   pdf.setTextColor(90, 98, 115);
