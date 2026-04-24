@@ -243,6 +243,51 @@ export type Database = {
           },
         ]
       }
+      codes_qr_employes: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          employe_id: string
+          employe_nom: string
+          id: string
+          matricule: string
+          nom_fichier: string
+          numero: string
+          qr_base64: string
+          updated_at: string
+          url_publique: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe_id: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          nom_fichier: string
+          numero: string
+          qr_base64: string
+          updated_at?: string
+          url_publique: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe_id?: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          nom_fichier?: string
+          numero?: string
+          qr_base64?: string
+          updated_at?: string
+          url_publique?: string
+        }
+        Relationships: []
+      }
       communications: {
         Row: {
           created_at: string
