@@ -4,7 +4,7 @@ import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup";
 
 export type DocumentRecord = {
   id: string;
@@ -36,6 +36,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   certificat: { principal: [3, 76, 120], secondaire: [245, 181, 72], doux: [238, 248, 252] },
   carte_service: { principal: [10, 132, 216], secondaire: [30, 45, 55], doux: [230, 244, 255] },
   rendu_3d: { principal: [85, 107, 47], secondaire: [196, 126, 66], doux: [242, 246, 232] },
+  realistic_sketchup: { principal: [88, 77, 66], secondaire: [46, 125, 92], doux: [241, 238, 233] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -49,6 +50,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   certificat: "certificats",
   carte_service: "cartes_service",
   rendu_3d: "rendus_3d",
+  realistic_sketchup: "realistic_sketchup",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -62,6 +64,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   certificat: "CRT",
   carte_service: "CAR",
   rendu_3d: "R3D",
+  realistic_sketchup: "RSK",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -75,6 +78,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   certificat: ["nom_fichier", "numero", "beneficiaire"],
   carte_service: ["nom_fichier", "numero", "nom_complet", "matricule"],
   rendu_3d: ["nom_fichier", "numero", "titre"],
+  realistic_sketchup: ["nom_fichier", "numero", "titre"],
 };
 
 const db = supabase as any;
@@ -169,6 +173,23 @@ export async function enregistrerRendu3D(payload: Record<string, unknown>, image
     date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
   };
   const requete = id ? db.from("rendus_3d").update(ligne).eq("id", id).select().single() : db.from("rendus_3d").insert(ligne).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as DocumentRecord;
+}
+
+export async function enregistrerRealisticSketchup(payload: Record<string, unknown>, imageBase64: string, numero?: string, id?: string) {
+  const documentNumero = numero || (await genererNumero("realistic_sketchup"));
+  const nomFichier = `${documentNumero}-${String(payload.titre || "realistic-sketchup").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.png`;
+  const ligne = {
+    numero: documentNumero,
+    nom_fichier: nomFichier,
+    titre: String(payload.titre || "Realistic SketchUp"),
+    donnees_formulaire: payload,
+    image_base64: imageBase64,
+    date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
+  };
+  const requete = id ? db.from("realistic_sketchup").update(ligne).eq("id", id).select().single() : db.from("realistic_sketchup").insert(ligne).select().single();
   const { data, error } = await requete;
   if (error) throw new Error(error.message);
   return data as DocumentRecord;
