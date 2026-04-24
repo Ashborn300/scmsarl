@@ -276,6 +276,40 @@ export async function enregistrerCodeQR(payload: Record<string, unknown>, qrBase
   return data as DocumentRecord;
 }
 
+export async function creerFormulairePersonnalise(titre: string, description: string, champs: ChampPersonnalise[], urlPublique = "") {
+  const { data, error } = await db.from("formulaires_personnalises").insert({ titre, description, champs, url_publique: urlPublique, publie: true }).select().single();
+  if (error) throw new Error(error.message);
+  const formulaire = data as FormulairePersonnalise;
+  const url = urlPublique || `https://scm-tolls.lovable.app/formulaire/${formulaire.id}`;
+  const { data: maj, error: erreurMaj } = await db.from("formulaires_personnalises").update({ url_publique: url }).eq("id", formulaire.id).select().single();
+  if (erreurMaj) return { ...formulaire, url_publique: url };
+  return maj as FormulairePersonnalise;
+}
+
+export async function listerFormulairesPersonnalises() {
+  const { data, error } = await db.from("formulaires_personnalises").select("*").order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as FormulairePersonnalise[];
+}
+
+export async function obtenirFormulairePublic(id: string) {
+  const { data, error } = await db.from("formulaires_personnalises").select("*").eq("id", id).eq("publie", true).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data as FormulairePersonnalise | null;
+}
+
+export async function envoyerReponseFormulaire(formulaireId: string, reponses: Record<string, string>, fichiers: ReponseFormulaire["fichiers"]) {
+  const { data, error } = await db.from("reponses_formulaires").insert({ formulaire_id: formulaireId, reponses, fichiers }).select().single();
+  if (error) throw new Error(error.message);
+  return data as ReponseFormulaire;
+}
+
+export async function listerReponsesFormulaire(formulaireId: string) {
+  const { data, error } = await db.from("reponses_formulaires").select("*").eq("formulaire_id", formulaireId).order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ReponseFormulaire[];
+}
+
 export async function supprimerDocument(type: OutilType, id: string) {
   const { error } = await db.from(tablesParOutil[type]).delete().eq("id", id);
   if (error) throw new Error(error.message);
