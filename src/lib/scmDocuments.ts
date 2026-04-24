@@ -242,16 +242,17 @@ export async function enregistrerDocument(type: OutilType, payload: Record<strin
   return data as DocumentRecord;
 }
 
-export async function enregistrerCarteService(payload: Record<string, unknown>, imageBase64: string, numero?: string, id?: string) {
+export async function enregistrerCarteService(payload: Record<string, unknown>, pdfBase64: string, numero?: string, id?: string) {
   const documentNumero = numero || (await genererNumero("carte_service"));
-  const nomFichier = `${documentNumero}-${String(payload.nomComplet || "carte-service").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.png`;
+  const nomFichier = `${documentNumero}-${String(payload.nomComplet || "carte-service").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
   const ligne = {
     numero: documentNumero,
     nom_fichier: nomFichier,
     nom_complet: String(payload.nomComplet || ""),
     matricule: String(payload.matricule || ""),
     donnees_formulaire: payload,
-    image_base64: imageBase64,
+    pdf_base64: pdfBase64,
+    image_base64: "",
     date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
   };
   const requete = id ? db.from("cartes_service").update(ligne).eq("id", id).select().single() : db.from("cartes_service").insert(ligne).select().single();
