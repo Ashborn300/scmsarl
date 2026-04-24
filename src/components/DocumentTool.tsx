@@ -2,6 +2,7 @@ import { ArrowLeft, FileCheck2, Plus, Save, Trash2 } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { DocumentHistory } from "./DocumentHistory";
+import { CustomFormTool } from "./CustomFormTool";
 import { creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerRealisticSketchup, enregistrerRendu3D, listerEmployes, mockupCarteServiceBase64, type DocumentRecord, type EmployeRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 
@@ -47,6 +48,7 @@ export const configs: Config[] = [
   ]},
   { type: "fiche_employe", titre: "Générateur de fiche d’employé", theme: "employee-sheet", description: "Fiche individuelle complète ou fiche collective avec photo, nom, matricule et genre.", showTotal: false, fields: [] },
   { type: "code_qr", titre: "Générateur Code QR", theme: "qr-code", description: "Code QR public menant vers une fiche web accessible avec les informations personnelles d’un employé.", showTotal: false, fields: [] },
+  { type: "formulaire_personnalise", titre: "Créateur de formulaire personnalisable", theme: "custom-form", description: "Formulaire champ par champ avec lien public externe et consultation des réponses.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
@@ -77,6 +79,12 @@ function optimiserImagePourIA(source?: string, tailleMax = 1024, qualite = 0.82)
 }
 
 export function DocumentTool({ config, retour }: { config: Config; retour: () => void }) {
+  if (config.type === "formulaire_personnalise") return <CustomFormTool retour={retour} />;
+  return <DocumentToolStandard config={config} retour={retour} />;
+}
+
+function DocumentToolStandard({ config, retour }: { config: Config; retour: () => void }) {
+
   const estCommunication = config.type === "communiquer";
   const [formulaire, setFormulaire] = useState<Record<string, string>>(() => Object.fromEntries(config.fields.map((field) => [field.name, field.defaultValue || ""])));
   const [lignes, setLignes] = useState<LignePrestation[]>([{ description: "", quantite: 1, prix: 0 }]);

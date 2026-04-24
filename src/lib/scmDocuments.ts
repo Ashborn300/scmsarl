@@ -4,7 +4,11 @@ import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr" | "formulaire_personnalise";
+export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
+export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
+export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
+export type ReponseFormulaire = { id: string; formulaire_id: string; reponses: Record<string, string>; fichiers: Record<string, { nom: string; type: string; taille: number; contenu: string }>; created_at: string };
 
 export type DocumentRecord = {
   id: string;
@@ -60,6 +64,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   realistic_sketchup: { principal: [88, 77, 66], secondaire: [46, 125, 92], doux: [241, 238, 233] },
   fiche_employe: { principal: [22, 101, 52], secondaire: [37, 99, 235], doux: [232, 246, 237] },
   code_qr: { principal: [15, 23, 42], secondaire: [20, 184, 166], doux: [232, 247, 245] },
+  formulaire_personnalise: { principal: [80, 70, 229], secondaire: [13, 148, 136], doux: [236, 238, 255] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -76,6 +81,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   realistic_sketchup: "realistic_sketchup",
   fiche_employe: "fiches_employes",
   code_qr: "codes_qr_employes",
+  formulaire_personnalise: "formulaires_personnalises",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -92,6 +98,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   realistic_sketchup: "RSK",
   fiche_employe: "FEM",
   code_qr: "QR",
+  formulaire_personnalise: "FRM",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -108,6 +115,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   realistic_sketchup: ["nom_fichier", "numero", "titre"],
   fiche_employe: ["nom_fichier", "numero", "titre", "type_fiche"],
   code_qr: ["nom_fichier", "numero", "employe_nom", "matricule"],
+  formulaire_personnalise: ["titre", "description", "url_publique"],
 };
 
 const db = supabase as any;
@@ -266,6 +274,38 @@ export async function enregistrerCodeQR(payload: Record<string, unknown>, qrBase
   const { data, error } = await requete;
   if (error) throw new Error(error.message);
   return data as DocumentRecord;
+}
+
+export async function creerFormulairePersonnalise(titre: string, description: string, champs: ChampPersonnalise[], urlPublique = "") {
+  const id = crypto.randomUUID();
+  const lien = urlPublique || `https://scm-tolls.lovable.app/formulaire/${id}`;
+  const { data, error } = await db.from("formulaires_personnalises").insert({ id, titre, description, champs, url_publique: lien, publie: true }).select().single();
+  if (error) throw new Error(error.message);
+  return data as FormulairePersonnalise;
+}
+
+export async function listerFormulairesPersonnalises() {
+  const { data, error } = await db.from("formulaires_personnalises").select("*").order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as FormulairePersonnalise[];
+}
+
+export async function obtenirFormulairePublic(id: string) {
+  const { data, error } = await db.from("formulaires_personnalises").select("*").eq("id", id).eq("publie", true).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data as FormulairePersonnalise | null;
+}
+
+export async function envoyerReponseFormulaire(formulaireId: string, reponses: Record<string, string>, fichiers: ReponseFormulaire["fichiers"]) {
+  const { data, error } = await db.from("reponses_formulaires").insert({ formulaire_id: formulaireId, reponses, fichiers }).select().single();
+  if (error) throw new Error(error.message);
+  return data as ReponseFormulaire;
+}
+
+export async function listerReponsesFormulaire(formulaireId: string) {
+  const { data, error } = await db.from("reponses_formulaires").select("*").eq("formulaire_id", formulaireId).order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ReponseFormulaire[];
 }
 
 export async function supprimerDocument(type: OutilType, id: string) {

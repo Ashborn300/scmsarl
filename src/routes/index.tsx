@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, Building2, ClipboardList, Cuboid, FileText, Hammer, HardHat, IdCard, Megaphone, QrCode, ReceiptText, ShieldCheck, UsersRound, Warehouse } from "lucide-react";
+import { Award, Building2, ClipboardList, Cuboid, FileText, Hammer, HardHat, IdCard, Megaphone, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Warehouse } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -31,6 +31,7 @@ const icones: Record<OutilType, React.ElementType> = {
   realistic_sketchup: Warehouse,
   fiche_employe: ClipboardList,
   code_qr: QrCode,
+  formulaire_personnalise: SquarePen,
 };
 
 type ToolVisual = {
@@ -146,6 +147,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(20,184,166,0.08)", border: "1px solid rgba(15,23,42,0.14)" },
     action: { background: "rgba(20,184,166,0.12)", border: "1px solid rgba(15,23,42,0.16)" },
     icon: { background: "linear-gradient(135deg, #0f172a, #14b8a6)", color: "white" },
+  },
+  formulaire_personnalise: {
+    card: { background: "linear-gradient(180deg, rgba(80,70,229,0.13) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(13,148,136,0.26)" },
+    banner: { background: "linear-gradient(135deg, #5046e5, #0d9488)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(80,70,229,0.08)", border: "1px solid rgba(13,148,136,0.16)" },
+    action: { background: "rgba(13,148,136,0.12)", border: "1px solid rgba(80,70,229,0.16)" },
+    icon: { background: "linear-gradient(135deg, #5046e5, #0d9488)", color: "white" },
   },
 };
 
