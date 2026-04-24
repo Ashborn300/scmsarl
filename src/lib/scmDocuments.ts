@@ -4,13 +4,15 @@ import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise";
 export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
 export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
 export type ReponseFormulaire = { id: string; formulaire_id: string; reponses: Record<string, string>; fichiers: Record<string, { nom: string; type: string; taille: number; contenu: string }>; created_at: string };
 export type ConnexionScm = { id: string; role: string; nom_utilisateur: string; admin_id: string | null; employe_id: string | null; matricule: string; type_connexion: string; connected_at: string; created_at: string };
 export type JourNonTravaille = { id: string; date_jour: string; titre: string; description: string; type_jour: string; actif: boolean; created_at: string; updated_at: string };
+export type BlocOrganigramme = { id: string; titre: string; niveau: number; couleur: "bleu" | "vert" | "orange" | "violet" | "turquoise"; parentId?: string };
+export type OrganigrammeEntreprise = { id: string; titre: string; description: string; blocs: BlocOrganigramme[]; actif: boolean; created_at: string; updated_at: string };
 
 export type DocumentRecord = {
   id: string;
@@ -69,6 +71,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   formulaire_personnalise: { principal: [80, 70, 229], secondaire: [13, 148, 136], doux: [236, 238, 255] },
   historique_connexion: { principal: [40, 92, 120], secondaire: [21, 128, 61], doux: [232, 242, 245] },
   calendrier_feries: { principal: [125, 71, 10], secondaire: [194, 120, 3], doux: [255, 245, 225] },
+  organigramme_entreprise: { principal: [13, 42, 148], secondaire: [20, 184, 166], doux: [232, 240, 255] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -88,6 +91,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   formulaire_personnalise: "formulaires_personnalises",
   historique_connexion: "connexions_scm",
   calendrier_feries: "jours_non_travailles",
+  organigramme_entreprise: "organigrammes_entreprise",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -107,6 +111,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   formulaire_personnalise: "FRM",
   historique_connexion: "LOG",
   calendrier_feries: "JNT",
+  organigramme_entreprise: "ORG",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -126,6 +131,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   formulaire_personnalise: ["titre", "description", "url_publique"],
   historique_connexion: ["nom_utilisateur", "role", "matricule"],
   calendrier_feries: ["titre", "description", "type_jour"],
+  organigramme_entreprise: ["titre", "description"],
 };
 
 const db = supabase as any;
