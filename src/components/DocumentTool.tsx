@@ -1,9 +1,9 @@
-import { ArrowLeft, CalendarDays, Copy, Eye, FileCheck2, FileDown, Link2, Plus, Save, Trash2, UsersRound } from "lucide-react";
+import { ArrowLeft, CalendarDays, Copy, Eye, FileCheck2, FileDown, Link2, Network, Pencil, Plus, Save, Trash2, UsersRound } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerJoursNonTravailles, listerReponsesFormulaire, mockupCarteServiceBase64, supprimerJourNonTravaille, type ChampPersonnalise, type ConnexionScm, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, type BlocOrganigramme, type ChampPersonnalise, type ConnexionScm, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
@@ -52,6 +52,7 @@ export const configs: Config[] = [
   { type: "formulaire_personnalise", titre: "Créateur de formulaire personnalisable", theme: "custom-form", description: "Formulaire champ par champ avec lien public externe et consultation des réponses.", showTotal: false, fields: [] },
   { type: "historique_connexion", titre: "Historique de connexion", theme: "login-history", description: "Consultez les connexions par date et téléchargez le rapport journalier en PDF.", showTotal: false, fields: [] },
   { type: "calendrier_feries", titre: "Calendrier des jours fériés", theme: "holiday-calendar", description: "Définissez les jours fériés et non travaillés visibles sur les dashboards employés.", showTotal: false, fields: [] },
+  { type: "organigramme_entreprise", titre: "Organigramme de l’entreprise", theme: "organization-chart", description: "Créez et publiez l’organigramme SCM SARL visible sur tous les dashboards employés.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
