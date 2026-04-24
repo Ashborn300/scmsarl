@@ -38,6 +38,7 @@ const icones: Record<OutilType, React.ElementType> = {
   demandes_conges: FilePlus2,
   bilans_sante: HeartPulse,
   gestion_materiel: PackageCheck,
+  arrivages_materiel: Warehouse,
   incidents_chantier: AlertTriangle,
   archives_chantiers: Archive,
 };
@@ -203,6 +204,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(71,85,105,0.08)", border: "1px solid rgba(202,138,4,0.16)" },
     action: { background: "rgba(202,138,4,0.12)", border: "1px solid rgba(71,85,105,0.16)" },
     icon: { background: "linear-gradient(135deg, #475569, #ca8a04)", color: "white" },
+  },
+  arrivages_materiel: {
+    card: { background: "linear-gradient(180deg, rgba(14,116,144,0.14) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(202,138,4,0.28)" },
+    banner: { background: "linear-gradient(135deg, #0e7490, #ca8a04)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(14,116,144,0.08)", border: "1px solid rgba(202,138,4,0.16)" },
+    action: { background: "rgba(202,138,4,0.12)", border: "1px solid rgba(14,116,144,0.16)" },
+    icon: { background: "linear-gradient(135deg, #0e7490, #ca8a04)", color: "white" },
   },
   incidents_chantier: {
     card: { background: "linear-gradient(180deg, rgba(185,28,28,0.14) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(234,88,12,0.28)" },

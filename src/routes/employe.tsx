@@ -30,6 +30,7 @@ import {
   Upload,
   UserRound,
   UsersRound,
+  Warehouse,
   X,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -50,7 +51,7 @@ export const Route = createFileRoute("/employe")({
 });
 
 type RoleSession = "admin" | "employe" | "chef_chantier";
-type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante" | "gestion_materiel" | "incident_chantier";
+type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante" | "gestion_materiel" | "arrivage_materiel" | "incident_chantier";
 type StatutPresence = "présent" | "absent" | "en retard" | "excusé";
 type ModeEdition = { type: "projets" | "employes" | "chantiers"; id?: string } | null;
 type Detail = { type: "projets" | "employes" | "chantiers" | "presences" | "annonces"; id: string } | null;
@@ -146,6 +147,7 @@ type DemandeConge = { id: string; employe_id: string; employe_nom: string; raiso
 type BilanSanteEmploye = { id: string; employe_id: string; employe_nom: string; semaine: string; etat_global: string; groupe_sanguin: string; allergies: string; blessure: boolean; details_blessure: string; created_at: string; updated_at: string };
 type LigneMateriel = { nom: string; quantite: number };
 type RapportMateriel = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; semaine: string; materiel_prevu: LigneMateriel[]; materiel_utilise: LigneMateriel[]; materiel_recupere: LigneMateriel[]; materiel_perdu: LigneMateriel[]; notes: string; statut: string; created_at: string; updated_at: string };
+type ArrivageMateriel = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; date_livraison: string; nom_materiel: string; quantite: number; entreprise_partenaire: string; prix_total: number; informations_supplementaires: string; preuve_image_url: string; statut: string; created_at: string; updated_at: string };
 type IncidentChantier = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; type_evenement: string; date_evenement: string; explication: string; images: string[]; statut: string; created_at: string; updated_at: string };
 
 type ProjetForm = Omit<Projet, "id" | "created_at" | "budget_estime"> & { budget_estime: string };
@@ -167,6 +169,7 @@ const annonceInitial: AnnonceForm = { titre: "", contenu: "", image_url: "", pub
 const congeInitial = { raison: "", image_url: "" };
 const bilanSanteInitial = { semaine: new Date().toISOString().slice(0, 10), etat_global: "", groupe_sanguin: "", allergies: "", blessure: false, details_blessure: "" };
 const materielInitial = { semaine: new Date().toISOString().slice(0, 10), chantier_id: "", materiel_prevu: [{ nom: "", quantite: 1 }], materiel_utilise: [] as LigneMateriel[], materiel_recupere: [] as LigneMateriel[], materiel_perdu: [] as LigneMateriel[], notes: "" };
+const arrivageInitial = { date_livraison: new Date().toISOString().slice(0, 10), chantier_id: "", nom_materiel: "", quantite: "", entreprise_partenaire: "", prix_total: "", informations_supplementaires: "", preuve_image_url: "" };
 const incidentInitial = { type_evenement: "Incident", date_evenement: new Date().toISOString().slice(0, 10), chantier_id: "", explication: "", images: [] as string[] };
 
 function nombre(value: number) { return new Intl.NumberFormat("fr-FR").format(value || 0); }
@@ -195,6 +198,7 @@ function EmployePage() {
   const [demandesConges, setDemandesConges] = useState<DemandeConge[]>([]);
   const [bilansSante, setBilansSante] = useState<BilanSanteEmploye[]>([]);
   const [rapportsMateriel, setRapportsMateriel] = useState<RapportMateriel[]>([]);
+  const [arrivagesMateriel, setArrivagesMateriel] = useState<ArrivageMateriel[]>([]);
   const [incidentsChantier, setIncidentsChantier] = useState<IncidentChantier[]>([]);
   const [jourPopup, setJourPopup] = useState<JourNonTravaille | null>(null);
   const [chargement, setChargement] = useState(true);
@@ -215,6 +219,7 @@ function EmployePage() {
   const [formConge, setFormConge] = useState(congeInitial);
   const [formBilanSante, setFormBilanSante] = useState(bilanSanteInitial);
   const [formMateriel, setFormMateriel] = useState(materielInitial);
+  const [formArrivage, setFormArrivage] = useState(arrivageInitial);
   const [formIncident, setFormIncident] = useState(incidentInitial);
   const [presenceDate, setPresenceDate] = useState(new Date().toISOString().slice(0, 10));
   const [presenceChantier, setPresenceChantier] = useState("");
@@ -322,14 +327,14 @@ function EmployePage() {
     if (session?.token) await db.rpc("scm_logout", { _token_hash: await sha256(session.token) });
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
-    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setAnnonces([]); setAnnoncesMasquees([]); setDemandesConges([]); setBilansSante([]); setRapportsMateriel([]); setIncidentsChantier([]); setMessage(""); setOnglet("dashboard");
+    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setAnnonces([]); setAnnoncesMasquees([]); setDemandesConges([]); setBilansSante([]); setRapportsMateriel([]); setArrivagesMateriel([]); setIncidentsChantier([]); setMessage(""); setOnglet("dashboard");
   }
 
   async function chargerDonnees(currentSession = session) {
     if (!currentSession) return;
     setChargement(true);
     setMessage("");
-    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes, orgRes, congesRes, santeRes, materielRes, incidentsRes] = await Promise.all([
+    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes, orgRes, congesRes, santeRes, materielRes, arrivagesRes, incidentsRes] = await Promise.all([
       db.from("projets").select("*").order("created_at", { ascending: false }),
       db.from("employes").select("*").order("created_at", { ascending: false }),
       db.from("chantiers").select("*").order("created_at", { ascending: false }),
@@ -341,9 +346,10 @@ function EmployePage() {
       db.from("demandes_conges").select("*").order("created_at", { ascending: false }),
       db.from("bilans_sante_employes").select("*").order("semaine", { ascending: false }),
       db.from("rapports_materiel").select("*").order("semaine", { ascending: false }),
+      db.from("arrivages_materiel").select("*").order("date_livraison", { ascending: false }),
       db.from("incidents_chantier").select("*").order("date_evenement", { ascending: false }),
     ]);
-    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error || orgRes.error || congesRes.error || santeRes.error || materielRes.error || incidentsRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
+    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error || orgRes.error || congesRes.error || santeRes.error || materielRes.error || arrivagesRes.error || incidentsRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
     setProjets(projetsRes.data || []);
     setEmployes(projetsRes.error ? [] : (employesRes.data || []));
     setChantiers(chantiersRes.data || []);
@@ -355,6 +361,7 @@ function EmployePage() {
     setDemandesConges(congesRes.data || []);
     setBilansSante(santeRes.data || []);
     setRapportsMateriel(materielRes.data || []);
+    setArrivagesMateriel(arrivagesRes.data || []);
     setIncidentsChantier(incidentsRes.data || []);
     if (currentSession.role !== "admin") {
       const today = new Date().toISOString().slice(0, 10);
@@ -567,6 +574,29 @@ function EmployePage() {
     if (error) setMessage(error.message || "Rapport matériel non envoyé."); else { setMessage("Rapport matériel envoyé à l’admin."); setFormMateriel({ ...materielInitial, semaine: new Date().toISOString().slice(0, 10) }); await chargerDonnees(); }
   }
 
+  async function televerserPreuveArrivage(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    setSauvegarde(true);
+    const path = `arrivages-materiel/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+    const { error } = await supabase.storage.from("scm-images").upload(path, file, { upsert: false });
+    if (error) { setMessage("Téléversement de la preuve impossible."); setSauvegarde(false); return; }
+    setFormArrivage({ ...formArrivage, preuve_image_url: supabase.storage.from("scm-images").getPublicUrl(path).data.publicUrl });
+    setSauvegarde(false);
+  }
+
+  async function envoyerArrivageMateriel(event: React.FormEvent) {
+    event.preventDefault();
+    if (!isChef || !session?.employeId || !employeConnecte) return setMessage("Seul le chef de chantier peut envoyer un rapport d’arrivage.");
+    const chantier = chantiersVisibles.find((c) => c.id === formArrivage.chantier_id) || chantiersVisibles[0];
+    if (!chantier) return setMessage("Aucun chantier disponible pour ce rapport.");
+    if (!formArrivage.nom_materiel.trim()) return setMessage("Le nom du matériel livré est obligatoire.");
+    setSauvegarde(true);
+    const { error } = await db.from("arrivages_materiel").insert({ chef_chantier_id: session.employeId, chef_chantier_nom: employeConnecte.nom_complet, chantier_id: chantier.id, chantier_nom: chantier.nom_chantier, date_livraison: formArrivage.date_livraison, nom_materiel: formArrivage.nom_materiel.trim(), quantite: Number(formArrivage.quantite) || 0, entreprise_partenaire: formArrivage.entreprise_partenaire.trim(), prix_total: Number(formArrivage.prix_total) || 0, informations_supplementaires: formArrivage.informations_supplementaires.trim(), preuve_image_url: formArrivage.preuve_image_url, statut: "Rapport envoyé" });
+    setSauvegarde(false);
+    if (error) setMessage(error.message || "Rapport d’arrivage non envoyé."); else { setMessage("Rapport d’arrivage envoyé à l’admin."); setFormArrivage({ ...arrivageInitial, date_livraison: new Date().toISOString().slice(0, 10) }); await chargerDonnees(); }
+  }
+
   async function televerserImagesIncident(files: FileList | null) {
     if (!files?.length) return;
     setSauvegarde(true);
@@ -597,7 +627,7 @@ function EmployePage() {
 
   if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
-  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : "Présences";
+  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "arrivage_materiel" ? "Rapport arrivage de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
   const chantierPresence = chantiersVisibles.find((c) => c.id === presenceChantier) || chantiersVisibles[0];
   const employesPresence = chantierPresence ? employes.filter((e) => (chantierPresence.employes_assignes || []).includes(e.id)) : [];
@@ -618,6 +648,7 @@ function EmployePage() {
             <BoutonNav actif={onglet === "calendrier"} icone={CalendarDays} label="Jours fériés" onClick={() => changerOnglet("calendrier")} />
             <BoutonNav actif={onglet === "organigramme"} icone={Network} label="Organigramme" onClick={() => changerOnglet("organigramme")} />
             {isChef && <BoutonNav actif={onglet === "gestion_materiel"} icone={PackageCheck} label="Gestion de Matériel" onClick={() => changerOnglet("gestion_materiel")} />}
+            {isChef && <BoutonNav actif={onglet === "arrivage_materiel"} icone={Warehouse} label="Rapport arrivage" onClick={() => changerOnglet("arrivage_materiel")} />}
             {isChef && <BoutonNav actif={onglet === "incident_chantier"} icone={AlertTriangle} label="Incident / Accident" onClick={() => changerOnglet("incident_chantier")} />}
             {!isAdmin && <BoutonNav actif={onglet === "demande_conge"} icone={FilePlus2} label="Demande de Congé" onClick={() => changerOnglet("demande_conge")} />}
             {!isAdmin && <BoutonNav actif={onglet === "bilan_sante"} icone={HeartPulse} label="Bilan de santé" onClick={() => changerOnglet("bilan_sante")} />}
@@ -629,7 +660,7 @@ function EmployePage() {
           <header className="dashboard-card mb-6 flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><button className="tool-action lg:hidden" onClick={() => setMenuOuvert(true)} aria-label="Ouvrir"><Menu className="size-5" /></button><div className="tool-blue inline-flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><UserRound className="size-6" /></div><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Espace entreprise</p><h2 className="text-2xl font-black sm:text-3xl">{titreOnglet}</h2></div></div>{isAdmin && ["projets", "employes", "chantiers", "annonces"].includes(onglet) && <button className="primary-action" onClick={() => ouvrirCreation(onglet as any)}><Plus className="size-4" /> Nouveau</button>}</header>
           {message && <div className="mb-5 rounded-2xl border border-border bg-card p-4 text-sm font-semibold shadow-document">{message}</div>}
           {chargement ? <div className="flex min-h-[50vh] items-center justify-center rounded-3xl border border-border bg-card"><Loader2 className="size-8 animate-spin text-primary" /></div> : onglet === "dashboard" ? <Dashboard role={session.role} stats={stats} employe={employeConnecte} chantiers={chantiersVisibles} presences={presencesVisibles} annonces={annoncesVisibles} jours={joursVisibles} setOnglet={setOnglet} voirAnnonce={(id: string) => setDetail({ type: "annonces", id })} masquerAnnonce={masquerAnnonce} admin={isAdmin} /> : <div className="space-y-5">
-            {!["organigramme", "demande_conge", "bilan_sante", "gestion_materiel", "incident_chantier"].includes(onglet) && <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-document sm:flex-row sm:items-center sm:justify-between"><div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input className="form-control pl-10" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder={`Rechercher dans ${titreOnglet.toLowerCase()}...`} /></div><p className="text-sm font-bold text-muted-foreground">{onglet === "projets" ? projetsFiltres.length : onglet === "employes" ? employesFiltres.length : onglet === "chantiers" ? chantiersFiltres.length : presencesFiltrees.length} résultat(s)</p></div>}
+            {!["organigramme", "demande_conge", "bilan_sante", "gestion_materiel", "arrivage_materiel", "incident_chantier"].includes(onglet) && <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-document sm:flex-row sm:items-center sm:justify-between"><div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input className="form-control pl-10" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder={`Rechercher dans ${titreOnglet.toLowerCase()}...`} /></div><p className="text-sm font-bold text-muted-foreground">{onglet === "projets" ? projetsFiltres.length : onglet === "employes" ? employesFiltres.length : onglet === "chantiers" ? chantiersFiltres.length : presencesFiltrees.length} résultat(s)</p></div>}
             {onglet === "projets" && <ListeProjets projets={projetsFiltres} admin={isAdmin} voir={(id: string) => setDetail({ type: "projets", id })} modifier={(id: string) => ouvrirEdition("projets", id)} supprimer={(id: string) => supprimer("projets", id)} />}
             {onglet === "employes" && <ListeEmployes employes={employesFiltres} chantiers={chantiers} admin={isAdmin} showSalary={isAdmin || !isChef} voir={(id: string) => setDetail({ type: "employes", id })} modifier={(id: string) => ouvrirEdition("employes", id)} supprimer={(id: string) => supprimer("employes", id)} />}
             {onglet === "chantiers" && <ListeChantiers chantiers={chantiersFiltres} projets={projets} employes={employes} admin={isAdmin} viewerRole={session.role} viewerId={session.employeId} voir={(id: string) => setDetail({ type: "chantiers", id })} modifier={(id: string) => ouvrirEdition("chantiers", id)} supprimer={(id: string) => supprimer("chantiers", id)} />}
@@ -639,6 +670,7 @@ function EmployePage() {
             {onglet === "demande_conge" && <DemandeCongeEmploye form={formConge} setForm={setFormConge} submit={envoyerDemandeConge} saving={sauvegarde} televerserImage={televerserImageConge} demandes={demandesConges.filter((d) => d.employe_id === session.employeId)} />}
             {onglet === "bilan_sante" && <BilanSanteEmployeForm form={formBilanSante} setForm={setFormBilanSante} submit={envoyerBilanSante} saving={sauvegarde} bilans={bilansSante.filter((b) => b.employe_id === session.employeId)} />}
             {onglet === "gestion_materiel" && isChef && <GestionMaterielChef form={formMateriel} setForm={setFormMateriel} submit={envoyerRapportMateriel} saving={sauvegarde} chantiers={chantiersVisibles} rapports={rapportsMateriel.filter((r) => r.chef_chantier_id === session.employeId)} />}
+            {onglet === "arrivage_materiel" && isChef && <ArrivageMaterielChef form={formArrivage} setForm={setFormArrivage} submit={envoyerArrivageMateriel} saving={sauvegarde} chantiers={chantiersVisibles} arrivages={arrivagesMateriel.filter((a) => a.chef_chantier_id === session.employeId)} televerserPreuve={televerserPreuveArrivage} />}
             {onglet === "incident_chantier" && isChef && <IncidentChantierChef form={formIncident} setForm={setFormIncident} submit={envoyerIncidentChantier} saving={sauvegarde} chantiers={chantiersVisibles} incidents={incidentsChantier.filter((i) => i.chef_chantier_id === session.employeId)} televerserImages={televerserImagesIncident} />}
             {onglet === "presences" && <PresencesSection admin={isAdmin} chef={isChef} presences={presencesFiltrees} chantiers={chantiers} employes={employes} chefs={chefOptions} filtreDate={filtreDate} setFiltreDate={setFiltreDate} filtreChantier={filtreChantier} setFiltreChantier={setFiltreChantier} filtreEmploye={filtreEmploye} setFiltreEmploye={setFiltreEmploye} filtreChef={filtreChef} setFiltreChef={setFiltreChef} voir={(id: string) => setDetail({ type: "presences", id })} presenceDate={presenceDate} setPresenceDate={setPresenceDate} presenceChantier={presenceChantier || chantierPresence?.id || ""} setPresenceChantier={setPresenceChantier} presenceNotes={presenceNotes} setPresenceNotes={setPresenceNotes} employesPresence={employesPresence} presenceStatuts={presenceStatuts} setPresenceStatuts={setPresenceStatuts} submit={enregistrerPresence} saving={sauvegarde} chantiersVisibles={chantiersVisibles} />}
           </div>}
@@ -688,6 +720,7 @@ function BilanSanteEmployeForm({ form, setForm, submit, saving, bilans }: any) {
 function IncidentChantierChef({ form, setForm, submit, saving, chantiers, incidents, televerserImages }: any) { return <div className="space-y-5"><form onSubmit={submit} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="mb-4 flex items-center gap-3"><span className="tool-site-incident flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><AlertTriangle className="size-6" /></span><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Chef de chantier</p><h3 className="text-xl font-black">Alerte incident / accident</h3></div></div><div className="grid gap-4 sm:grid-cols-2"><Champ label="Type"><Select value={form.type_evenement} onChange={(v: string) => setForm({ ...form, type_evenement: v })}><option>Incident</option><option>Accident</option></Select></Champ><Champ label="Date"><input type="date" className="form-control" value={form.date_evenement} onChange={(e) => setForm({ ...form, date_evenement: e.target.value })} /></Champ><Champ label="Chantier"><Select value={form.chantier_id || chantiers[0]?.id || ""} onChange={(v: string) => setForm({ ...form, chantier_id: v })}>{chantiers.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select></Champ></div><Champ label="Explication détaillée"><textarea className="form-control mt-4 min-h-36" value={form.explication} onChange={(e) => setForm({ ...form, explication: e.target.value })} /></Champ><div className="mt-4 rounded-2xl border border-border bg-background p-4"><p className="mb-3 text-sm font-black">Images</p><input type="file" accept="image/*" multiple className="file-input" onChange={(e) => televerserImages(e.target.files)} />{!!form.images.length && <div className="mt-3 grid gap-3 sm:grid-cols-2">{form.images.map((image: string) => <img key={image} src={image} alt="Image incident" className="max-h-48 w-full rounded-2xl object-contain bg-muted" />)}</div>}</div><button className="primary-action mt-4" disabled={saving}><AlertTriangle className="size-4" /> Envoyer l’alerte</button></form><section className="grid gap-4 xl:grid-cols-2">{incidents.map((i: IncidentChantier) => <article key={i.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-black text-destructive">{i.type_evenement}</span><h3 className="mt-3 text-xl font-black">{i.chantier_nom}</h3><p className="text-sm font-bold text-muted-foreground">{dateFr(i.date_evenement)}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-6">{i.explication}</p></article>)}{!incidents.length && <p className="rounded-2xl bg-muted p-5 text-sm text-muted-foreground">Aucune alerte envoyée.</p>}</section></div>; }
 
 function GestionMaterielChef({ form, setForm, submit, saving, chantiers, rapports }: any) { const maj = (key: string, items: LigneMateriel[]) => setForm({ ...form, [key]: items }); return <div className="space-y-5"><form onSubmit={submit} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="mb-4 flex items-center gap-3"><span className="tool-material-management flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><PackageCheck className="size-6" /></span><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Chef de chantier</p><h3 className="text-xl font-black">Rapport hebdomadaire matériel</h3></div></div><div className="grid gap-4 sm:grid-cols-2"><Champ label="Semaine"><input type="date" className="form-control" value={form.semaine} onChange={(e) => setForm({ ...form, semaine: e.target.value })} /></Champ><Champ label="Chantier"><Select value={form.chantier_id || chantiers[0]?.id || ""} onChange={(v: string) => setForm({ ...form, chantier_id: v })}>{chantiers.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select></Champ></div><MaterielEditor titre="Matériel prévu lundi" items={form.materiel_prevu} setItems={(items) => maj("materiel_prevu", items)} /><MaterielEditor titre="Matériel utilisé samedi" items={form.materiel_utilise} setItems={(items) => maj("materiel_utilise", items)} /><MaterielEditor titre="Matériel récupéré" items={form.materiel_recupere} setItems={(items) => maj("materiel_recupere", items)} /><MaterielEditor titre="Matériel perdu" items={form.materiel_perdu} setItems={(items) => maj("materiel_perdu", items)} /><Champ label="Notes"><textarea className="form-control mt-4 min-h-24" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Champ><button className="primary-action mt-4" disabled={saving}><PackageCheck className="size-4" /> Envoyer le rapport</button></form><section className="grid gap-4 xl:grid-cols-2">{rapports.map((r: RapportMateriel) => <article key={r.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{dateFr(r.semaine)}</span><h3 className="mt-3 text-xl font-black">{r.chantier_nom}</h3><div className="mt-4 grid gap-3 sm:grid-cols-2"><MaterielResume titre="Récupéré" items={r.materiel_recupere} /><MaterielResume titre="Perdu" items={r.materiel_perdu} /></div>{r.notes && <p className="mt-3 rounded-xl bg-muted p-3 text-sm font-semibold text-muted-foreground">{r.notes}</p>}</article>)}{!rapports.length && <p className="rounded-2xl bg-muted p-5 text-sm text-muted-foreground">Aucun rapport envoyé.</p>}</section></div>; }
+function ArrivageMaterielChef({ form, setForm, submit, saving, chantiers, arrivages, televerserPreuve }: any) { return <div className="space-y-5"><form onSubmit={submit} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="mb-4 flex items-center gap-3"><span className="tool-material-management flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><Warehouse className="size-6" /></span><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Chef de chantier</p><h3 className="text-xl font-black">Rapport arrivage de Matériel</h3></div></div><div className="grid gap-4 sm:grid-cols-2"><Champ label="Date de livraison"><input type="date" className="form-control" value={form.date_livraison} onChange={(e) => setForm({ ...form, date_livraison: e.target.value })} /></Champ><Champ label="Chantier"><Select value={form.chantier_id || chantiers[0]?.id || ""} onChange={(v: string) => setForm({ ...form, chantier_id: v })}>{chantiers.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select></Champ><Champ label="Nom du matériel livré"><input className="form-control" value={form.nom_materiel} onChange={(e) => setForm({ ...form, nom_materiel: e.target.value })} /></Champ><Champ label="Quantité"><input type="number" min="0" className="form-control" value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} /></Champ><Champ label="Entreprise partenaire"><input className="form-control" value={form.entreprise_partenaire} onChange={(e) => setForm({ ...form, entreprise_partenaire: e.target.value })} /></Champ><Champ label="Prix total"><input type="number" min="0" className="form-control" value={form.prix_total} onChange={(e) => setForm({ ...form, prix_total: e.target.value })} /></Champ></div><Champ label="Information supplémentaire"><textarea className="form-control mt-4 min-h-28" value={form.informations_supplementaires} onChange={(e) => setForm({ ...form, informations_supplementaires: e.target.value })} /></Champ><div className="mt-4 rounded-2xl border border-border bg-background p-4"><p className="mb-3 text-sm font-black">Preuve de livraison en image</p>{form.preuve_image_url && <img src={form.preuve_image_url} alt="Preuve de livraison" className="mb-3 max-h-56 w-full rounded-2xl bg-muted object-contain" />}<input type="file" accept="image/*" className="file-input" onChange={(e) => televerserPreuve(e.target.files)} /></div><button className="primary-action mt-4" disabled={saving}><Warehouse className="size-4" /> Envoyer le rapport</button></form><section className="grid gap-4 xl:grid-cols-2">{arrivages.map((a: ArrivageMateriel) => <article key={a.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{dateFr(a.date_livraison)}</span><h3 className="mt-3 text-xl font-black">{a.nom_materiel}</h3><div className="mt-4 grid gap-3 sm:grid-cols-2"><Info icone={PackageCheck} label="Quantité" valeur={String(a.quantite || 0)} /><Info icone={Building2} label="Partenaire" valeur={a.entreprise_partenaire || "—"} /><Info icone={ClipboardList} label="Prix total" valeur={devise(a.prix_total || 0)} /><Info icone={HardHat} label="Chantier" valeur={a.chantier_nom || "—"} /></div>{a.preuve_image_url && <img src={a.preuve_image_url} alt="Preuve livraison" className="mt-4 max-h-56 w-full rounded-2xl bg-muted object-contain" loading="lazy" />}</article>)}{!arrivages.length && <p className="rounded-2xl bg-muted p-5 text-sm text-muted-foreground">Aucun arrivage envoyé.</p>}</section></div>; }
 function MaterielEditor({ titre, items, setItems }: { titre: string; items: LigneMateriel[]; setItems: (items: LigneMateriel[]) => void }) { const liste = items.length ? items : [{ nom: "", quantite: 1 }]; return <div className="mt-4 rounded-2xl border border-border bg-background p-4"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-black">{titre}</p><button type="button" className="mini-button" onClick={() => setItems([...liste, { nom: "", quantite: 1 }])}><Plus className="size-4" /> Ajouter</button></div><div className="space-y-2">{liste.map((item, index) => <div key={`${titre}-${index}`} className="grid gap-2 sm:grid-cols-[1fr_110px_42px]"><input className="form-control" value={item.nom} onChange={(e) => setItems(liste.map((m, i) => i === index ? { ...m, nom: e.target.value } : m))} placeholder="Nom du matériel" /><input type="number" min="1" className="form-control" value={item.quantite} onChange={(e) => setItems(liste.map((m, i) => i === index ? { ...m, quantite: Number(e.target.value) || 1 } : m))} /><button type="button" className="tool-action danger" onClick={() => setItems(liste.filter((_, i) => i !== index))}><Trash2 className="size-4" /></button></div>)}</div></div>; }
 function MaterielResume({ titre, items }: { titre: string; items: LigneMateriel[] }) { return <div className="rounded-xl border border-border bg-background p-3"><p className="text-xs font-black uppercase text-muted-foreground">{titre}</p>{items?.length ? items.map((m, i) => <p key={`${titre}-${i}`} className="mt-1 text-sm font-bold">{m.nom} × {m.quantite || 1}</p>) : <p className="mt-1 text-sm font-bold text-muted-foreground">—</p>}</div>; }
 
