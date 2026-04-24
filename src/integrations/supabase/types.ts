@@ -653,6 +653,39 @@ export type Database = {
         }
         Relationships: []
       }
+      formulaires_personnalises: {
+        Row: {
+          champs: Json
+          created_at: string
+          description: string
+          id: string
+          publie: boolean
+          titre: string
+          updated_at: string
+          url_publique: string
+        }
+        Insert: {
+          champs?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          publie?: boolean
+          titre?: string
+          updated_at?: string
+          url_publique?: string
+        }
+        Update: {
+          champs?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          publie?: boolean
+          titre?: string
+          updated_at?: string
+          url_publique?: string
+        }
+        Relationships: []
+      }
       presences: {
         Row: {
           chantier_id: string
@@ -838,6 +871,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reponses_formulaires: {
+        Row: {
+          created_at: string
+          fichiers: Json
+          formulaire_id: string
+          id: string
+          reponses: Json
+        }
+        Insert: {
+          created_at?: string
+          fichiers?: Json
+          formulaire_id: string
+          id?: string
+          reponses?: Json
+        }
+        Update: {
+          created_at?: string
+          fichiers?: Json
+          formulaire_id?: string
+          id?: string
+          reponses?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reponses_formulaires_formulaire_id_fkey"
+            columns: ["formulaire_id"]
+            isOneToOne: false
+            referencedRelation: "formulaires_personnalises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scm_sessions: {
         Row: {
