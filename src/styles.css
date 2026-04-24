@@ -67,6 +67,13 @@
   --chart-3: oklch(0.72 0.17 65);
   --chart-4: oklch(0.55 0.2 310);
   --chart-5: oklch(0.6 0.18 25);
+  --dash-bg: oklch(0.965 0.018 260);
+  --dash-surface: oklch(1 0 0 / 82%);
+  --dash-violet: oklch(0.55 0.25 294);
+  --dash-cyan: oklch(0.72 0.16 218);
+  --dash-emerald: oklch(0.7 0.17 158);
+  --dash-coral: oklch(0.72 0.19 35);
+  --dash-amber: oklch(0.82 0.17 82);
   --sidebar: var(--card);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
@@ -105,6 +112,7 @@
 .tool-purple { --tool-1: oklch(0.51 0.2 305); --tool-2: oklch(0.65 0.17 285); }
 .tool-teal { --tool-1: oklch(0.58 0.15 190); --tool-2: oklch(0.74 0.13 180); }
 .tool-red { --tool-1: oklch(0.55 0.2 28); --tool-2: oklch(0.67 0.17 18); }
+.tool-coral { --tool-1: var(--dash-coral); --tool-2: var(--dash-amber); }
 
 @layer base {
   * { border-color: var(--color-border); }
@@ -127,6 +135,20 @@
     background-image: linear-gradient(color-mix(in oklab, var(--primary) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklab, var(--primary) 10%, transparent) 1px, transparent 1px);
     background-size: 34px 34px;
   }
+  .dashboard-shell {
+    background:
+      radial-gradient(circle at 18% 12%, color-mix(in oklab, var(--dash-violet) 14%, transparent), transparent 28rem),
+      radial-gradient(circle at 84% 6%, color-mix(in oklab, var(--dash-cyan) 18%, transparent), transparent 24rem),
+      linear-gradient(135deg, color-mix(in oklab, var(--dash-bg) 94%, white), var(--dash-bg));
+  }
+  .dashboard-card {
+    background: var(--dash-surface);
+    backdrop-filter: blur(18px);
+    border: 1px solid color-mix(in oklab, var(--border) 72%, white);
+    box-shadow: 0 24px 65px -48px oklch(0.24 0.07 270 / 0.78);
+  }
+  .dashboard-sidebar { background: oklch(1 0 0 / 86%); backdrop-filter: blur(18px); }
+  .dashboard-hero { background: linear-gradient(135deg, var(--dash-violet), var(--dash-cyan) 48%, var(--dash-emerald)); color: var(--primary-foreground); }
 }
 
 @layer components {
