@@ -259,11 +259,12 @@ export type Database = {
           date_document: string
           donnees_formulaire: Json
           id: string
-          image_base64: string
+          image_base64: string | null
           matricule: string
           nom_complet: string
           nom_fichier: string
           numero: string
+          pdf_base64: string
           updated_at: string
         }
         Insert: {
@@ -271,11 +272,12 @@ export type Database = {
           date_document?: string
           donnees_formulaire?: Json
           id?: string
-          image_base64: string
+          image_base64?: string | null
           matricule?: string
           nom_complet?: string
           nom_fichier: string
           numero: string
+          pdf_base64?: string
           updated_at?: string
         }
         Update: {
@@ -283,11 +285,12 @@ export type Database = {
           date_document?: string
           donnees_formulaire?: Json
           id?: string
-          image_base64?: string
+          image_base64?: string | null
           matricule?: string
           nom_complet?: string
           nom_fichier?: string
           numero?: string
+          pdf_base64?: string
           updated_at?: string
         }
         Relationships: []
