@@ -567,11 +567,37 @@ function EmployePage() {
     if (error) setMessage(error.message || "Rapport matériel non envoyé."); else { setMessage("Rapport matériel envoyé à l’admin."); setFormMateriel({ ...materielInitial, semaine: new Date().toISOString().slice(0, 10) }); await chargerDonnees(); }
   }
 
+  async function televerserImagesIncident(files: FileList | null) {
+    if (!files?.length) return;
+    setSauvegarde(true);
+    const images = [...formIncident.images];
+    for (const file of [...files]) {
+      const path = `incidents-chantiers/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+      const { error } = await supabase.storage.from("scm-images").upload(path, file, { upsert: false });
+      if (error) { setMessage("Téléversement des images impossible."); setSauvegarde(false); return; }
+      images.push(supabase.storage.from("scm-images").getPublicUrl(path).data.publicUrl);
+    }
+    setFormIncident({ ...formIncident, images });
+    setSauvegarde(false);
+  }
+
+  async function envoyerIncidentChantier(event: React.FormEvent) {
+    event.preventDefault();
+    if (!isChef || !session?.employeId || !employeConnecte) return setMessage("Seul le chef de chantier peut envoyer une alerte.");
+    const chantier = chantiersVisibles.find((c) => c.id === formIncident.chantier_id) || chantiersVisibles[0];
+    if (!chantier) return setMessage("Aucun chantier disponible pour cette alerte.");
+    if (!formIncident.explication.trim()) return setMessage("L’explication détaillée est obligatoire.");
+    setSauvegarde(true);
+    const { error } = await db.from("incidents_chantier").insert({ chef_chantier_id: session.employeId, chef_chantier_nom: employeConnecte.nom_complet, chantier_id: chantier.id, chantier_nom: chantier.nom_chantier, type_evenement: formIncident.type_evenement, date_evenement: formIncident.date_evenement, explication: formIncident.explication.trim(), images: formIncident.images, statut: "Alerte envoyée" });
+    setSauvegarde(false);
+    if (error) setMessage(error.message || "Alerte non envoyée."); else { setMessage("Alerte incident/accident envoyée à l’admin."); setFormIncident({ ...incidentInitial, date_evenement: new Date().toISOString().slice(0, 10) }); await chargerDonnees(); }
+  }
+
   function changerOnglet(tab: Onglet) { setOnglet(tab); setRecherche(""); setMenuOuvert(false); }
 
   if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
-  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : "Présences";
+  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
   const chantierPresence = chantiersVisibles.find((c) => c.id === presenceChantier) || chantiersVisibles[0];
   const employesPresence = chantierPresence ? employes.filter((e) => (chantierPresence.employes_assignes || []).includes(e.id)) : [];
