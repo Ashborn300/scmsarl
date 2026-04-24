@@ -18,6 +18,7 @@ import {
   LogOut,
   MapPin,
   Menu,
+  Network,
   Plus,
   Search,
   ShieldCheck,
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/employe")({
 });
 
 type RoleSession = "admin" | "employe" | "chef_chantier";
-type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier";
+type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme";
 type StatutPresence = "présent" | "absent" | "en retard" | "excusé";
 type ModeEdition = { type: "projets" | "employes" | "chantiers"; id?: string } | null;
 type Detail = { type: "projets" | "employes" | "chantiers" | "presences" | "annonces"; id: string } | null;
@@ -135,6 +136,8 @@ type Annonce = {
 
 type AnnonceMasquee = { id: string; annonce_id: string; employe_id: string; created_at: string };
 type JourNonTravaille = { id: string; date_jour: string; titre: string; description: string; type_jour: string; actif: boolean; created_at: string; updated_at: string };
+type BlocOrganigramme = { id: string; titre: string; niveau: number; couleur: "bleu" | "vert" | "orange" | "violet" | "turquoise" };
+type OrganigrammeEntreprise = { id: string; titre: string; description: string; blocs: BlocOrganigramme[]; actif: boolean; created_at: string; updated_at: string };
 
 type ProjetForm = Omit<Projet, "id" | "created_at" | "budget_estime"> & { budget_estime: string };
 type EmployeForm = Omit<Employe, "id" | "created_at" | "salaire" | "salaire_total" | "salaire_recu" | "salaire_restant"> & { salaire_total: string; salaire_recu: string };
@@ -175,6 +178,7 @@ function EmployePage() {
   const [annonces, setAnnonces] = useState<Annonce[]>([]);
   const [annoncesMasquees, setAnnoncesMasquees] = useState<AnnonceMasquee[]>([]);
   const [joursNonTravailles, setJoursNonTravailles] = useState<JourNonTravaille[]>([]);
+  const [organigrammes, setOrganigrammes] = useState<OrganigrammeEntreprise[]>([]);
   const [jourPopup, setJourPopup] = useState<JourNonTravaille | null>(null);
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
@@ -304,7 +308,7 @@ function EmployePage() {
     if (!currentSession) return;
     setChargement(true);
     setMessage("");
-    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes] = await Promise.all([
+    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes, orgRes] = await Promise.all([
       db.from("projets").select("*").order("created_at", { ascending: false }),
       db.from("employes").select("*").order("created_at", { ascending: false }),
       db.from("chantiers").select("*").order("created_at", { ascending: false }),
@@ -312,8 +316,9 @@ function EmployePage() {
       db.from("annonces").select("*").order("created_at", { ascending: false }),
       db.from("annonces_masquees").select("*").order("created_at", { ascending: false }),
       db.from("jours_non_travailles").select("*").order("date_jour", { ascending: false }),
+      db.from("organigrammes_entreprise").select("*").eq("actif", true).order("created_at", { ascending: false }).limit(1),
     ]);
-    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
+    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error || orgRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
     setProjets(projetsRes.data || []);
     setEmployes(projetsRes.error ? [] : (employesRes.data || []));
     setChantiers(chantiersRes.data || []);
@@ -321,6 +326,7 @@ function EmployePage() {
     setAnnonces(annoncesRes.data || []);
     setAnnoncesMasquees(masqueesRes.data || []);
     setJoursNonTravailles(joursRes.data || []);
+    setOrganigrammes(orgRes.data || []);
     if (currentSession.role !== "admin") {
       const today = new Date().toISOString().slice(0, 10);
       const jour = (joursRes.data || []).find((item: JourNonTravaille) => item.actif && item.date_jour === today);
@@ -486,7 +492,7 @@ function EmployePage() {
 
   if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
-  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : "Présences";
+  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
   const chantierPresence = chantiersVisibles.find((c) => c.id === presenceChantier) || chantiersVisibles[0];
   const employesPresence = chantierPresence ? employes.filter((e) => (chantierPresence.employes_assignes || []).includes(e.id)) : [];
@@ -505,6 +511,7 @@ function EmployePage() {
             {(isAdmin || isChef) && <BoutonNav actif={onglet === "presences"} icone={ClipboardCheck} label="Présences" onClick={() => changerOnglet("presences")} />}
             <BoutonNav actif={onglet === "annonces"} icone={Megaphone} label="Annonces" onClick={() => changerOnglet("annonces")} />
             <BoutonNav actif={onglet === "calendrier"} icone={CalendarDays} label="Jours fériés" onClick={() => changerOnglet("calendrier")} />
+            <BoutonNav actif={onglet === "organigramme"} icone={Network} label="Organigramme" onClick={() => changerOnglet("organigramme")} />
           </nav>
           <div className="dashboard-hero mt-10 rounded-3xl p-4 shadow-tool"><Building2 className="mb-3 size-8" /><p className="text-sm font-black">{session.nom}</p><p className="mt-1 text-xs font-semibold leading-5 opacity-90">Accès filtré automatiquement selon le rôle connecté.</p><button className="mini-button mt-4 w-full bg-card/20 text-primary-foreground" onClick={deconnecter}><LogOut className="size-4" /> Déconnexion</button></div>
         </aside>
