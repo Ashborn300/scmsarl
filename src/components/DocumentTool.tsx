@@ -5,6 +5,7 @@ import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
 import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerJoursNonTravailles, listerReponsesFormulaire, mockupCarteServiceBase64, supprimerJourNonTravaille, type ChampPersonnalise, type ConnexionScm, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
+import scmLogo from "@/assets/scm-logo.jpeg";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea" | "image"; required?: boolean; defaultValue?: string };
 type Config = { type: OutilType; titre: string; theme: string; description: string; fields: Field[]; hasLines?: boolean; showTotal?: boolean; totalLabel?: string };
@@ -77,6 +78,17 @@ function optimiserImagePourIA(source?: string, tailleMax = 1024, qualite = 0.82)
     };
     image.onerror = reject;
     image.src = source;
+  });
+}
+
+async function imageAssetEnDataUrl(source: string) {
+  const reponse = await fetch(source);
+  const blob = await reponse.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const lecteur = new FileReader();
+    lecteur.onload = () => resolve(String(lecteur.result));
+    lecteur.onerror = reject;
+    lecteur.readAsDataURL(blob);
   });
 }
 
