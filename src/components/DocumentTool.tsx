@@ -1,9 +1,9 @@
-import { ArrowLeft, FileCheck2, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, Eye, FileCheck2, FileDown, Link2, Plus, Save, Trash2 } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
-import { CustomFormTool } from "@/components/CustomFormTool";
-import { creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerRealisticSketchup, enregistrerRendu3D, listerEmployes, mockupCarteServiceBase64, type DocumentRecord, type EmployeRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerRealisticSketchup, enregistrerRendu3D, listerEmployes, listerFormulairesPersonnalises, listerReponsesFormulaire, mockupCarteServiceBase64, type ChampPersonnalise, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type LignePrestation, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea" | "image"; required?: boolean; defaultValue?: string };
