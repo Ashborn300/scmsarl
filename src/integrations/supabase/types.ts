@@ -44,6 +44,68 @@ export type Database = {
         }
         Relationships: []
       }
+      annonces: {
+        Row: {
+          auteur_admin_id: string | null
+          contenu: string
+          created_at: string
+          id: string
+          image_url: string
+          publiee: boolean
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          auteur_admin_id?: string | null
+          contenu?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          publiee?: boolean
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          auteur_admin_id?: string | null
+          contenu?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          publiee?: boolean
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      annonces_masquees: {
+        Row: {
+          annonce_id: string
+          created_at: string
+          employe_id: string
+          id: string
+        }
+        Insert: {
+          annonce_id: string
+          created_at?: string
+          employe_id: string
+          id?: string
+        }
+        Update: {
+          annonce_id?: string
+          created_at?: string
+          employe_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annonces_masquees_annonce_id_fkey"
+            columns: ["annonce_id"]
+            isOneToOne: false
+            referencedRelation: "annonces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chantiers: {
         Row: {
           autoriser_budget_chef: boolean
