@@ -294,10 +294,10 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     const libellePrix = type === "devis" ? "Coût" : "Prix";
     y += 2;
     pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(16, 42, 88);
+    pdf.setTextColor(...couleurs.principal);
     pdf.text(titreLignes, 20, y);
     y += 8;
-    pdf.setFillColor(230, 238, 250);
+    pdf.setFillColor(...couleurs.doux);
     pdf.rect(20, y - 5, 168, 8, "F");
     pdf.text("Description", 23, y);
     pdf.text("Qté", 125, y);
@@ -314,7 +314,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   }
 
   if (type !== "communiquer" && typeof options.total === "number") {
-    pdf.setFillColor(16, 42, 88);
+    pdf.setFillColor(...couleurs.principal);
     pdf.roundedRect(124, 220, 64, 14, 2, 2, "F");
     pdf.setTextColor(255, 255, 255);
     pdf.setFont("helvetica", "bold");
