@@ -80,6 +80,10 @@ function optimiserImagePourIA(source?: string, tailleMax = 1024, qualite = 0.82)
 
 export function DocumentTool({ config, retour }: { config: Config; retour: () => void }) {
   if (config.type === "formulaire_personnalise") return <CustomFormTool retour={retour} />;
+  return <DocumentToolStandard config={config} retour={retour} />;
+}
+
+function DocumentToolStandard({ config, retour }: { config: Config; retour: () => void }) {
 
   const estCommunication = config.type === "communiquer";
   const [formulaire, setFormulaire] = useState<Record<string, string>>(() => Object.fromEntries(config.fields.map((field) => [field.name, field.defaultValue || ""])));
