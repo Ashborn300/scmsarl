@@ -49,6 +49,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   const estCommunication = config.type === "communiquer";
   const [formulaire, setFormulaire] = useState<Record<string, string>>(() => Object.fromEntries(config.fields.map((field) => [field.name, field.defaultValue || ""])));
   const [lignes, setLignes] = useState<LignePrestation[]>([{ description: "", quantite: 1, prix: 0 }]);
+  const [imagesFormulaire, setImagesFormulaire] = useState<Record<string, File | undefined>>({});
   const [sceau, setSceau] = useState<File>();
   const [signature, setSignature] = useState<File>();
   const [libelleSceau, setLibelleSceau] = useState(estCommunication ? "Nom / fonction de celui qui impose le sceau" : "Sceau de l’entreprise");
@@ -60,6 +61,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   const total = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
 
   function changer(name: string, value: string) { setFormulaire((actuel) => ({ ...actuel, [name]: value })); }
+  function changerImage(name: string, file?: File) { setImagesFormulaire((actuel) => ({ ...actuel, [name]: file })); }
 
   async function soumettre(event: React.FormEvent) {
     event.preventDefault();
@@ -70,7 +72,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
     try {
       const numero = documentEdite?.numero || await (await import("@/lib/scmDocuments")).genererNumero(config.type);
       const ancienPayload = (documentEdite?.donnees_formulaire || {}) as Record<string, unknown>;
-      const imagesChamps = Object.fromEntries(await Promise.all(config.fields.filter((field) => field.type === "image").map(async (field) => [field.name, await lireImage((formulaire[field.name] as unknown as File | undefined)) || String(ancienPayload[field.name] || "")]))) as Record<string, string>;
+      const imagesChamps = Object.fromEntries(await Promise.all(config.fields.filter((field) => field.type === "image").map(async (field) => [field.name, await lireImage(imagesFormulaire[field.name]) || String(ancienPayload[field.name] || "")]))) as Record<string, string>;
       const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
       const signatureBase64 = estCommunication ? undefined : await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
       const champs: Array<[string, string]> = config.fields.map((field) => [field.label, field.type === "image" ? imagesChamps[field.name] || "—" : formulaire[field.name] || "—"]);
