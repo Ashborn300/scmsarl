@@ -358,8 +358,10 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
 function DocumentToolStandard({ config, retour }: { config: Config; retour: () => void }) {
 
   const estCommunication = config.type === "communiquer";
+  const avecDeductions = config.type === "facture" || config.type === "devis" || config.type === "recu";
   const [formulaire, setFormulaire] = useState<Record<string, string>>(() => Object.fromEntries(config.fields.map((field) => [field.name, field.defaultValue || ""])));
   const [lignes, setLignes] = useState<LignePrestation[]>([{ description: "", quantite: 1, prix: 0 }]);
+  const [deductions, setDeductions] = useState<LigneDeduction[]>([]);
   const [imagesFormulaire, setImagesFormulaire] = useState<Record<string, File | undefined>>({});
   const [sceau, setSceau] = useState<File>();
   const [signature, setSignature] = useState<File>();
@@ -371,7 +373,9 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
   const [employes, setEmployes] = useState<EmployeRecord[]>([]);
   const [employesSelectionnes, setEmployesSelectionnes] = useState<string[]>([]);
 
-  const total = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
+  const totalAvantDeduction = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
+  const totalDeductions = useMemo(() => avecDeductions ? deductions.reduce((somme, deduction) => somme + totalAvantDeduction * Number(deduction.pourcentage || 0) / 100, 0) : 0, [avecDeductions, deductions, totalAvantDeduction]);
+  const total = Math.max(0, totalAvantDeduction - totalDeductions);
 
   useEffect(() => { if (config.type === "fiche_employe" || config.type === "code_qr") listerEmployes().then(setEmployes).catch((erreur) => alert(erreur instanceof Error ? erreur.message : "Impossible de charger les employés.")); }, [config.type]);
 
