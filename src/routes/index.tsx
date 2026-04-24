@@ -194,6 +194,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     action: { background: "rgba(245,158,11,0.12)", border: "1px solid rgba(190,18,60,0.16)" },
     icon: { background: "linear-gradient(135deg, #be123c, #f59e0b)", color: "white" },
   },
+  gestion_materiel: {
+    card: { background: "linear-gradient(180deg, rgba(71,85,105,0.14) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(202,138,4,0.28)" },
+    banner: { background: "linear-gradient(135deg, #475569, #ca8a04)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(71,85,105,0.08)", border: "1px solid rgba(202,138,4,0.16)" },
+    action: { background: "rgba(202,138,4,0.12)", border: "1px solid rgba(71,85,105,0.16)" },
+    icon: { background: "linear-gradient(135deg, #475569, #ca8a04)", color: "white" },
+  },
   organigramme_entreprise: {
     card: { background: "linear-gradient(180deg, rgba(13,42,148,0.14) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(20,184,166,0.26)" },
     banner: { background: "linear-gradient(135deg, #0d2a94, #14b8a6)", color: "white" },
