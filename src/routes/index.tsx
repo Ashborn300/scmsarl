@@ -87,7 +87,7 @@ function Index() {
             {configs.map((config) => {
               const Icone = icones[config.type];
               return (
-                <button key={config.type} type="button" onClick={() => setOutilActif(config.type)} className={`tool-${config.theme} group relative overflow-hidden rounded-3xl border border-border bg-card p-5 text-left shadow-document transition hover:-translate-y-1 hover:shadow-tool`}>
+                <button key={config.type} type="button" onClick={() => setOutilActif(config.type)} className={`tool-${config.theme} tool-card group relative overflow-hidden rounded-3xl border p-5 text-left shadow-document transition hover:-translate-y-1 hover:shadow-tool`}>
                   <span className="absolute inset-x-0 top-0 h-2 bg-tool-gradient" />
                   <div className="flex items-start justify-between gap-4">
                     <span className="flex size-14 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool transition group-hover:scale-105"><Icone className="size-7" /></span>
