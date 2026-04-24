@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer";
 
 export type DocumentRecord = {
   id: string;
@@ -28,6 +28,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   contrat_construction: "contrats_construction",
   contrat_employe: "contrats_employes",
   description_projet: "descriptions_projets",
+  communiquer: "communications",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -37,6 +38,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   contrat_construction: "CCO",
   contrat_employe: "CEM",
   description_projet: "PRJ",
+  communiquer: "COM",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -46,6 +48,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   contrat_construction: ["nom_fichier", "numero", "client"],
   contrat_employe: ["nom_fichier", "numero", "employe"],
   description_projet: ["nom_fichier", "numero", "projet"],
+  communiquer: ["nom_fichier", "numero", "titre"],
 };
 
 const db = supabase as any;
@@ -101,6 +104,7 @@ export async function enregistrerDocument(type: OutilType, payload: Record<strin
     ...(type === "facture" || type === "devis" || type === "recu" || type === "contrat_construction" ? { client: String(payload.client || payload.nomClient || "") } : {}),
     ...(type === "contrat_employe" ? { employe: String(payload.employe || "") } : {}),
     ...(type === "description_projet" ? { projet: String(payload.projet || payload.nomProjet || "") } : {}),
+    ...(type === "communiquer" ? { titre: String(payload.titre || payload.objet || "") } : {}),
   };
   const requete = id ? db.from(table).update(ligne).eq("id", id).select().single() : db.from(table).insert(ligne).select().single();
   const { data, error } = await requete;
