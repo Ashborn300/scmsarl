@@ -705,6 +705,21 @@ export async function creerPdfFicheEmploye(typeFiche: string, employes: EmployeR
   return pdf.output("datauristring");
 }
 
+export async function creerPdfArchiveChantier(archive: Omit<ArchiveChantier, "id" | "created_at" | "updated_at" | "pdf_base64" | "nom_fichier">) {
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const couleurs = couleursPdfParOutil.archives_chantiers;
+  const logo = await imageVersBase64(logoUrl);
+  const drapeauRdc = await drapeauRdcVersPng();
+  ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche archive chantier", `ARC-${Date.now().toString().slice(-6)}`, couleurs.principal);
+  let y = 84;
+  [["Nom du chantier", archive.nom_chantier], ["Nom du client", archive.nom_client], ["Adresse du projet", archive.adresse_projet], ["Début construction", archive.date_debut_construction || "—"], ["Finalisation construction", archive.date_finalisation_construction || "—"], ["Budget estimé au début", `${Number(archive.budget_estime_debut || 0).toLocaleString("fr-FR")} $`], ["Budget final", `${Number(archive.budget_final || 0).toLocaleString("fr-FR")} $`]].forEach(([label, valeur]) => { y = texteValeur(pdf, label, String(valeur), 20, y, 168, 4.2, couleurs.principal); });
+  y += 4; pdf.setFillColor(...couleurs.doux); pdf.rect(20, y - 5, 168, 8, "F"); pdf.setFont("helvetica", "bold"); pdf.setTextColor(...couleurs.principal); pdf.text("EMPLOYÉS AYANT PARTICIPÉ", 23, y); y += 10;
+  pdf.setFont("helvetica", "normal"); pdf.setTextColor(36, 45, 64);
+  archive.employes_participants.forEach((employe, index) => { if (y > 234) { piedDePage(pdf, couleurs.principal, undefined, undefined, "SCM SARL", "Archive chantier"); pdf.addPage(); ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche archive chantier", "ARCHIVE", couleurs.principal); y = 84; } pdf.text(`${index + 1}. ${employe.nom_complet || "—"} — ${employe.poste || employe.matricule || "—"}`, 24, y); y += 6; });
+  piedDePage(pdf, couleurs.principal, undefined, undefined, "SCM SARL", "Archive chantier");
+  return pdf.output("datauristring");
+}
+
 export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string; lignes?: LignePrestation[]; total?: number }) {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const couleurs = couleursPdfParOutil[type];
