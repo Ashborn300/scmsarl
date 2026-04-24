@@ -626,7 +626,7 @@ function EmployePage() {
 
   if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
-  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : "Présences";
+  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "arrivage_materiel" ? "Rapport arrivage de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
   const chantierPresence = chantiersVisibles.find((c) => c.id === presenceChantier) || chantiersVisibles[0];
   const employesPresence = chantierPresence ? employes.filter((e) => (chantierPresence.employes_assignes || []).includes(e.id)) : [];
@@ -647,6 +647,7 @@ function EmployePage() {
             <BoutonNav actif={onglet === "calendrier"} icone={CalendarDays} label="Jours fériés" onClick={() => changerOnglet("calendrier")} />
             <BoutonNav actif={onglet === "organigramme"} icone={Network} label="Organigramme" onClick={() => changerOnglet("organigramme")} />
             {isChef && <BoutonNav actif={onglet === "gestion_materiel"} icone={PackageCheck} label="Gestion de Matériel" onClick={() => changerOnglet("gestion_materiel")} />}
+            {isChef && <BoutonNav actif={onglet === "arrivage_materiel"} icone={Warehouse} label="Rapport arrivage" onClick={() => changerOnglet("arrivage_materiel")} />}
             {isChef && <BoutonNav actif={onglet === "incident_chantier"} icone={AlertTriangle} label="Incident / Accident" onClick={() => changerOnglet("incident_chantier")} />}
             {!isAdmin && <BoutonNav actif={onglet === "demande_conge"} icone={FilePlus2} label="Demande de Congé" onClick={() => changerOnglet("demande_conge")} />}
             {!isAdmin && <BoutonNav actif={onglet === "bilan_sante"} icone={HeartPulse} label="Bilan de santé" onClick={() => changerOnglet("bilan_sante")} />}
