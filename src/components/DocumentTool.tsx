@@ -94,6 +94,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
     setLignes(Array.isArray(donnees.lignes) && donnees.lignes.length ? donnees.lignes as LignePrestation[] : [{ description: "", quantite: 1, prix: 0 }]);
     setLibelleSceau(String(donnees.libelleSceau || (estCommunication ? "Nom / fonction de celui qui impose le sceau" : "Sceau de l’entreprise")));
     setLibelleSignature(String(donnees.libelleSignature || "Signature du client"));
+    setImagesFormulaire({});
     setSceau(undefined);
     setSignature(undefined);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -114,7 +115,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
               {config.fields.map((field) => (
                 <label key={field.name} className={field.type === "textarea" ? "sm:col-span-2" : ""}>
                   <span className="mb-1 block text-sm font-semibold text-foreground">{field.label}{field.required ? " *" : ""}</span>
-                  {field.type === "textarea" ? <textarea value={formulaire[field.name] || ""} onChange={(e) => changer(field.name, e.target.value)} rows={4} className="form-control min-h-28" /> : <input value={formulaire[field.name] || ""} onChange={(e) => changer(field.name, e.target.value)} type={field.type || "text"} className="form-control" />}
+                  {field.type === "textarea" ? <textarea value={formulaire[field.name] || ""} onChange={(e) => changer(field.name, e.target.value)} rows={4} className="form-control min-h-28" /> : field.type === "image" ? <input type="file" accept="image/*" onChange={(e) => changerImage(field.name, e.target.files?.[0])} className="file-input" /> : <input value={formulaire[field.name] || ""} onChange={(e) => changer(field.name, e.target.value)} type={field.type || "text"} className="form-control" />}
                 </label>
               ))}
             </div>
