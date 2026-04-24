@@ -833,6 +833,60 @@ export type Database = {
         }
         Relationships: []
       }
+      factures_employes: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          employe_id: string | null
+          employe_nom: string
+          id: string
+          matricule: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          poste: string
+          salaire_brut: number
+          salaire_net: number
+          total_deductions: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe_id?: string | null
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64?: string
+          poste?: string
+          salaire_brut?: number
+          salaire_net?: number
+          total_deductions?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe_id?: string | null
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          poste?: string
+          salaire_brut?: number
+          salaire_net?: number
+          total_deductions?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fiches_employes: {
         Row: {
           created_at: string
