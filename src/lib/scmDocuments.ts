@@ -4,7 +4,7 @@ import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "incidents_chantier" | "archives_chantiers";
 export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
 export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
@@ -17,6 +17,8 @@ export type DemandeConge = { id: string; employe_id: string; employe_nom: string
 export type BilanSanteEmploye = { id: string; employe_id: string; employe_nom: string; semaine: string; etat_global: string; groupe_sanguin: string; allergies: string; blessure: boolean; details_blessure: string; created_at: string; updated_at: string };
 export type LigneMateriel = { nom: string; quantite: number };
 export type RapportMateriel = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; semaine: string; materiel_prevu: LigneMateriel[]; materiel_utilise: LigneMateriel[]; materiel_recupere: LigneMateriel[]; materiel_perdu: LigneMateriel[]; notes: string; statut: string; created_at: string; updated_at: string };
+export type IncidentChantier = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; type_evenement: string; date_evenement: string; explication: string; images: string[]; statut: string; created_at: string; updated_at: string };
+export type ArchiveChantier = { id: string; nom_chantier: string; nom_client: string; date_debut_construction: string | null; date_finalisation_construction: string | null; budget_estime_debut: number; budget_final: number; adresse_projet: string; employes_participants: EmployeRecord[]; pdf_base64: string; nom_fichier: string; created_at: string; updated_at: string };
 
 export type DocumentRecord = {
   id: string;
@@ -79,6 +81,8 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   demandes_conges: { principal: [14, 116, 144], secondaire: [34, 197, 94], doux: [230, 248, 250] },
   bilans_sante: { principal: [190, 18, 60], secondaire: [245, 158, 11], doux: [255, 238, 242] },
   gestion_materiel: { principal: [71, 85, 105], secondaire: [202, 138, 4], doux: [245, 242, 232] },
+  incidents_chantier: { principal: [185, 28, 28], secondaire: [234, 88, 12], doux: [255, 236, 232] },
+  archives_chantiers: { principal: [52, 88, 74], secondaire: [180, 83, 9], doux: [238, 246, 241] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -102,6 +106,8 @@ export const tablesParOutil: Record<OutilType, string> = {
   demandes_conges: "demandes_conges",
   bilans_sante: "bilans_sante_employes",
   gestion_materiel: "rapports_materiel",
+  incidents_chantier: "incidents_chantier",
+  archives_chantiers: "archives_chantiers",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -125,6 +131,8 @@ export const prefixesParOutil: Record<OutilType, string> = {
   demandes_conges: "DCG",
   bilans_sante: "SAN",
   gestion_materiel: "MAT",
+  incidents_chantier: "INC",
+  archives_chantiers: "ARC",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -148,6 +156,8 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   demandes_conges: ["employe_nom", "raison", "statut"],
   bilans_sante: ["employe_nom", "etat_global", "groupe_sanguin", "allergies", "details_blessure"],
   gestion_materiel: ["chef_chantier_nom", "chantier_nom", "notes", "statut"],
+  incidents_chantier: ["chef_chantier_nom", "chantier_nom", "type_evenement", "explication", "statut"],
+  archives_chantiers: ["nom_chantier", "nom_client", "adresse_projet", "nom_fichier"],
 };
 
 const db = supabase as any;
@@ -429,6 +439,33 @@ export async function listerRapportsMateriel() {
   return (data ?? []) as RapportMateriel[];
 }
 
+export async function televerserImageIncidentChantier(fichier: File) {
+  const extension = fichier.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+  const chemin = `incidents-chantiers/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from("scm-images").upload(chemin, fichier, { cacheControl: "3600", contentType: fichier.type || "image/png", upsert: false });
+  if (error) throw new Error(error.message);
+  return supabase.storage.from("scm-images").getPublicUrl(chemin).data.publicUrl;
+}
+
+export async function listerIncidentsChantier() {
+  const { data, error } = await db.from("incidents_chantier").select("*").order("date_evenement", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as IncidentChantier[];
+}
+
+export async function listerArchivesChantiers() {
+  const { data, error } = await db.from("archives_chantiers").select("*").order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ArchiveChantier[];
+}
+
+export async function enregistrerArchiveChantier(payload: Omit<ArchiveChantier, "id" | "created_at" | "updated_at">, id?: string) {
+  const requete = id ? db.from("archives_chantiers").update(payload).eq("id", id).select().single() : db.from("archives_chantiers").insert(payload).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as ArchiveChantier;
+}
+
 export async function supprimerDocument(type: OutilType, id: string) {
   const { error } = await db.from(tablesParOutil[type]).delete().eq("id", id);
   if (error) throw new Error(error.message);
@@ -665,6 +702,21 @@ export async function creerPdfFicheEmploye(typeFiche: string, employes: EmployeR
   const infos: Array<[string, string | undefined | null]> = [["Genre", employe?.genre], ["Téléphone", employe?.telephone], ["Email", employe?.email], ["Adresse", employe?.adresse], ["Date de naissance", employe?.date_naissance], ["Date d’admission", employe?.date_admission], ["N° pièce d’identité", employe?.numero_piece_identite], ["Contact d’urgence", employe?.contact_urgence], ["Statut", employe?.statut], ["Rôle", employe?.role]];
   infos.forEach(([label, valeur], index) => blocInfoEmploye(pdf, label, valeur, index % 2 === 0 ? 20 : 107, 140 + Math.floor(index / 2) * 25, 81, couleurs.principal, couleurs.doux));
   piedDePage(pdf, couleurs.principal, sceau, undefined, "Sceau de l’entreprise", "");
+  return pdf.output("datauristring");
+}
+
+export async function creerPdfArchiveChantier(archive: Omit<ArchiveChantier, "id" | "created_at" | "updated_at" | "pdf_base64" | "nom_fichier">) {
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const couleurs = couleursPdfParOutil.archives_chantiers;
+  const logo = await imageVersBase64(logoUrl);
+  const drapeauRdc = await drapeauRdcVersPng();
+  ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche archive chantier", `ARC-${Date.now().toString().slice(-6)}`, couleurs.principal);
+  let y = 84;
+  [["Nom du chantier", archive.nom_chantier], ["Nom du client", archive.nom_client], ["Adresse du projet", archive.adresse_projet], ["Début construction", archive.date_debut_construction || "—"], ["Finalisation construction", archive.date_finalisation_construction || "—"], ["Budget estimé au début", `${Number(archive.budget_estime_debut || 0).toLocaleString("fr-FR")} $`], ["Budget final", `${Number(archive.budget_final || 0).toLocaleString("fr-FR")} $`]].forEach(([label, valeur]) => { y = texteValeur(pdf, label, String(valeur), 20, y, 168, 4.2, couleurs.principal); });
+  y += 4; pdf.setFillColor(...couleurs.doux); pdf.rect(20, y - 5, 168, 8, "F"); pdf.setFont("helvetica", "bold"); pdf.setTextColor(...couleurs.principal); pdf.text("EMPLOYÉS AYANT PARTICIPÉ", 23, y); y += 10;
+  pdf.setFont("helvetica", "normal"); pdf.setTextColor(36, 45, 64);
+  archive.employes_participants.forEach((employe, index) => { if (y > 234) { piedDePage(pdf, couleurs.principal, undefined, undefined, "SCM SARL", "Archive chantier"); pdf.addPage(); ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche archive chantier", "ARCHIVE", couleurs.principal); y = 84; } pdf.text(`${index + 1}. ${employe.nom_complet || "—"} — ${employe.poste || employe.matricule || "—"}`, 24, y); y += 6; });
+  piedDePage(pdf, couleurs.principal, undefined, undefined, "SCM SARL", "Archive chantier");
   return pdf.output("datauristring");
 }
 
