@@ -658,7 +658,7 @@ function EmployePage() {
 
   function changerOnglet(tab: Onglet) { setOnglet(tab); setRecherche(""); setMenuOuvert(false); }
 
-  if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
+  if (!session) return <LoginScreen identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
   const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "arrivage_materiel" ? "Rapport arrivage de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
