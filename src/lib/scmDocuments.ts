@@ -157,10 +157,12 @@ async function drapeauRdcVersPng() {
   return canvas.toDataURL("image/png");
 }
 
-function texteMultiligne(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170) {
+function texteMultiligne(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170, couleur: [number, number, number] = [16, 42, 88]) {
   pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(...couleur);
   pdf.text(label, x, y);
   pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(36, 45, 64);
   const lignes = pdf.splitTextToSize(valeur || "—", largeur);
   pdf.text(lignes, x, y + 6);
   return y + 10 + lignes.length * 5;
@@ -281,7 +283,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
 
   let y = 82;
   champs.forEach(([label, valeur]) => {
-    y = texteMultiligne(pdf, label, valeur, 20, y, 165);
+    y = texteMultiligne(pdf, label, valeur, 20, y, 165, couleurs.principal);
     if (y > 218) {
       type === "communiquer" ? piedDePageCommunication(pdf, couleurs.principal, options.sceau, options.libelleSceau) : piedDePage(pdf, couleurs.principal, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
       pdf.addPage();
