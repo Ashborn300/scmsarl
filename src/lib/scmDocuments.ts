@@ -11,7 +11,7 @@ export type FormulairePersonnalise = { id: string; titre: string; description: s
 export type ReponseFormulaire = { id: string; formulaire_id: string; reponses: Record<string, string>; fichiers: Record<string, { nom: string; type: string; taille: number; contenu: string }>; created_at: string };
 export type ConnexionScm = { id: string; role: string; nom_utilisateur: string; admin_id: string | null; employe_id: string | null; matricule: string; type_connexion: string; connected_at: string; created_at: string };
 export type JourNonTravaille = { id: string; date_jour: string; titre: string; description: string; type_jour: string; actif: boolean; created_at: string; updated_at: string };
-export type BlocOrganigramme = { id: string; titre: string; niveau: number; couleur: "bleu" | "vert" | "orange" | "violet" | "turquoise"; parentId?: string };
+export type BlocOrganigramme = { id: string; titre: string; niveau: number; couleur: "bleu" | "vert" | "orange" | "violet" | "turquoise"; parentId?: string; position?: "bas" | "cote" };
 export type OrganigrammeEntreprise = { id: string; titre: string; description: string; blocs: BlocOrganigramme[]; actif: boolean; created_at: string; updated_at: string };
 
 export type DocumentRecord = {
