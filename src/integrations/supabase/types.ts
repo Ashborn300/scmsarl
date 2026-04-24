@@ -1332,6 +1332,74 @@ export type Database = {
         Returns: Json
       }
       scm_logout: { Args: { _token_hash: string }; Returns: boolean }
+      scm_update_own_profile_photo: {
+        Args: { _photo_profil: string; _token_hash: string }
+        Returns: {
+          adresse: string
+          chantier_assigne: string | null
+          contact_urgence: string
+          created_at: string
+          date_admission: string | null
+          date_naissance: string | null
+          email: string
+          genre: string
+          id: string
+          matricule: string
+          nom_complet: string
+          numero_piece_identite: string
+          peut_voir_budget: boolean
+          photo_profil: string
+          poste: string
+          role: string
+          salaire: number
+          salaire_recu: number
+          salaire_restant: number
+          salaire_total: number
+          statut: string
+          telephone: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "employes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      scm_visible_employes: {
+        Args: { _token_hash: string }
+        Returns: {
+          adresse: string
+          chantier_assigne: string | null
+          contact_urgence: string
+          created_at: string
+          date_admission: string | null
+          date_naissance: string | null
+          email: string
+          genre: string
+          id: string
+          matricule: string
+          nom_complet: string
+          numero_piece_identite: string
+          peut_voir_budget: boolean
+          photo_profil: string
+          poste: string
+          role: string
+          salaire: number
+          salaire_recu: number
+          salaire_restant: number
+          salaire_total: number
+          statut: string
+          telephone: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "employes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       [_ in never]: never
