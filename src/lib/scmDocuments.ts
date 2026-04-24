@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
-import carteServiceMockupUrl from "@/assets/carte-service-mockup.png";
+import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
 export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service";
 
