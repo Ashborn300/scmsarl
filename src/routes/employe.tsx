@@ -50,7 +50,7 @@ export const Route = createFileRoute("/employe")({
 });
 
 type RoleSession = "admin" | "employe" | "chef_chantier";
-type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante" | "gestion_materiel" | "incident_chantier";
+type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante" | "gestion_materiel" | "arrivage_materiel" | "incident_chantier";
 type StatutPresence = "présent" | "absent" | "en retard" | "excusé";
 type ModeEdition = { type: "projets" | "employes" | "chantiers"; id?: string } | null;
 type Detail = { type: "projets" | "employes" | "chantiers" | "presences" | "annonces"; id: string } | null;
@@ -146,6 +146,7 @@ type DemandeConge = { id: string; employe_id: string; employe_nom: string; raiso
 type BilanSanteEmploye = { id: string; employe_id: string; employe_nom: string; semaine: string; etat_global: string; groupe_sanguin: string; allergies: string; blessure: boolean; details_blessure: string; created_at: string; updated_at: string };
 type LigneMateriel = { nom: string; quantite: number };
 type RapportMateriel = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; semaine: string; materiel_prevu: LigneMateriel[]; materiel_utilise: LigneMateriel[]; materiel_recupere: LigneMateriel[]; materiel_perdu: LigneMateriel[]; notes: string; statut: string; created_at: string; updated_at: string };
+type ArrivageMateriel = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; date_livraison: string; nom_materiel: string; quantite: number; entreprise_partenaire: string; prix_total: number; informations_supplementaires: string; preuve_image_url: string; statut: string; created_at: string; updated_at: string };
 type IncidentChantier = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; type_evenement: string; date_evenement: string; explication: string; images: string[]; statut: string; created_at: string; updated_at: string };
 
 type ProjetForm = Omit<Projet, "id" | "created_at" | "budget_estime"> & { budget_estime: string };
@@ -167,6 +168,7 @@ const annonceInitial: AnnonceForm = { titre: "", contenu: "", image_url: "", pub
 const congeInitial = { raison: "", image_url: "" };
 const bilanSanteInitial = { semaine: new Date().toISOString().slice(0, 10), etat_global: "", groupe_sanguin: "", allergies: "", blessure: false, details_blessure: "" };
 const materielInitial = { semaine: new Date().toISOString().slice(0, 10), chantier_id: "", materiel_prevu: [{ nom: "", quantite: 1 }], materiel_utilise: [] as LigneMateriel[], materiel_recupere: [] as LigneMateriel[], materiel_perdu: [] as LigneMateriel[], notes: "" };
+const arrivageInitial = { date_livraison: new Date().toISOString().slice(0, 10), chantier_id: "", nom_materiel: "", quantite: "", entreprise_partenaire: "", prix_total: "", informations_supplementaires: "", preuve_image_url: "" };
 const incidentInitial = { type_evenement: "Incident", date_evenement: new Date().toISOString().slice(0, 10), chantier_id: "", explication: "", images: [] as string[] };
 
 function nombre(value: number) { return new Intl.NumberFormat("fr-FR").format(value || 0); }
