@@ -444,6 +444,20 @@ export async function listerRapportsMateriel() {
   return (data ?? []) as RapportMateriel[];
 }
 
+export async function listerArrivagesMateriel() {
+  const { data, error } = await db.from("arrivages_materiel").select("*").order("date_livraison", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ArrivageMateriel[];
+}
+
+export async function televerserPreuveArrivageMateriel(fichier: File) {
+  const extension = fichier.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+  const chemin = `arrivages-materiel/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from("scm-images").upload(chemin, fichier, { cacheControl: "3600", contentType: fichier.type || "image/png", upsert: false });
+  if (error) throw new Error(error.message);
+  return supabase.storage.from("scm-images").getPublicUrl(chemin).data.publicUrl;
+}
+
 export async function televerserImageIncidentChantier(fichier: File) {
   const extension = fichier.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
   const chemin = `incidents-chantiers/${crypto.randomUUID()}.${extension}`;
