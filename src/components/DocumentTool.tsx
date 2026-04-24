@@ -49,6 +49,23 @@ function lireImage(fichier?: File) {
   });
 }
 
+function optimiserImagePourIA(source?: string, tailleMax = 1024, qualite = 0.82) {
+  return new Promise<string | undefined>((resolve, reject) => {
+    if (!source) return resolve(undefined);
+    const image = new Image();
+    image.onload = () => {
+      const ratio = Math.min(1, tailleMax / Math.max(image.width, image.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.width * ratio));
+      canvas.height = Math.max(1, Math.round(image.height * ratio));
+      canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", qualite));
+    };
+    image.onerror = reject;
+    image.src = source;
+  });
+}
+
 export function DocumentTool({ config, retour }: { config: Config; retour: () => void }) {
   const estCommunication = config.type === "communiquer";
   const [formulaire, setFormulaire] = useState<Record<string, string>>(() => Object.fromEntries(config.fields.map((field) => [field.name, field.defaultValue || ""])));
@@ -82,7 +99,8 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
       if (config.type === "carte_service") {
         const mockup = await mockupCarteServiceBase64();
         const prompt = `Use the provided ID card mockup image as the exact base template.\n\nDo not redesign the layout. Do not change the background, card proportions, wave shapes, colors, shadows, spacing, or general design.\n\nOnly replace the following elements:\n\n1. Replace the circular profile photo on the front card with the uploaded profile image [PROFILE_IMAGE].\n2. Replace the QR code on the front card with the uploaded QR code image [QR_CODE_IMAGE].\n3. Keep the logo on the back card exactly as it appears in the mockup image.\n4. Replace the employee information text with:\n\nNom complet : ${formulaire.nomComplet}\nMatricule : ${formulaire.matricule}\nGenre : ${formulaire.genre}\nTéléphone : ${formulaire.telephone}\nAdresse : ${formulaire.adresse}\nPoste : ${formulaire.poste}\n\n5. Keep the back card text exactly as:\n\nInformations supplémentaires\n\nLe détenteur de cette carte est un employé Agréé de SCM SARL.\n\nRCCM : CD/KNM/RCCM/ 24-B-01256\nIDNAT : 01-F4200-N55523N\nN°IMPÔT : A2442 173S\n\nImportant:\n- Use the uploaded mockup image as the reference/base image.\n- Preserve the exact original design.\n- Only edit the specified images and text.\n- Do not invent new layout.\n- Do not add random text.\n- Keep everything clean, readable, aligned, and print-ready.`;
-        const image = await genererImageOpenRouter({ data: { prompt, images: [mockup, imagesChamps.profileImage, imagesChamps.qrCodeImage].filter(Boolean) } });
+        const [profilOptimise, qrOptimise] = await Promise.all([optimiserImagePourIA(imagesChamps.profileImage, 768), optimiserImagePourIA(imagesChamps.qrCodeImage, 512, 0.9)]);
+        const image = await genererImageOpenRouter({ data: { prompt, images: [mockup, profilOptimise, qrOptimise].filter(Boolean) } });
         await enregistrerCarteService({ ...formulaire, ...imagesChamps, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
         setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Carte de service modifiée avec succès." : "Carte de service générée et enregistrée avec succès."); return;
       }
