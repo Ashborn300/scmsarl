@@ -303,6 +303,23 @@ export async function enregistrerRealisticSketchup(payload: Record<string, unkno
   return data as DocumentRecord;
 }
 
+export async function enregistrerVersionNuit(payload: Record<string, unknown>, imageBase64: string, numero?: string, id?: string) {
+  const documentNumero = numero || (await genererNumero("version_nuit"));
+  const nomFichier = `${documentNumero}-${String(payload.titre || "version-nuit").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.png`;
+  const ligne = {
+    numero: documentNumero,
+    nom_fichier: nomFichier,
+    titre: String(payload.titre || "Version nuit"),
+    donnees_formulaire: payload,
+    image_base64: imageBase64,
+    date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
+  };
+  const requete = id ? db.from("versions_nuit").update(ligne).eq("id", id).select().single() : db.from("versions_nuit").insert(ligne).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as DocumentRecord;
+}
+
 export async function enregistrerPlanArchitectural(payload: Record<string, unknown>, imageBase64: string, numero?: string, id?: string) {
   const documentNumero = numero || (await genererNumero("plan_architectural"));
   const nomFichier = `${documentNumero}-${String(payload.titre || "plan-architectural").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.png`;
