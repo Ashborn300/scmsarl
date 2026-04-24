@@ -26,13 +26,19 @@ const icones: Record<OutilType, React.ElementType> = {
   description_projet: Building2,
 };
 
-const stylesOutils: Record<OutilType, CSSProperties> = {
-  facture: { ["--tool-1" as "--tool-1"]: "oklch(0.5 0.2 260)", ["--tool-2" as "--tool-2"]: "oklch(0.68 0.14 225)", ["--tool-foreground" as "--tool-foreground"]: "oklch(0.99 0.003 95)" },
-  devis: { ["--tool-1" as "--tool-1"]: "oklch(0.82 0.17 95)", ["--tool-2" as "--tool-2"]: "oklch(0.74 0.19 70)", ["--tool-foreground" as "--tool-foreground"]: "oklch(0.18 0.04 260)" },
-  recu: { ["--tool-1" as "--tool-1"]: "oklch(0.55 0.16 150)", ["--tool-2" as "--tool-2"]: "oklch(0.73 0.14 165)", ["--tool-foreground" as "--tool-foreground"]: "oklch(0.99 0.003 95)" },
-  contrat_construction: { ["--tool-1" as "--tool-1"]: "oklch(0.51 0.2 305)", ["--tool-2" as "--tool-2"]: "oklch(0.65 0.17 285)", ["--tool-foreground" as "--tool-foreground"]: "oklch(0.99 0.003 95)" },
-  contrat_employe: { ["--tool-1" as "--tool-1"]: "oklch(0.58 0.15 190)", ["--tool-2" as "--tool-2"]: "oklch(0.74 0.13 180)", ["--tool-foreground" as "--tool-foreground"]: "oklch(0.99 0.003 95)" },
-  description_projet: { ["--tool-1" as "--tool-1"]: "oklch(0.55 0.2 28)", ["--tool-2" as "--tool-2"]: "oklch(0.67 0.17 18)", ["--tool-foreground" as "--tool-foreground"]: "oklch(0.99 0.003 95)" },
+type ToolCardStyle = CSSProperties & {
+  "--tool-1": string;
+  "--tool-2": string;
+  "--tool-foreground": string;
+};
+
+const stylesOutils: Record<OutilType, ToolCardStyle> = {
+  facture: { "--tool-1": "oklch(0.5 0.2 260)", "--tool-2": "oklch(0.68 0.14 225)", "--tool-foreground": "oklch(0.99 0.003 95)" },
+  devis: { "--tool-1": "oklch(0.82 0.17 95)", "--tool-2": "oklch(0.74 0.19 70)", "--tool-foreground": "oklch(0.18 0.04 260)" },
+  recu: { "--tool-1": "oklch(0.55 0.16 150)", "--tool-2": "oklch(0.73 0.14 165)", "--tool-foreground": "oklch(0.99 0.003 95)" },
+  contrat_construction: { "--tool-1": "oklch(0.51 0.2 305)", "--tool-2": "oklch(0.65 0.17 285)", "--tool-foreground": "oklch(0.99 0.003 95)" },
+  contrat_employe: { "--tool-1": "oklch(0.58 0.15 190)", "--tool-2": "oklch(0.74 0.13 180)", "--tool-foreground": "oklch(0.99 0.003 95)" },
+  description_projet: { "--tool-1": "oklch(0.55 0.2 28)", "--tool-2": "oklch(0.67 0.17 18)", "--tool-foreground": "oklch(0.99 0.003 95)" },
 };
 
 function Index() {
