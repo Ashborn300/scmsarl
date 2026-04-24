@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, FileText, Hammer, HardHat, ReceiptText, ShieldCheck, UsersRound } from "lucide-react";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
 import scmLogo from "@/assets/scm-logo.jpeg";
@@ -24,6 +24,66 @@ const icones: Record<OutilType, React.ElementType> = {
   contrat_construction: ShieldCheck,
   contrat_employe: UsersRound,
   description_projet: Building2,
+};
+
+type ToolVisual = {
+  action: CSSProperties;
+  badge: CSSProperties;
+  banner: CSSProperties;
+  card: CSSProperties;
+  footer: CSSProperties;
+  icon: CSSProperties;
+};
+
+const stylesOutils: Record<OutilType, ToolVisual> = {
+  facture: {
+    card: { background: "linear-gradient(180deg, rgba(34,125,255,0.14) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(34,125,255,0.24)" },
+    banner: { background: "linear-gradient(135deg, #2563eb, #0891b2)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.16)", color: "white" },
+    footer: { background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.14)" },
+    action: { background: "rgba(37,99,235,0.12)", border: "1px solid rgba(37,99,235,0.16)" },
+    icon: { background: "linear-gradient(135deg, #2563eb, #0891b2)", color: "white" },
+  },
+  devis: {
+    card: { background: "linear-gradient(180deg, rgba(245,158,11,0.2) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(245,158,11,0.32)" },
+    banner: { background: "linear-gradient(135deg, #f59e0b, #facc15)", color: "#172033" },
+    badge: { background: "rgba(255,255,255,0.32)", color: "#172033" },
+    footer: { background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.18)" },
+    action: { background: "rgba(250,204,21,0.18)", border: "1px solid rgba(245,158,11,0.22)" },
+    icon: { background: "linear-gradient(135deg, #f59e0b, #facc15)", color: "#172033" },
+  },
+  recu: {
+    card: { background: "linear-gradient(180deg, rgba(16,185,129,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(16,185,129,0.28)" },
+    banner: { background: "linear-gradient(135deg, #10b981, #22c55e)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.16)", color: "white" },
+    footer: { background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.16)" },
+    action: { background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.18)" },
+    icon: { background: "linear-gradient(135deg, #10b981, #22c55e)", color: "white" },
+  },
+  contrat_construction: {
+    card: { background: "linear-gradient(180deg, rgba(168,85,247,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(168,85,247,0.28)" },
+    banner: { background: "linear-gradient(135deg, #a855f7, #7c3aed)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.16)", color: "white" },
+    footer: { background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.16)" },
+    action: { background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.18)" },
+    icon: { background: "linear-gradient(135deg, #a855f7, #7c3aed)", color: "white" },
+  },
+  contrat_employe: {
+    card: { background: "linear-gradient(180deg, rgba(20,184,166,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(20,184,166,0.28)" },
+    banner: { background: "linear-gradient(135deg, #14b8a6, #06b6d4)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.16)", color: "white" },
+    footer: { background: "rgba(20,184,166,0.08)", border: "1px solid rgba(20,184,166,0.16)" },
+    action: { background: "rgba(20,184,166,0.12)", border: "1px solid rgba(20,184,166,0.18)" },
+    icon: { background: "linear-gradient(135deg, #14b8a6, #06b6d4)", color: "white" },
+  },
+  description_projet: {
+    card: { background: "linear-gradient(180deg, rgba(239,68,68,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(239,68,68,0.28)" },
+    banner: { background: "linear-gradient(135deg, #ef4444, #f97316)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.16)", color: "white" },
+    footer: { background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.16)" },
+    action: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.18)" },
+    icon: { background: "linear-gradient(135deg, #ef4444, #f97316)", color: "white" },
+  },
 };
 
 function Index() {
@@ -86,18 +146,20 @@ function Index() {
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {configs.map((config) => {
               const Icone = icones[config.type];
+              const visual = stylesOutils[config.type];
               return (
-                <button key={config.type} type="button" onClick={() => setOutilActif(config.type)} className={`tool-${config.theme} tool-card group relative overflow-hidden rounded-3xl border p-5 text-left shadow-document transition hover:-translate-y-1 hover:shadow-tool`}>
-                  <span className="absolute inset-x-0 top-0 h-2 bg-tool-gradient" />
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="flex size-14 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool transition group-hover:scale-105"><Icone className="size-7" /></span>
-                    <span className="rounded-full bg-muted px-3 py-1 text-xs font-black uppercase text-muted-foreground">SCM</span>
+                <button key={config.type} type="button" onClick={() => setOutilActif(config.type)} style={visual.card} className="tool-card group relative overflow-hidden rounded-3xl border p-5 text-left shadow-document transition hover:-translate-y-1 hover:shadow-tool">
+                  <div style={visual.banner} className="tool-card-banner -mx-5 -mt-5 mb-5 flex items-center justify-between px-5 py-4">
+                    <span style={visual.badge} className="flex size-14 items-center justify-center rounded-2xl transition group-hover:scale-105"><Icone className="size-7" /></span>
+                    <span style={visual.badge} className="rounded-full px-3 py-1 text-xs font-black uppercase">SCM</span>
                   </div>
                   <h3 className="mt-6 text-xl font-black text-foreground">{config.titre.replace("Générateur de ", "")}</h3>
                   <p className="mt-2 min-h-14 text-sm leading-6 text-muted-foreground">{config.description}</p>
-                  <div className="mt-5 flex items-center justify-between rounded-2xl bg-muted p-2 pl-4">
+                  <div style={visual.footer} className="tool-card-soft mt-5 rounded-2xl p-3">
+                    <div style={visual.action} className="tool-card-action flex items-center justify-between rounded-2xl p-2 pl-4">
                     <span className="text-xs font-black text-foreground">Ouvrir l’outil</span>
-                    <span className="flex size-9 items-center justify-center rounded-xl bg-tool-gradient text-tool-foreground shadow-tool">→</span>
+                    <span style={visual.icon} className="flex size-9 items-center justify-center rounded-xl shadow-tool">→</span>
+                    </div>
                   </div>
                 </button>
               );

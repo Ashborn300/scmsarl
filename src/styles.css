@@ -107,6 +107,7 @@
 }
 
 .tool-blue { --tool-1: oklch(0.5 0.2 260); --tool-2: oklch(0.68 0.14 225); }
+.tool-yellow { --tool-1: oklch(0.82 0.17 95); --tool-2: oklch(0.74 0.19 70); --tool-foreground: var(--foreground); }
 .tool-green { --tool-1: oklch(0.55 0.16 150); --tool-2: oklch(0.73 0.14 165); }
 .tool-orange { --tool-1: oklch(0.66 0.18 55); --tool-2: oklch(0.78 0.17 80); }
 .tool-purple { --tool-1: oklch(0.51 0.2 305); --tool-2: oklch(0.65 0.17 285); }
@@ -149,14 +150,27 @@
   }
   .tool-card {
     background:
-      linear-gradient(145deg, color-mix(in oklab, var(--tool-1) 15%, white), var(--card) 48%),
+      linear-gradient(145deg, color-mix(in oklab, var(--tool-1) 18%, white), var(--card) 46%),
       var(--card);
     border-color: color-mix(in oklab, var(--tool-1) 32%, var(--border));
   }
   .tool-card:hover {
     background:
-      linear-gradient(145deg, color-mix(in oklab, var(--tool-1) 23%, white), color-mix(in oklab, var(--tool-2) 10%, var(--card)) 58%),
+      linear-gradient(145deg, color-mix(in oklab, var(--tool-1) 28%, white), color-mix(in oklab, var(--tool-2) 16%, var(--card)) 58%),
       var(--card);
+  }
+  .tool-card-banner {
+    background: var(--tool-gradient);
+    color: var(--tool-foreground);
+    box-shadow: var(--shadow-tool);
+  }
+  .tool-card-soft {
+    background: color-mix(in oklab, var(--tool-1) 14%, white);
+    border: 1px solid color-mix(in oklab, var(--tool-1) 22%, white);
+  }
+  .tool-card-action {
+    background: color-mix(in oklab, var(--tool-1) 18%, white);
+    border: 1px solid color-mix(in oklab, var(--tool-1) 26%, white);
   }
   .dashboard-sidebar { background: oklch(1 0 0 / 86%); backdrop-filter: blur(18px); }
   .dashboard-hero { background: linear-gradient(135deg, var(--dash-violet), var(--dash-cyan) 48%, var(--dash-emerald)); color: var(--primary-foreground); }
