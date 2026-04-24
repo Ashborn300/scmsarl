@@ -302,7 +302,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     });
   }
 
-  if (typeof options.total === "number") {
+  if (type !== "communiquer" && typeof options.total === "number") {
     pdf.setFillColor(16, 42, 88);
     pdf.roundedRect(124, 220, 64, 14, 2, 2, "F");
     pdf.setTextColor(255, 255, 255);
