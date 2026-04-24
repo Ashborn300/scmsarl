@@ -980,6 +980,42 @@ export type Database = {
         }
         Relationships: []
       }
+      lettres_licenciement: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          employe: string
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe?: string
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe?: string
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organigrammes_entreprise: {
         Row: {
           actif: boolean

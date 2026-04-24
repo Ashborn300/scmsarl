@@ -4,7 +4,7 @@ import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement";
 export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
 export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
@@ -86,6 +86,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   arrivages_materiel: { principal: [14, 116, 144], secondaire: [202, 138, 4], doux: [230, 248, 250] },
   incidents_chantier: { principal: [185, 28, 28], secondaire: [234, 88, 12], doux: [255, 236, 232] },
   archives_chantiers: { principal: [52, 88, 74], secondaire: [180, 83, 9], doux: [238, 246, 241] },
+  lettre_licenciement: { principal: [127, 29, 29], secondaire: [180, 83, 9], doux: [253, 240, 232] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -112,6 +113,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   arrivages_materiel: "arrivages_materiel",
   incidents_chantier: "incidents_chantier",
   archives_chantiers: "archives_chantiers",
+  lettre_licenciement: "lettres_licenciement",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -138,6 +140,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   arrivages_materiel: "ARM",
   incidents_chantier: "INC",
   archives_chantiers: "ARC",
+  lettre_licenciement: "LIC",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -164,6 +167,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   arrivages_materiel: ["chef_chantier_nom", "chantier_nom", "nom_materiel", "entreprise_partenaire", "informations_supplementaires", "statut"],
   incidents_chantier: ["chef_chantier_nom", "chantier_nom", "type_evenement", "explication", "statut"],
   archives_chantiers: ["nom_chantier", "nom_client", "adresse_projet", "nom_fichier"],
+  lettre_licenciement: ["nom_fichier", "numero", "employe"],
 };
 
 const db = supabase as any;
@@ -223,7 +227,7 @@ export async function enregistrerDocument(type: OutilType, payload: Record<strin
       ? { montant_total: Number(payload.totalFinal || payload.total || payload.montant || payload.budget || 0) }
       : {}),
     ...(type === "facture" || type === "devis" || type === "recu" || type === "contrat_construction" ? { client: String(payload.client || payload.nomClient || "") } : {}),
-    ...(type === "contrat_employe" ? { employe: String(payload.employe || "") } : {}),
+    ...(type === "contrat_employe" || type === "lettre_licenciement" ? { employe: String(payload.employe || "") } : {}),
     ...(type === "description_projet" ? { projet: String(payload.projet || payload.nomProjet || "") } : {}),
     ...(type === "communiquer" ? { titre: String(payload.titre || payload.objet || "") } : {}),
     ...(type === "certificat" ? { beneficiaire: String(payload.beneficiaire || "") } : {}),
@@ -753,6 +757,222 @@ export async function creerPdfArchiveChantier(archive: Omit<ArchiveChantier, "id
   return pdf.output("datauristring");
 }
 
+function creerPdfLettreLicenciement(pdf: jsPDF, logo: string, drapeauRdc: string, numero: string, champs: Array<[string, string]>, couleurs: { principal: [number, number, number]; secondaire: [number, number, number]; doux: [number, number, number] }, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string }) {
+  const employe = valeurChamp(champs, "Nom de l’employé");
+  const poste = valeurChamp(champs, "Poste occupé");
+  const matricule = valeurChamp(champs, "Matricule");
+  const dateEffet = valeurChamp(champs, "Date d’effet du licenciement");
+  const dateLettre = valeurChamp(champs, "Date de la lettre");
+  const motif = valeurChamp(champs, "Motif du licenciement");
+  const detailsFaits = valeurChamp(champs, "Détails et faits reprochés");
+  const preavis = valeurChamp(champs, "Préavis et indemnités");
+  const obligationsSortie = valeurChamp(champs, "Obligations de sortie");
+  const lieu = valeurChamp(champs, "Lieu de signature");
+  const signataireNom = valeurChamp(champs, "Nom du signataire");
+  const signataireFonction = valeurChamp(champs, "Fonction du signataire");
+
+  // Fond crème élégant
+  pdf.setFillColor(252, 250, 246);
+  pdf.rect(0, 0, 210, 297, "F");
+
+  // Bande latérale décorative gauche
+  pdf.setFillColor(...couleurs.principal);
+  pdf.rect(0, 0, 6, 297, "F");
+  pdf.setFillColor(...couleurs.secondaire);
+  pdf.rect(6, 0, 1.5, 297, "F");
+
+  // Carte intérieure blanche
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(14, 14, 184, 269, 2, 2, "F");
+  pdf.setDrawColor(...couleurs.principal);
+  pdf.setLineWidth(0.3);
+  pdf.roundedRect(14, 14, 184, 269, 2, 2, "S");
+
+  // En-tête : logo + drapeau + identité
+  pdf.addImage(logo, "JPEG", 20, 20, 36, 22, undefined, "FAST");
+  pdf.addImage(drapeauRdc, "PNG", 170, 20, 22, 16, undefined, "FAST");
+
+  pdf.setTextColor(...couleurs.principal);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(11);
+  pdf.text("SCM SARL", 60, 26);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.setTextColor(85, 92, 110);
+  pdf.text("Société de Construction et Matériaux", 60, 31);
+  pdf.text("République Démocratique du Congo", 60, 35);
+  pdf.text("Direction des Ressources Humaines", 60, 39);
+
+  // Filet doré sous l'en-tête
+  pdf.setDrawColor(...couleurs.secondaire);
+  pdf.setLineWidth(0.6);
+  pdf.line(20, 46, 192, 46);
+  pdf.setLineWidth(0.2);
+  pdf.line(20, 47.5, 192, 47.5);
+
+  // Titre principal centré
+  pdf.setFont("times", "bold");
+  pdf.setTextColor(...couleurs.principal);
+  pdf.setFontSize(20);
+  pdf.text("LETTRE DE LICENCIEMENT", 105, 60, { align: "center" });
+  pdf.setFont("times", "italic");
+  pdf.setFontSize(9);
+  pdf.setTextColor(120, 100, 80);
+  pdf.text(`Référence : ${numero}`, 105, 66, { align: "center" });
+
+  // Bloc destinataire
+  pdf.setFillColor(...couleurs.doux);
+  pdf.roundedRect(110, 73, 82, 28, 1.5, 1.5, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("DESTINATAIRE", 114, 79);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(40, 45, 60);
+  pdf.text(pdf.splitTextToSize(employe, 76), 114, 85);
+  pdf.setFontSize(8);
+  pdf.setTextColor(85, 92, 110);
+  pdf.text(`Poste : ${poste}`, 114, 92);
+  pdf.text(`Matricule : ${matricule}`, 114, 97);
+
+  // Lieu et date
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(40, 45, 60);
+  pdf.text(`Fait à ${lieu}, le ${dateLettre}`, 20, 80);
+
+  // Objet
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("Objet :", 20, 110);
+  pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(40, 45, 60);
+  pdf.text("Notification de rupture du contrat de travail", 36, 110);
+
+  // Corps formel
+  let y = 122;
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+  pdf.setTextColor(40, 45, 60);
+
+  const introduction = `Madame, Monsieur ${employe},`;
+  pdf.text(introduction, 20, y);
+  y += 8;
+
+  const corps = `Suite à notre analyse approfondie de votre situation professionnelle et après examen attentif des éléments constitutifs de votre dossier, nous sommes au regret de vous notifier, par la présente, votre licenciement de la société SCM SARL, prenant effet à compter du ${dateEffet}.`;
+  const lignesCorps = pdf.splitTextToSize(corps, 168);
+  pdf.text(lignesCorps, 20, y);
+  y += lignesCorps.length * 5 + 4;
+
+  // Section motif (encadré)
+  pdf.setFillColor(...couleurs.doux);
+  pdf.roundedRect(20, y - 4, 168, 7, 1, 1, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("MOTIF DU LICENCIEMENT", 23, y + 1);
+  y += 10;
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+  pdf.setTextColor(40, 45, 60);
+  const motifLignes = pdf.splitTextToSize(motif, 168);
+  pdf.text(motifLignes, 20, y);
+  y += motifLignes.length * 5 + 4;
+
+  if (detailsFaits && detailsFaits !== "—") {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text("Faits reprochés et circonstances :", 20, y);
+    y += 5;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(50, 55, 70);
+    const detailsLignes = pdf.splitTextToSize(detailsFaits, 168);
+    pdf.text(detailsLignes, 20, y);
+    y += detailsLignes.length * 4.6 + 4;
+  }
+
+  if (preavis && preavis !== "—") {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text("Préavis et indemnités :", 20, y);
+    y += 5;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(50, 55, 70);
+    const preavisLignes = pdf.splitTextToSize(preavis, 168);
+    pdf.text(preavisLignes, 20, y);
+    y += preavisLignes.length * 4.6 + 4;
+  }
+
+  if (obligationsSortie && obligationsSortie !== "—") {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text("Obligations de sortie :", 20, y);
+    y += 5;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(50, 55, 70);
+    const oblLignes = pdf.splitTextToSize(obligationsSortie, 168);
+    pdf.text(oblLignes, 20, y);
+    y += oblLignes.length * 4.6 + 4;
+  }
+
+  // Formule de politesse
+  if (y < 215) {
+    y = Math.max(y + 2, 215);
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(60, 65, 80);
+    const politesse = "Nous vous prions d’agréer, Madame, Monsieur, l’expression de nos salutations distinguées.";
+    pdf.text(pdf.splitTextToSize(politesse, 168), 20, y);
+  }
+
+  // Bloc signature en bas — sceau de l'entreprise + signature de l'employé licencié
+  const ySign = 240;
+  pdf.setDrawColor(...couleurs.secondaire);
+  pdf.setLineWidth(0.4);
+  pdf.line(20, ySign - 4, 192, ySign - 4);
+
+  // Colonne gauche : Sceau de l'entreprise
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("SCEAU & SIGNATURE DE L’ENTREPRISE", 22, ySign);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(95, 100, 115);
+  pdf.text(signataireNom || options.libelleSceau || "Direction SCM SARL", 22, ySign + 4);
+  if (signataireFonction && signataireFonction !== "—") pdf.text(signataireFonction, 22, ySign + 8);
+  if (options.sceau) pdf.addImage(options.sceau, formatImage(options.sceau), 24, ySign + 11, 50, 26, undefined, "FAST");
+
+  // Colonne droite : Signature de l'employé licencié
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("SIGNATURE DE L’EMPLOYÉ LICENCIÉ", 115, ySign);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(95, 100, 115);
+  pdf.text("« Lu et approuvé »", 115, ySign + 4);
+  pdf.text(employe, 115, ySign + 8);
+  if (options.signature) pdf.addImage(options.signature, formatImage(options.signature), 117, ySign + 11, 50, 26, undefined, "FAST");
+
+  // Pied de page institutionnel
+  pdf.setDrawColor(...couleurs.principal);
+  pdf.setLineWidth(0.2);
+  pdf.line(20, 275, 192, 275);
+  pdf.setFont("helvetica", "italic");
+  pdf.setFontSize(7);
+  pdf.setTextColor(120, 125, 140);
+  pdf.text("SCM SARL — Document confidentiel — Conforme au Code du travail de la République Démocratique du Congo", 105, 280, { align: "center" });
+}
+
 export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string; lignes?: LignePrestation[]; deductions?: LigneDeduction[]; total?: number; totalAvantDeduction?: number }) {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const couleurs = couleursPdfParOutil[type];
@@ -761,6 +981,11 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
 
   if (type === "certificat") {
     creerPdfCertificat(pdf, champs, numero, options);
+    return pdf.output("datauristring");
+  }
+
+  if (type === "lettre_licenciement") {
+    creerPdfLettreLicenciement(pdf, logo, drapeauRdc, numero, champs, couleurs, options);
     return pdf.output("datauristring");
   }
 
