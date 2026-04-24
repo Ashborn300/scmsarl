@@ -334,9 +334,10 @@ function EmployePage() {
     if (!currentSession) return;
     setChargement(true);
     setMessage("");
+    const tokenHash = await sha256(currentSession.token);
     const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes, orgRes, congesRes, santeRes, materielRes, arrivagesRes, incidentsRes] = await Promise.all([
       db.from("projets").select("*").order("created_at", { ascending: false }),
-      db.from("employes").select("*").order("created_at", { ascending: false }),
+      currentSession.role === "admin" ? db.from("employes").select("*").order("created_at", { ascending: false }) : db.rpc("scm_visible_employes", { _token_hash: tokenHash }),
       db.from("chantiers").select("*").order("created_at", { ascending: false }),
       db.from("presences").select("*").order("date", { ascending: false }),
       db.from("annonces").select("*").order("created_at", { ascending: false }),
@@ -351,7 +352,7 @@ function EmployePage() {
     ]);
     if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error || orgRes.error || congesRes.error || santeRes.error || materielRes.error || arrivagesRes.error || incidentsRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
     setProjets(projetsRes.data || []);
-    setEmployes(projetsRes.error ? [] : (employesRes.data || []));
+    setEmployes(employesRes.error ? [] : (employesRes.data || []));
     setChantiers(chantiersRes.data || []);
     setPresences(presencesRes.data || []);
     setAnnonces(annoncesRes.data || []);
