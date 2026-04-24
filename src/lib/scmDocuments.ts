@@ -1093,28 +1093,73 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   return pdf.output("datauristring");
 }
 
-export function telechargerPdf(base64: string, nom: string) {
+function dataUrlVersBlob(dataUrl: string, typeParDefaut: string): Blob {
+  if (!dataUrl) return new Blob([], { type: typeParDefaut });
+  if (!dataUrl.startsWith("data:")) {
+    return new Blob([dataUrl], { type: typeParDefaut });
+  }
+  const [entete, donnees = ""] = dataUrl.split(",");
+  const correspondanceType = entete.match(/data:([^;]+)/);
+  const typeMime = correspondanceType?.[1] || typeParDefaut;
+  const estBase64 = entete.includes(";base64");
+  if (!estBase64) {
+    return new Blob([decodeURIComponent(donnees)], { type: typeMime });
+  }
+  const binaire = atob(donnees);
+  const buffer = new Uint8Array(binaire.length);
+  for (let i = 0; i < binaire.length; i += 1) buffer[i] = binaire.charCodeAt(i);
+  return new Blob([buffer], { type: typeMime });
+}
+
+function nomFichierAvecExtension(nom: string, extension: string): string {
+  const propre = (nom || "document").trim().replace(/[\\/:*?"<>|]+/g, "_");
+  return propre.toLowerCase().endsWith(`.${extension}`) ? propre : `${propre}.${extension}`;
+}
+
+function declencherTelechargementBlob(blob: Blob, nom: string) {
+  const url = URL.createObjectURL(blob);
   const lien = document.createElement("a");
-  lien.href = base64;
+  lien.href = url;
   lien.download = nom;
+  lien.rel = "noopener";
+  lien.style.display = "none";
+  document.body.appendChild(lien);
   lien.click();
+  document.body.removeChild(lien);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+export function telechargerPdf(base64: string, nom: string) {
+  const blob = dataUrlVersBlob(base64, "application/pdf");
+  declencherTelechargementBlob(blob, nomFichierAvecExtension(nom, "pdf"));
 }
 
 export function voirPdf(base64: string) {
-  const fenetre = window.open();
-  if (fenetre) fenetre.document.write(`<iframe title="PDF" src="${base64}" style="border:0;width:100%;height:100vh"></iframe>`);
+  const blob = dataUrlVersBlob(base64, "application/pdf");
+  const url = URL.createObjectURL(blob);
+  const fenetre = window.open(url, "_blank", "noopener");
+  if (!fenetre) {
+    declencherTelechargementBlob(blob, nomFichierAvecExtension("document", "pdf"));
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export function telechargerImage(base64: string, nom: string) {
-  const lien = document.createElement("a");
-  lien.href = base64;
-  lien.download = nom;
-  lien.click();
+  const correspondanceType = base64.match(/data:([^;]+)/);
+  const typeMime = correspondanceType?.[1] || "image/png";
+  const extension = typeMime.split("/")[1]?.split("+")[0] || "png";
+  const blob = dataUrlVersBlob(base64, typeMime);
+  declencherTelechargementBlob(blob, nomFichierAvecExtension(nom, extension));
 }
 
 export function voirImage(base64: string) {
-  const fenetre = window.open();
-  if (fenetre) fenetre.document.write(`<img alt="Carte de service" src="${base64}" style="display:block;max-width:100%;height:auto;margin:0 auto;background:#c8c8c8" />`);
+  const correspondanceType = base64.match(/data:([^;]+)/);
+  const typeMime = correspondanceType?.[1] || "image/png";
+  const blob = dataUrlVersBlob(base64, typeMime);
+  const url = URL.createObjectURL(blob);
+  const fenetre = window.open(url, "_blank", "noopener");
+  if (!fenetre) declencherTelechargementBlob(blob, nomFichierAvecExtension("image", typeMime.split("/")[1] || "png"));
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export async function mockupCarteServiceBase64() {
