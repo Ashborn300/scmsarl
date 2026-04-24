@@ -197,6 +197,7 @@ function EmployePage() {
   const [demandesConges, setDemandesConges] = useState<DemandeConge[]>([]);
   const [bilansSante, setBilansSante] = useState<BilanSanteEmploye[]>([]);
   const [rapportsMateriel, setRapportsMateriel] = useState<RapportMateriel[]>([]);
+  const [arrivagesMateriel, setArrivagesMateriel] = useState<ArrivageMateriel[]>([]);
   const [incidentsChantier, setIncidentsChantier] = useState<IncidentChantier[]>([]);
   const [jourPopup, setJourPopup] = useState<JourNonTravaille | null>(null);
   const [chargement, setChargement] = useState(true);
@@ -217,6 +218,7 @@ function EmployePage() {
   const [formConge, setFormConge] = useState(congeInitial);
   const [formBilanSante, setFormBilanSante] = useState(bilanSanteInitial);
   const [formMateriel, setFormMateriel] = useState(materielInitial);
+  const [formArrivage, setFormArrivage] = useState(arrivageInitial);
   const [formIncident, setFormIncident] = useState(incidentInitial);
   const [presenceDate, setPresenceDate] = useState(new Date().toISOString().slice(0, 10));
   const [presenceChantier, setPresenceChantier] = useState("");
@@ -324,7 +326,7 @@ function EmployePage() {
     if (session?.token) await db.rpc("scm_logout", { _token_hash: await sha256(session.token) });
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
-    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setAnnonces([]); setAnnoncesMasquees([]); setDemandesConges([]); setBilansSante([]); setRapportsMateriel([]); setIncidentsChantier([]); setMessage(""); setOnglet("dashboard");
+    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setAnnonces([]); setAnnoncesMasquees([]); setDemandesConges([]); setBilansSante([]); setRapportsMateriel([]); setArrivagesMateriel([]); setIncidentsChantier([]); setMessage(""); setOnglet("dashboard");
   }
 
   async function chargerDonnees(currentSession = session) {
