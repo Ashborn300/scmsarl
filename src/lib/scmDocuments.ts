@@ -248,6 +248,26 @@ export async function enregistrerFicheEmploye(payload: Record<string, unknown>, 
   return data as DocumentRecord;
 }
 
+export async function enregistrerCodeQR(payload: Record<string, unknown>, qrBase64: string, urlPublique: string, numero?: string, id?: string) {
+  const documentNumero = numero || (await genererNumero("code_qr"));
+  const nomFichier = `${documentNumero}-${String(payload.employeNom || "code-qr-employe").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.png`;
+  const ligne = {
+    numero: documentNumero,
+    nom_fichier: nomFichier,
+    employe_id: String(payload.employeId || ""),
+    employe_nom: String(payload.employeNom || ""),
+    matricule: String(payload.matricule || ""),
+    url_publique: urlPublique,
+    qr_base64: qrBase64,
+    donnees_formulaire: payload,
+    date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
+  };
+  const requete = id ? db.from("codes_qr_employes").update(ligne).eq("id", id).select().single() : db.from("codes_qr_employes").insert(ligne).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as DocumentRecord;
+}
+
 export async function supprimerDocument(type: OutilType, id: string) {
   const { error } = await db.from(tablesParOutil[type]).delete().eq("id", id);
   if (error) throw new Error(error.message);
