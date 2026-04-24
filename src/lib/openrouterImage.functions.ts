@@ -7,6 +7,7 @@ const OPENROUTER_MODEL = "google/gemini-3.1-flash-image-preview";
 const imageRequestSchema = z.object({
   prompt: z.string().min(3, "La description de l’image est trop courte.").max(4000, "La description de l’image est trop longue."),
   images: z.array(z.string().min(10)).default([]),
+  model: z.enum(["google/gemini-2.5-flash-image", "google/gemini-3.1-flash-image-preview"]).optional(),
 });
 
 type OpenRouterContentPart =
@@ -48,7 +49,7 @@ export const genererImageOpenRouter = createServerFn({ method: "POST" })
         "X-Title": "SCM SARL",
       },
       body: JSON.stringify({
-        model: process.env.OPENROUTER_MODEL || OPENROUTER_MODEL,
+        model: data.model || process.env.OPENROUTER_MODEL || OPENROUTER_MODEL,
         modalities: ["image", "text"],
         messages: [
           {
@@ -73,5 +74,5 @@ export const genererImageOpenRouter = createServerFn({ method: "POST" })
     const imageUrl = extraireImageDepuisReponse(payload);
     if (!imageUrl) throw new Error("OpenRouter n’a retourné aucune image exploitable.");
 
-    return { imageUrl, model: process.env.OPENROUTER_MODEL || OPENROUTER_MODEL, size: "1024x1024" };
+    return { imageUrl, model: data.model || process.env.OPENROUTER_MODEL || OPENROUTER_MODEL, size: "1024x1024" };
   });
