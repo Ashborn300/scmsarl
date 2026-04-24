@@ -168,6 +168,16 @@ function piedDePage(pdf: jsPDF, sceau?: string, signature?: string, libelleSceau
   if (signature) pdf.addImage(signature, "JPEG", 117, y + 7, 48, 24, undefined, "FAST");
 }
 
+function piedDePageCommunication(pdf: jsPDF, sceau?: string, libelleSceau = "Nom / fonction de celui qui impose le sceau") {
+  const y = 238;
+  pdf.setDrawColor(25, 55, 109);
+  pdf.line(18, y - 8, 192, y - 8);
+  pdf.setFontSize(9);
+  pdf.setTextColor(90, 98, 115);
+  pdf.text(libelleSceau || "Nom / fonction de celui qui impose le sceau", 115, y);
+  if (sceau) pdf.addImage(sceau, "JPEG", 118, y + 7, 52, 28, undefined, "FAST");
+}
+
 function texteValeur(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170, interligne = 4.5) {
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(16, 42, 88);
@@ -262,7 +272,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   champs.forEach(([label, valeur]) => {
     y = texteMultiligne(pdf, label, valeur, 20, y, 165);
     if (y > 218) {
-      piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
+      type === "communiquer" ? piedDePageCommunication(pdf, options.sceau, options.libelleSceau) : piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
       pdf.addPage();
       y = 24;
     }
@@ -300,7 +310,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     pdf.text(`TOTAL : ${options.total.toLocaleString("fr-FR")} $`, 130, 229);
   }
 
-  piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
+  type === "communiquer" ? piedDePageCommunication(pdf, options.sceau, options.libelleSceau) : piedDePage(pdf, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
   return pdf.output("datauristring");
 }
 
