@@ -304,21 +304,28 @@ function EmployePage() {
     if (!currentSession) return;
     setChargement(true);
     setMessage("");
-    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes] = await Promise.all([
+    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes] = await Promise.all([
       db.from("projets").select("*").order("created_at", { ascending: false }),
       db.from("employes").select("*").order("created_at", { ascending: false }),
       db.from("chantiers").select("*").order("created_at", { ascending: false }),
       db.from("presences").select("*").order("date", { ascending: false }),
       db.from("annonces").select("*").order("created_at", { ascending: false }),
       db.from("annonces_masquees").select("*").order("created_at", { ascending: false }),
+      db.from("jours_non_travailles").select("*").order("date_jour", { ascending: false }),
     ]);
-    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
+    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
     setProjets(projetsRes.data || []);
     setEmployes(projetsRes.error ? [] : (employesRes.data || []));
     setChantiers(chantiersRes.data || []);
     setPresences(presencesRes.data || []);
     setAnnonces(annoncesRes.data || []);
     setAnnoncesMasquees(masqueesRes.data || []);
+    setJoursNonTravailles(joursRes.data || []);
+    if (currentSession.role !== "admin") {
+      const today = new Date().toISOString().slice(0, 10);
+      const jour = (joursRes.data || []).find((item: JourNonTravaille) => item.actif && item.date_jour === today);
+      if (jour && localStorage.getItem(`scm-jour-popup-${jour.id}`) !== today) setJourPopup(jour);
+    }
     setChargement(false);
   }
 
