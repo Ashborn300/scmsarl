@@ -4,7 +4,7 @@ import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "fiche_employe";
 
 export type DocumentRecord = {
   id: string;
@@ -25,6 +25,25 @@ export type DocumentRecord = {
 
 export type LignePrestation = { description: string; quantite: number; prix: number };
 
+export type EmployeRecord = {
+  id: string;
+  nom_complet: string;
+  matricule: string;
+  genre: string;
+  poste: string;
+  telephone: string;
+  email: string;
+  adresse: string;
+  date_naissance: string | null;
+  date_admission: string | null;
+  numero_piece_identite: string;
+  contact_urgence: string;
+  chantier_assigne: string | null;
+  statut: string;
+  role: string;
+  photo_profil: string;
+};
+
 const couleursPdfParOutil: Record<OutilType, { principal: [number, number, number]; secondaire: [number, number, number]; doux: [number, number, number] }> = {
   facture: { principal: [37, 99, 235], secondaire: [8, 145, 178], doux: [230, 240, 255] },
   devis: { principal: [245, 158, 11], secondaire: [250, 204, 21], doux: [255, 247, 214] },
@@ -37,6 +56,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   carte_service: { principal: [10, 132, 216], secondaire: [30, 45, 55], doux: [230, 244, 255] },
   rendu_3d: { principal: [85, 107, 47], secondaire: [196, 126, 66], doux: [242, 246, 232] },
   realistic_sketchup: { principal: [88, 77, 66], secondaire: [46, 125, 92], doux: [241, 238, 233] },
+  fiche_employe: { principal: [22, 101, 52], secondaire: [37, 99, 235], doux: [232, 246, 237] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -51,6 +71,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   carte_service: "cartes_service",
   rendu_3d: "rendus_3d",
   realistic_sketchup: "realistic_sketchup",
+  fiche_employe: "fiches_employes",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -65,6 +86,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   carte_service: "CAR",
   rendu_3d: "R3D",
   realistic_sketchup: "RSK",
+  fiche_employe: "FEM",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -79,6 +101,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   carte_service: ["nom_fichier", "numero", "nom_complet", "matricule"],
   rendu_3d: ["nom_fichier", "numero", "titre"],
   realistic_sketchup: ["nom_fichier", "numero", "titre"],
+  fiche_employe: ["nom_fichier", "numero", "titre", "type_fiche"],
 };
 
 const db = supabase as any;
