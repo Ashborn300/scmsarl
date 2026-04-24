@@ -322,14 +322,14 @@ function EmployePage() {
     if (session?.token) await db.rpc("scm_logout", { _token_hash: await sha256(session.token) });
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
-    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setAnnonces([]); setAnnoncesMasquees([]); setDemandesConges([]); setBilansSante([]); setRapportsMateriel([]); setMessage(""); setOnglet("dashboard");
+    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setAnnonces([]); setAnnoncesMasquees([]); setDemandesConges([]); setBilansSante([]); setRapportsMateriel([]); setIncidentsChantier([]); setMessage(""); setOnglet("dashboard");
   }
 
   async function chargerDonnees(currentSession = session) {
     if (!currentSession) return;
     setChargement(true);
     setMessage("");
-    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes, orgRes, congesRes, santeRes, materielRes] = await Promise.all([
+    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes, orgRes, congesRes, santeRes, materielRes, incidentsRes] = await Promise.all([
       db.from("projets").select("*").order("created_at", { ascending: false }),
       db.from("employes").select("*").order("created_at", { ascending: false }),
       db.from("chantiers").select("*").order("created_at", { ascending: false }),
@@ -341,8 +341,9 @@ function EmployePage() {
       db.from("demandes_conges").select("*").order("created_at", { ascending: false }),
       db.from("bilans_sante_employes").select("*").order("semaine", { ascending: false }),
       db.from("rapports_materiel").select("*").order("semaine", { ascending: false }),
+      db.from("incidents_chantier").select("*").order("date_evenement", { ascending: false }),
     ]);
-    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error || orgRes.error || congesRes.error || santeRes.error || materielRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
+    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error || orgRes.error || congesRes.error || santeRes.error || materielRes.error || incidentsRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
     setProjets(projetsRes.data || []);
     setEmployes(projetsRes.error ? [] : (employesRes.data || []));
     setChantiers(chantiersRes.data || []);
@@ -354,6 +355,7 @@ function EmployePage() {
     setDemandesConges(congesRes.data || []);
     setBilansSante(santeRes.data || []);
     setRapportsMateriel(materielRes.data || []);
+    setIncidentsChantier(incidentsRes.data || []);
     if (currentSession.role !== "admin") {
       const today = new Date().toISOString().slice(0, 10);
       const jour = (joursRes.data || []).find((item: JourNonTravaille) => item.actif && item.date_jour === today);
