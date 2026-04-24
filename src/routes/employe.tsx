@@ -308,15 +308,19 @@ function EmployePage() {
     event.preventDefault();
     setMessage("");
     const saisie = identifiant.trim();
-    if (!saisie) { setIdentifiant(""); setMessage(loginMode === "admin" ? "Entrez l’identifiant admin." : "Entrez le matricule employé."); return; }
+    if (!saisie) { setIdentifiant(""); setMessage("Entrez votre identifiant de connexion."); return; }
     setSauvegarde(true);
     const token = crypto.randomUUID() + crypto.randomUUID();
     const tokenHash = await sha256(token);
-    const { data, error } = loginMode === "admin"
-      ? await db.rpc("scm_login_admin", { _username: saisie, _token_hash: tokenHash })
-      : await db.rpc("scm_login_employe", { _matricule: saisie, _token_hash: tokenHash });
+    let data: any = null;
+    let error: any = null;
+    const adminRes = await db.rpc("scm_login_admin", { _username: saisie, _token_hash: tokenHash });
+    if (adminRes.data?.success) { data = adminRes.data; } else {
+      const empRes = await db.rpc("scm_login_employe", { _matricule: saisie, _token_hash: tokenHash });
+      data = empRes.data; error = empRes.error || adminRes.error;
+    }
     setSauvegarde(false);
-    if (error || !data?.success) { setIdentifiant(""); setMessage(data?.message || "Connexion impossible pour le moment."); return; }
+    if (error || !data?.success) { setIdentifiant(""); setMessage(data?.message || "Identifiant invalide."); return; }
     localStorage.setItem(SESSION_KEY, token);
     setIdentifiant("");
     setSession({ token, role: data.role, nom: data.nom, employeId: data.employeId, adminId: data.adminId });
