@@ -45,7 +45,7 @@ export const Route = createFileRoute("/employe")({
 });
 
 type RoleSession = "admin" | "employe" | "chef_chantier";
-type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces";
+type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier";
 type StatutPresence = "présent" | "absent" | "en retard" | "excusé";
 type ModeEdition = { type: "projets" | "employes" | "chantiers"; id?: string } | null;
 type Detail = { type: "projets" | "employes" | "chantiers" | "presences" | "annonces"; id: string } | null;
@@ -134,6 +134,7 @@ type Annonce = {
 };
 
 type AnnonceMasquee = { id: string; annonce_id: string; employe_id: string; created_at: string };
+type JourNonTravaille = { id: string; date_jour: string; titre: string; description: string; type_jour: string; actif: boolean; created_at: string; updated_at: string };
 
 type ProjetForm = Omit<Projet, "id" | "created_at" | "budget_estime"> & { budget_estime: string };
 type EmployeForm = Omit<Employe, "id" | "created_at" | "salaire" | "salaire_total" | "salaire_recu" | "salaire_restant"> & { salaire_total: string; salaire_recu: string };
