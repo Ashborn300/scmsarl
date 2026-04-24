@@ -5,6 +5,7 @@ import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
 import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerJoursNonTravailles, listerReponsesFormulaire, mockupCarteServiceBase64, supprimerJourNonTravaille, type ChampPersonnalise, type ConnexionScm, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
+import scmLogo from "@/assets/scm-logo.jpeg";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea" | "image"; required?: boolean; defaultValue?: string };
 type Config = { type: OutilType; titre: string; theme: string; description: string; fields: Field[]; hasLines?: boolean; showTotal?: boolean; totalLabel?: string };
@@ -80,6 +81,17 @@ function optimiserImagePourIA(source?: string, tailleMax = 1024, qualite = 0.82)
   });
 }
 
+async function imageAssetEnDataUrl(source: string) {
+  const reponse = await fetch(source);
+  const blob = await reponse.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const lecteur = new FileReader();
+    lecteur.onload = () => resolve(String(lecteur.result));
+    lecteur.onerror = reject;
+    lecteur.readAsDataURL(blob);
+  });
+}
+
 const champPersonnaliseSchema = z.object({ id: z.string().min(1).max(80), label: z.string().trim().min(1).max(80), type: z.enum(["texte", "nombre", "image", "fichier"]), requis: z.boolean() });
 const formulairePersonnaliseSchema = z.object({ titre: z.string().trim().min(1).max(120), description: z.string().trim().max(1000), champs: z.array(champPersonnaliseSchema).min(1).max(30) });
 const typesChampsPersonnalises: TypeChampPersonnalise[] = ["texte", "nombre", "image", "fichier"];
@@ -147,12 +159,18 @@ function HistoriqueConnexionTool({ retour }: { retour: () => void }) {
   async function telechargerPdf() {
     const { jsPDF } = await import("jspdf");
     const pdf = new jsPDF({ unit: "mm", format: "a4" });
-    pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.text("Rapport journalier de connexion", 16, 20);
-    pdf.setFontSize(11); pdf.text(`Date : ${new Date(date).toLocaleDateString("fr-FR")}`, 16, 30);
-    pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
-    let y = 44; pdf.text("Heure", 16, 38); pdf.text("Nom", 45, 38); pdf.text("Rôle", 116, 38); pdf.text("Matricule", 154, 38);
-    connexions.forEach((c) => { if (y > 280) { pdf.addPage(); y = 20; } pdf.text(new Date(c.connected_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), 16, y); pdf.text(pdf.splitTextToSize(c.nom_utilisateur || "—", 64), 45, y); pdf.text(c.role || "—", 116, y); pdf.text(c.matricule || "—", 154, y); y += 8; });
-    if (!connexions.length) pdf.text("Aucune connexion enregistrée pour cette date.", 16, 48);
+    const pageLargeur = pdf.internal.pageSize.getWidth();
+    const pageHauteur = pdf.internal.pageSize.getHeight();
+    const marge = 14;
+    const logo = await imageAssetEnDataUrl(scmLogo);
+    const dateLisible = new Date(`${date}T00:00:00`).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+    const dessinerEntete = () => { pdf.setFillColor(18, 83, 105); pdf.rect(0, 0, pageLargeur, 45, "F"); pdf.setFillColor(239, 184, 56); pdf.rect(0, 41, pageLargeur, 4, "F"); pdf.addImage(logo, "JPEG", marge, 10, 31, 20); pdf.setTextColor(255, 255, 255); pdf.setFont("helvetica", "bold"); pdf.setFontSize(19); pdf.text("Rapport journalier de connexion", 52, 18); pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); pdf.text(`SCM SARL · ${dateLisible}`, 52, 27); pdf.setFillColor(255, 255, 255); pdf.roundedRect(pageLargeur - 48, 11, 34, 18, 3, 3, "F"); pdf.setTextColor(18, 83, 105); pdf.setFont("helvetica", "bold"); pdf.setFontSize(13); pdf.text(String(connexions.length).padStart(2, "0"), pageLargeur - 39, 21); pdf.setFontSize(6.8); pdf.text("CONNEXIONS", pageLargeur - 43, 27); };
+    const dessinerPied = (page: number) => { pdf.setDrawColor(226, 232, 240); pdf.line(marge, pageHauteur - 14, pageLargeur - marge, pageHauteur - 14); pdf.setTextColor(100, 116, 139); pdf.setFont("helvetica", "normal"); pdf.setFontSize(8); pdf.text(`Généré le ${new Date().toLocaleString("fr-FR")}`, marge, pageHauteur - 8); pdf.text(`Page ${page}`, pageLargeur - marge - 12, pageHauteur - 8); };
+    let page = 1; let y = 68;
+    dessinerEntete(); dessinerPied(page);
+    pdf.setFillColor(241, 245, 249); pdf.roundedRect(marge, 54, pageLargeur - marge * 2, 10, 2, 2, "F"); pdf.setTextColor(18, 83, 105); pdf.setFont("helvetica", "bold"); pdf.setFontSize(8.5); pdf.text("HEURE", 18, 60.5); pdf.text("NOM", 48, 60.5); pdf.text("RÔLE", 121, 60.5); pdf.text("MATRICULE", 157, 60.5);
+    if (!connexions.length) { pdf.setTextColor(71, 85, 105); pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); pdf.text("Aucune connexion enregistrée pour cette date.", marge, 78); }
+    connexions.forEach((c, index) => { if (y > 266) { pdf.addPage(); page += 1; dessinerEntete(); dessinerPied(page); y = 58; } pdf.setFillColor(index % 2 === 0 ? 255 : 248, index % 2 === 0 ? 255 : 250, index % 2 === 0 ? 255 : 252); pdf.roundedRect(marge, y - 5, pageLargeur - marge * 2, 9, 1.5, 1.5, "F"); pdf.setTextColor(15, 23, 42); pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.text(new Date(c.connected_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), 18, y); pdf.setFont("helvetica", "normal"); pdf.text(pdf.splitTextToSize(c.nom_utilisateur || "—", 66), 48, y); pdf.setTextColor(21, 128, 61); pdf.setFont("helvetica", "bold"); pdf.text(c.role || "—", 121, y); pdf.setTextColor(15, 23, 42); pdf.setFont("helvetica", "normal"); pdf.text(c.matricule || "—", 157, y); y += 10; });
     pdf.save(`rapport-connexions-${date}.pdf`);
   }
   return <main className="min-h-screen bg-background px-4 py-5 sm:px-6 lg:px-8 tool-login-history"><div className="mx-auto max-w-7xl"><button type="button" onClick={retour} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Retour au tableau de bord</button><div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-8"><span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span><h1 className="max-w-3xl text-3xl font-black lg:text-5xl">Historique de connexion</h1><p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">Voyez qui s’est connecté, à quelle heure, et téléchargez le rapport journalier.</p></div><section className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><label className="w-full sm:max-w-xs"><span className="mb-1 block text-sm font-semibold text-foreground">Date</span><input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} /></label><button className="primary-action" onClick={telechargerPdf}><FileDown className="size-4" /> Télécharger PDF</button></div><div className="mt-5 space-y-3">{chargement ? <p className="rounded-xl bg-muted p-4 text-sm font-bold">Chargement…</p> : connexions.length ? connexions.map((c) => <article key={c.id} className="grid gap-2 rounded-xl border border-border bg-background p-4 sm:grid-cols-[110px_1fr_130px_120px]"><strong>{new Date(c.connected_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</strong><span>{c.nom_utilisateur || "—"}</span><span className="font-bold text-primary">{c.role}</span><span>{c.matricule || "—"}</span></article>) : <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">Aucune connexion pour cette date.</p>}</div></section></div></main>;
