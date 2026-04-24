@@ -409,6 +409,57 @@ function creerPdfCertificat(pdf: jsPDF, champs: Array<[string, string]>, numero:
   ajouterImageSiValide(pdf, options.sceau, 88, 40, 34, 34);
 }
 
+function ajouterEnteteFicheEmploye(pdf: jsPDF, logo: string, drapeauRdc: string, titre: string, numero: string, couleur: [number, number, number]) {
+  pdf.setFillColor(247, 249, 252);
+  pdf.rect(0, 0, 210, 297, "F");
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(12, 12, 186, 273, 3, 3, "F");
+  pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST");
+  pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST");
+  pdf.setTextColor(...couleur);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(18);
+  pdf.text(titre.toUpperCase(), 18, 58);
+  pdf.setFontSize(10);
+  pdf.text(`N° ${numero}`, 18, 65);
+  pdf.text(`Date : ${new Date().toLocaleDateString("fr-FR")}`, 158, 65);
+  pdf.setDrawColor(...couleur);
+  pdf.line(18, 70, 192, 70);
+}
+
+export async function creerPdfFicheEmploye(typeFiche: string, employes: EmployeRecord[], numero: string, sceau?: string) {
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const couleurs = couleursPdfParOutil.fiche_employe;
+  const logo = await imageVersBase64(logoUrl);
+  const drapeauRdc = await drapeauRdcVersPng();
+  ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, typeFiche === "collective" ? "Fiche collective des employés" : "Fiche individuelle de l’employé", numero, couleurs.principal);
+
+  if (typeFiche === "collective") {
+    let y = 84;
+    employes.forEach((employe, index) => {
+      if (y > 238) { piedDePage(pdf, couleurs.principal, sceau, undefined, "Sceau de l’entreprise", ""); pdf.addPage(); ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche collective des employés", numero, couleurs.principal); y = 84; }
+      pdf.setFillColor(...couleurs.doux);
+      pdf.roundedRect(20, y - 8, 168, 28, 2, 2, "F");
+      ajouterImageSiValide(pdf, employe.photo_profil, 24, y - 5, 20, 20);
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(...couleurs.principal);
+      pdf.text(`${index + 1}. ${employe.nom_complet || "—"}`, 50, y);
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(45, 55, 72);
+      pdf.text(`Matricule : ${employe.matricule || "—"}`, 50, y + 7);
+      pdf.text(`Genre : ${employe.genre || "—"}`, 120, y + 7);
+      y += 34;
+    });
+    piedDePage(pdf, couleurs.principal, sceau, undefined, "Sceau de l’entreprise", "");
+    return pdf.output("datauristring");
+  }
+
+  const employe = employes[0];
+  ajouterImageSiValide(pdf, employe?.photo_profil, 150, 82, 34, 34);
+  let y = 86;
+  [["Nom complet", employe?.nom_complet], ["Matricule", employe?.matricule], ["Genre", employe?.genre], ["Poste", employe?.poste], ["Téléphone", employe?.telephone], ["Email", employe?.email], ["Adresse", employe?.adresse], ["Date de naissance", employe?.date_naissance || "—"], ["Date d’admission", employe?.date_admission || "—"], ["N° pièce d’identité", employe?.numero_piece_identite], ["Contact d’urgence", employe?.contact_urgence], ["Statut", employe?.statut], ["Rôle", employe?.role]].forEach(([label, valeur]) => { y = texteMultiligne(pdf, String(label), String(valeur || "—"), 22, y, 118, couleurs.principal); });
+  piedDePage(pdf, couleurs.principal, sceau, undefined, "Sceau de l’entreprise", "");
+  return pdf.output("datauristring");
+}
+
 export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string; lignes?: LignePrestation[]; total?: number }) {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const couleurs = couleursPdfParOutil[type];
