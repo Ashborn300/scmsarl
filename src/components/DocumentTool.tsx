@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerRealisticSketchup, enregistrerRendu3D, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerPlanArchitectural, enregistrerRealisticSketchup, enregistrerRendu3D, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
@@ -46,6 +46,18 @@ export const configs: Config[] = [
   ]},
   { type: "realistic_sketchup", titre: "Realistic SketchUp", theme: "realistic-sketchup", description: "Transformation Nano Banana d’un modèle SketchUp en rendu architectural hyperréaliste.", showTotal: false, fields: [
     { name: "sketchupImage", label: "Image du modèle SketchUp", type: "image", required: true }, { name: "titre", label: "Titre du rendu", defaultValue: "Realistic SketchUp" }, { name: "correctionPrompt", label: "Correction à appliquer au résultat", type: "textarea" },
+  ]},
+  { type: "plan_architectural", titre: "Génération de plan architectural", theme: "plan-architectural", description: "Génération Nano Banana d’un plan d’architecture 2D fidèle à partir d’une description textuelle complète.", showTotal: false, fields: [
+    { name: "titre", label: "Titre du plan", defaultValue: "Plan architectural" },
+    { name: "typeBatiment", label: "Type de bâtiment (maison, villa, immeuble, bureau...)", required: true },
+    { name: "nombreNiveaux", label: "Nombre de niveaux (RDC, R+1, R+2...)", defaultValue: "RDC" },
+    { name: "dimensions", label: "Dimensions globales (ex: 12m x 10m)" },
+    { name: "superficie", label: "Superficie totale en m²" },
+    { name: "pieces", label: "Liste des pièces avec dimensions (ex: 3 chambres 4x4m, salon 6x5m, cuisine 3x4m, 2 salles de bain, terrasse...)", type: "textarea", required: true },
+    { name: "orientation", label: "Orientation et entrée principale (ex: entrée au sud, salon orienté nord)" },
+    { name: "exigencesSpeciales", label: "Exigences spéciales (garage, piscine, escalier, balcon, mobilier indicatif...)", type: "textarea" },
+    { name: "styleTrait", label: "Style du plan (technique noir et blanc, coloré, blueprint, top-down...)", defaultValue: "Plan d’architecte technique noir et blanc, top-down 2D, cotes et annotations" },
+    { name: "correctionPrompt", label: "Correction à appliquer au résultat", type: "textarea" },
   ]},
   { type: "fiche_employe", titre: "Générateur de fiche d’employé", theme: "employee-sheet", description: "Fiche individuelle complète ou fiche collective avec photo, nom, matricule et genre.", showTotal: false, fields: [] },
   { type: "code_qr", titre: "Générateur Code QR", theme: "qr-code", description: "Code QR public menant vers une fiche web accessible avec les informations personnelles d’un employé.", showTotal: false, fields: [] },
@@ -421,6 +433,23 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
         await enregistrerRealisticSketchup({ ...formulaire, ...imagesChamps, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
         setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Rendu Realistic SketchUp corrigé et enregistré avec succès." : "Rendu Realistic SketchUp généré et enregistré avec succès."); return;
       }
+      if (config.type === "plan_architectural") {
+        const correction = formulaire.correctionPrompt?.trim();
+        const descriptionParts = [
+          formulaire.typeBatiment && `Building type: ${formulaire.typeBatiment}`,
+          formulaire.nombreNiveaux && `Levels: ${formulaire.nombreNiveaux}`,
+          formulaire.dimensions && `Overall dimensions: ${formulaire.dimensions}`,
+          formulaire.superficie && `Total area: ${formulaire.superficie} m²`,
+          formulaire.pieces && `Rooms layout (must respect every room and dimension): ${formulaire.pieces}`,
+          formulaire.orientation && `Orientation and main entrance: ${formulaire.orientation}`,
+          formulaire.exigencesSpeciales && `Special requirements: ${formulaire.exigencesSpeciales}`,
+          formulaire.styleTrait && `Drawing style: ${formulaire.styleTrait}`,
+        ].filter(Boolean).join(". ");
+        const prompt = `Generate a professional 2D architectural floor plan, top-down orthographic view, as faithfully as possible to the description. Strictly respect all room counts, dimensions, proportions, and adjacencies. Include clear wall thickness, doors with swing arcs, windows, stairs, fixtures (toilets, sinks, kitchen counters, beds indicated by furniture symbols), dimension lines with measurements in meters, room name labels in French, scale bar, and a north arrow. Clean technical line drawing on white background, precise geometry, architectural standard symbols. ${descriptionParts}. Output a single high-resolution square architectural plan image, sharp lines, legible labels.${correction ? ` Correction request: ${correction}` : ""}`;
+        const image = await genererImageOpenRouter({ data: { prompt, images: [], model: "google/gemini-3.1-flash-image-preview" } });
+        await enregistrerPlanArchitectural({ ...formulaire, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
+        setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Plan architectural corrigé et enregistré avec succès." : "Plan architectural généré et enregistré avec succès."); return;
+      }
       if (config.type === "fiche_employe") {
         const typeFiche = formulaire.typeFiche || "individuelle";
         if (!employesSelectionnes.length) return alert("Veuillez sélectionner au moins un employé.");
@@ -504,12 +533,12 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
               <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3"><span>Total avant déduction : {totalAvantDeduction.toLocaleString("fr-FR")} $</span><span>Déductions : {totalDeductions.toLocaleString("fr-FR")} $</span><span>Montant final : {total.toLocaleString("fr-FR")} $</span></div>
             </div>}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {config.type !== "carte_service" && config.type !== "rendu_3d" && config.type !== "realistic_sketchup" && config.type !== "code_qr" && <><label><span className="mb-1 block text-sm font-semibold text-foreground">{estCommunication ? "Dénominateur de celui qui impose le sceau" : "Texte au-dessus du sceau"}</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
+              {config.type !== "carte_service" && config.type !== "rendu_3d" && config.type !== "realistic_sketchup" && config.type !== "plan_architectural" && config.type !== "code_qr" && <><label><span className="mb-1 block text-sm font-semibold text-foreground">{estCommunication ? "Dénominateur de celui qui impose le sceau" : "Texte au-dessus du sceau"}</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
               {!estCommunication && config.type !== "fiche_employe" && <label><span className="mb-1 block text-sm font-semibold text-foreground">Texte au-dessus de la signature</span><input value={libelleSignature} onChange={(e) => setLibelleSignature(e.target.value)} className="form-control" /></label>}
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer le sceau de l’entreprise</span><input type="file" accept="image/*" onChange={(e) => setSceau(e.target.files?.[0])} className="file-input" /></label>
               {!estCommunication && config.type !== "fiche_employe" && <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer la signature du client</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label>}</>}
             </div>
-            <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">{config.showTotal === false ? <span className="text-sm font-semibold text-foreground">{documentEdite ? `Modification de ${documentEdite.numero}` : "Fiche prête à générer"}</span> : <strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong>}<button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : documentEdite ? (config.type === "carte_service" || config.type === "rendu_3d" || config.type === "realistic_sketchup" || config.type === "code_qr" ? "Réenregistrer l’image" : "Réenregistrer le PDF") : (config.type === "carte_service" || config.type === "rendu_3d" || config.type === "realistic_sketchup" || config.type === "code_qr" ? "Générer et enregistrer l’image" : "Générer et enregistrer le PDF")}</button></div>
+            <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">{config.showTotal === false ? <span className="text-sm font-semibold text-foreground">{documentEdite ? `Modification de ${documentEdite.numero}` : "Fiche prête à générer"}</span> : <strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong>}<button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : documentEdite ? (config.type === "carte_service" || config.type === "rendu_3d" || config.type === "realistic_sketchup" || config.type === "plan_architectural" || config.type === "code_qr" ? "Réenregistrer l’image" : "Réenregistrer le PDF") : (config.type === "carte_service" || config.type === "rendu_3d" || config.type === "realistic_sketchup" || config.type === "plan_architectural" || config.type === "code_qr" ? "Générer et enregistrer l’image" : "Générer et enregistrer le PDF")}</button></div>
           </form>
           <div className="space-y-6"><div className="rounded-2xl border border-border bg-card p-5 shadow-document"><FileCheck2 className="mb-3 size-8 text-primary" /><h2 className="text-xl font-bold text-foreground">Document officiel prêt à l’emploi</h2><p className="mt-2 text-sm text-muted-foreground">Chaque PDF inclut le logo SCM SARL, le drapeau de la RDC, une mise en page structurée, ainsi que les zones sceau et signature.</p></div><DocumentHistory type={config.type} actualisation={actualisation} onEdit={editerDocument} /></div>
         </div>
