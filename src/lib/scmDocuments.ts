@@ -119,6 +119,7 @@ export async function enregistrerDocument(type: OutilType, payload: Record<strin
     ...(type === "contrat_employe" ? { employe: String(payload.employe || "") } : {}),
     ...(type === "description_projet" ? { projet: String(payload.projet || payload.nomProjet || "") } : {}),
     ...(type === "communiquer" ? { titre: String(payload.titre || payload.objet || "") } : {}),
+    ...(type === "certificat" ? { beneficiaire: String(payload.beneficiaire || "") } : {}),
   };
   const requete = id ? db.from(table).update(ligne).eq("id", id).select().single() : db.from(table).insert(ligne).select().single();
   const { data, error } = await requete;
