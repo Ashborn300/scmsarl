@@ -1472,3 +1472,348 @@ export async function creerPdfCarteService(data: DonneesCarteService) {
 
   return pdf.output("datauristring");
 }
+
+// ============================================================================
+// FACTURE EMPLOYÉ — facture professionnelle de paie pour un employé
+// ============================================================================
+
+export type FactureEmployeRecord = {
+  id: string;
+  numero: string;
+  nom_fichier: string;
+  employe_id: string | null;
+  employe_nom: string;
+  matricule: string;
+  poste: string;
+  salaire_brut: number;
+  total_deductions: number;
+  salaire_net: number;
+  donnees_formulaire: Record<string, unknown>;
+  pdf_base64: string;
+  date_document: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DonneesFactureEmploye = {
+  employe: EmployeRecord;
+  numero: string;
+  date: string;
+  periode: string;
+  salaireBrut: number;
+  deductions: LigneDeduction[];
+  notes: string;
+  modePaiement: string;
+  signataireNom: string;
+  signataireFonction: string;
+  sceau?: string;
+  signature?: string;
+};
+
+export async function creerPdfFactureEmploye(data: DonneesFactureEmploye): Promise<string> {
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const couleurs = couleursPdfParOutil.facture_employe;
+  const logo = await imageVersBase64(logoUrl);
+  const drapeau = await drapeauRdcVersPng();
+
+  const pageW = 210;
+  const pageH = 297;
+
+  // Fond
+  pdf.setFillColor(247, 250, 252);
+  pdf.rect(0, 0, pageW, pageH, "F");
+
+  // Bande latérale gauche (accent)
+  pdf.setFillColor(...couleurs.principal);
+  pdf.rect(0, 0, 6, pageH, "F");
+  pdf.setFillColor(...couleurs.secondaire);
+  pdf.rect(6, 0, 1.5, pageH, "F");
+
+  // Carte intérieure blanche
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(14, 14, 184, 269, 3, 3, "F");
+
+  // En-tête : logo + identité + drapeau
+  pdf.addImage(logo, "JPEG", 20, 20, 40, 24, undefined, "FAST");
+  pdf.addImage(drapeau, "PNG", 170, 20, 22, 16, undefined, "FAST");
+
+  pdf.setTextColor(...couleurs.principal);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(13);
+  pdf.text("SCM SARL", 64, 26);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(85, 92, 110);
+  pdf.text("Société Civile et Minière — Construction RDC", 64, 31);
+  pdf.text("RCCM : CD/KNM/RCCM/24-B-01256 · IDNAT : 01-F4200-N55523N", 64, 36);
+  pdf.text("N° Impôt : A2442 173S · Direction des Ressources Humaines", 64, 41);
+
+  // Filet décoratif
+  pdf.setDrawColor(...couleurs.secondaire);
+  pdf.setLineWidth(0.7);
+  pdf.line(20, 50, 192, 50);
+  pdf.setLineWidth(0.2);
+  pdf.line(20, 51.5, 192, 51.5);
+
+  // Titre principal centré
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(20);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("FACTURE DE SALAIRE EMPLOYÉ", pageW / 2, 62, { align: "center" });
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(110, 118, 135);
+  pdf.text(`Référence : ${data.numero}  ·  Émise le ${new Date(data.date).toLocaleDateString("fr-FR")}`, pageW / 2, 68, { align: "center" });
+
+  // Bloc informations employé (encadré gauche) + Période (encadré droit)
+  const yBlocs = 78;
+  pdf.setFillColor(...couleurs.doux);
+  pdf.roundedRect(20, yBlocs, 105, 38, 2, 2, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("BÉNÉFICIAIRE", 24, yBlocs + 6);
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(11.5);
+  pdf.setTextColor(25, 35, 55);
+  pdf.text(pdf.splitTextToSize(data.employe.nom_complet || "—", 96), 24, yBlocs + 13);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(70, 80, 100);
+  pdf.text(`Matricule : ${data.employe.matricule || "—"}`, 24, yBlocs + 21);
+  pdf.text(`Poste : ${data.employe.poste || "—"}`, 24, yBlocs + 26);
+  pdf.text(`Téléphone : ${data.employe.telephone || "—"}`, 24, yBlocs + 31);
+  pdf.text(`N° Pièce : ${data.employe.numero_piece_identite || "—"}`, 24, yBlocs + 36);
+
+  // Bloc période
+  pdf.setFillColor(...couleurs.principal);
+  pdf.roundedRect(132, yBlocs, 60, 38, 2, 2, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text("PÉRIODE DE PAIE", 136, yBlocs + 6);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(11);
+  pdf.text(pdf.splitTextToSize(data.periode || "—", 52), 136, yBlocs + 13);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.text(`Date d'émission :`, 136, yBlocs + 26);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.text(new Date(data.date).toLocaleDateString("fr-FR"), 136, yBlocs + 31);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.text(`N° ${data.numero}`, 136, yBlocs + 36);
+
+  // Tableau Détails du salaire
+  let y = 128;
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("DÉTAIL DE LA RÉMUNÉRATION", 20, y);
+  y += 4;
+  pdf.setDrawColor(...couleurs.secondaire);
+  pdf.setLineWidth(0.5);
+  pdf.line(20, y, 192, y);
+  y += 6;
+
+  // En-tête tableau
+  pdf.setFillColor(...couleurs.principal);
+  pdf.rect(20, y - 5, 172, 9, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text("DÉSIGNATION", 24, y + 1);
+  pdf.text("BASE", 122, y + 1);
+  pdf.text("MONTANT ($)", 168, y + 1, { align: "right" });
+  y += 11;
+
+  // Salaire brut
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9.5);
+  pdf.setTextColor(40, 50, 70);
+  pdf.setFillColor(248, 250, 253);
+  pdf.rect(20, y - 5, 172, 8, "F");
+  pdf.text("Salaire brut mensuel", 24, y);
+  pdf.text("Mensuel", 122, y);
+  pdf.setFont("helvetica", "bold");
+  pdf.text(`${data.salaireBrut.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $`, 188, y, { align: "right" });
+  y += 10;
+
+  // Sous-total
+  pdf.setDrawColor(220, 226, 234);
+  pdf.line(20, y - 4, 192, y - 4);
+
+  // Section Déductions
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setTextColor(...couleurs.secondaire);
+  pdf.text("DÉDUCTIONS APPLIQUÉES", 24, y + 1);
+  y += 6;
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(40, 50, 70);
+  let totalDeductions = 0;
+  if (data.deductions.length === 0) {
+    pdf.setFont("helvetica", "italic");
+    pdf.setTextColor(120, 130, 150);
+    pdf.text("Aucune déduction appliquée.", 24, y + 2);
+    y += 8;
+  } else {
+    data.deductions.forEach((deduction, index) => {
+      const pct = Number(deduction.pourcentage || 0);
+      const montant = data.salaireBrut * pct / 100;
+      totalDeductions += montant;
+      if (index % 2 === 0) {
+        pdf.setFillColor(252, 245, 230);
+        pdf.rect(20, y - 4, 172, 7.5, "F");
+      }
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(40, 50, 70);
+      pdf.text(deduction.libelle || "Frais", 24, y);
+      pdf.text(`${pct.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %`, 122, y);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(180, 83, 9);
+      pdf.text(`- ${montant.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $`, 188, y, { align: "right" });
+      y += 8;
+    });
+  }
+
+  // Total des déductions
+  pdf.setDrawColor(...couleurs.secondaire);
+  pdf.setLineWidth(0.3);
+  pdf.line(120, y - 2, 192, y - 2);
+  y += 4;
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9.5);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("Total des déductions", 122, y);
+  pdf.setTextColor(180, 83, 9);
+  pdf.text(`- ${totalDeductions.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $`, 188, y, { align: "right" });
+  y += 8;
+
+  // SALAIRE NET
+  const salaireNet = Math.max(0, data.salaireBrut - totalDeductions);
+  pdf.setFillColor(...couleurs.principal);
+  pdf.roundedRect(20, y, 172, 16, 2, 2, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(11);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text("SALAIRE NET À PAYER", 24, y + 10);
+  pdf.setFontSize(15);
+  pdf.text(`${salaireNet.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $`, 188, y + 10, { align: "right" });
+  y += 22;
+
+  // Mode de paiement
+  if (data.modePaiement) {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text("Mode de paiement :", 20, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(45, 55, 75);
+    pdf.text(data.modePaiement, 56, y);
+    y += 6;
+  }
+
+  // Notes
+  if (data.notes && data.notes.trim()) {
+    pdf.setFillColor(244, 248, 252);
+    const notesLignes = pdf.splitTextToSize(data.notes, 168);
+    const notesHauteur = Math.max(14, notesLignes.length * 4.5 + 6);
+    pdf.roundedRect(20, y, 172, notesHauteur, 2, 2, "F");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text("NOTES", 24, y + 5);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(60, 70, 90);
+    pdf.text(notesLignes, 24, y + 10);
+    y += notesHauteur + 4;
+  }
+
+  // Bloc signature en bas — sceau de l'entreprise + signature de l'employé
+  const ySign = 232;
+  pdf.setDrawColor(...couleurs.secondaire);
+  pdf.setLineWidth(0.4);
+  pdf.line(20, ySign - 4, 192, ySign - 4);
+
+  // Colonne gauche : Sceau de l'entreprise
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("SCEAU & SIGNATURE DE L'ENTREPRISE", 22, ySign);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(95, 100, 115);
+  pdf.text(data.signataireNom || "Direction SCM SARL", 22, ySign + 5);
+  if (data.signataireFonction) pdf.text(data.signataireFonction, 22, ySign + 9);
+  if (data.sceau) {
+    try { pdf.addImage(data.sceau, formatImage(data.sceau), 24, ySign + 12, 50, 26, undefined, "FAST"); } catch { /* ignore */ }
+  }
+
+  // Colonne droite : Signature de l'employé
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("SIGNATURE DE L'EMPLOYÉ", 115, ySign);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(95, 100, 115);
+  pdf.text("« Reçu et accepté »", 115, ySign + 5);
+  pdf.text(data.employe.nom_complet || "—", 115, ySign + 9);
+  if (data.signature) {
+    try { pdf.addImage(data.signature, formatImage(data.signature), 117, ySign + 12, 50, 26, undefined, "FAST"); } catch { /* ignore */ }
+  }
+
+  // Pied de page institutionnel
+  pdf.setDrawColor(...couleurs.principal);
+  pdf.setLineWidth(0.2);
+  pdf.line(20, 274, 192, 274);
+  pdf.setFont("helvetica", "italic");
+  pdf.setFontSize(7);
+  pdf.setTextColor(120, 125, 140);
+  pdf.text("SCM SARL — Document confidentiel — Conforme au Code du travail de la République Démocratique du Congo", pageW / 2, 279, { align: "center" });
+
+  return pdf.output("datauristring");
+}
+
+export async function listerFacturesEmployes(recherche = "") {
+  let requete = db.from("factures_employes").select("*").order("created_at", { ascending: false });
+  if (recherche.trim()) {
+    const terme = `%${recherche.trim()}%`;
+    requete = requete.or(`nom_fichier.ilike.${terme},numero.ilike.${terme},employe_nom.ilike.${terme},matricule.ilike.${terme},poste.ilike.${terme}`);
+  }
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as FactureEmployeRecord[];
+}
+
+export async function enregistrerFactureEmploye(payload: Record<string, unknown>, pdfBase64: string, infos: { employeId: string | null; employeNom: string; matricule: string; poste: string; salaireBrut: number; totalDeductions: number; salaireNet: number }, numero?: string, id?: string) {
+  const documentNumero = numero || (await genererNumero("facture_employe"));
+  const nomFichier = `${documentNumero}-${(infos.employeNom || "facture-employe").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
+  const ligne = {
+    numero: documentNumero,
+    nom_fichier: nomFichier,
+    employe_id: infos.employeId,
+    employe_nom: infos.employeNom,
+    matricule: infos.matricule,
+    poste: infos.poste,
+    salaire_brut: infos.salaireBrut,
+    total_deductions: infos.totalDeductions,
+    salaire_net: infos.salaireNet,
+    donnees_formulaire: payload,
+    pdf_base64: pdfBase64,
+    date_document: String(payload.date || new Date().toISOString().slice(0, 10)),
+  };
+  const requete = id ? db.from("factures_employes").update(ligne).eq("id", id).select().single() : db.from("factures_employes").insert(ligne).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as FactureEmployeRecord;
+}
+
