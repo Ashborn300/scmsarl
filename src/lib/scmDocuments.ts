@@ -296,6 +296,12 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   const couleurs = couleursPdfParOutil[type];
   const logo = await imageVersBase64(logoUrl);
   const drapeauRdc = await drapeauRdcVersPng();
+
+  if (type === "certificat") {
+    creerPdfCertificat(pdf, champs, numero, options);
+    return pdf.output("datauristring");
+  }
+
   pdf.setFillColor(247, 249, 252);
   pdf.rect(0, 0, 210, 297, "F");
   pdf.setFillColor(255, 255, 255);
