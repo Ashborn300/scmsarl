@@ -124,6 +124,8 @@
 .tool-login-history { --tool-1: oklch(0.44 0.09 230); --tool-2: oklch(0.48 0.13 150); }
 .tool-holiday-calendar { --tool-1: oklch(0.46 0.11 70); --tool-2: oklch(0.68 0.16 78); }
 .tool-organization-chart { --tool-1: oklch(0.34 0.16 260); --tool-2: oklch(0.68 0.14 190); }
+.tool-leave-requests { --tool-1: oklch(0.48 0.13 220); --tool-2: oklch(0.67 0.16 150); }
+.tool-health-report { --tool-1: oklch(0.5 0.19 20); --tool-2: oklch(0.72 0.17 70); }
 
 @layer base {
   * { border-color: var(--color-border); }

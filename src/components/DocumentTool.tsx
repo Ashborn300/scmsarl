@@ -1,9 +1,9 @@
-import { ArrowLeft, CalendarDays, Copy, Eye, FileCheck2, FileDown, Link2, Pencil, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, ClipboardList, Copy, Eye, FileCheck2, FileDown, HeartPulse, Link2, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, televerserImageOrganigramme, type ChampPersonnalise, type ConnexionScm, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerReponsesFormulaire, mockupCarteServiceBase64, modifierFormulairePersonnalise, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, televerserImageOrganigramme, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
@@ -53,6 +53,8 @@ export const configs: Config[] = [
   { type: "historique_connexion", titre: "Historique de connexion", theme: "login-history", description: "Consultez les connexions par date et téléchargez le rapport journalier en PDF.", showTotal: false, fields: [] },
   { type: "calendrier_feries", titre: "Calendrier des jours fériés", theme: "holiday-calendar", description: "Définissez les jours fériés et non travaillés visibles sur les dashboards employés.", showTotal: false, fields: [] },
   { type: "organigramme_entreprise", titre: "Organigramme de l’entreprise", theme: "organization-chart", description: "Créez et publiez l’organigramme SCM SARL visible sur tous les dashboards employés.", showTotal: false, fields: [] },
+  { type: "demandes_conges", titre: "Demandes de Congés", theme: "leave-requests", description: "Consultez toutes les demandes de congé envoyées par les employés.", showTotal: false, fields: [] },
+  { type: "bilans_sante", titre: "Bilan de santé des employé", theme: "health-report", description: "Consultez les états de santé hebdomadaires complétés par les employés.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
@@ -272,6 +274,23 @@ function CalendrierFeriesTool({ retour }: { retour: () => void }) {
   );
 }
 
+function DemandesCongesTool({ retour }: { retour: () => void }) {
+  const [demandes, setDemandes] = useState<DemandeConge[]>([]);
+  const [chargement, setChargement] = useState(false);
+  useEffect(() => { charger(); }, []);
+  async function charger() { setChargement(true); try { setDemandes(await listerDemandesConges()); } catch (e) { alert(e instanceof Error ? e.message : "Chargement impossible."); } finally { setChargement(false); } }
+  return <main className="min-h-screen bg-background px-4 py-5 sm:px-6 lg:px-8 tool-leave-requests"><div className="mx-auto max-w-7xl"><button type="button" onClick={retour} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Retour au tableau de bord</button><div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-8"><span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span><h1 className="max-w-3xl text-3xl font-black lg:text-5xl">Demandes de Congés</h1><p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">Toutes les demandes envoyées depuis les dashboards employés.</p></div><section className="grid gap-4 xl:grid-cols-2">{chargement ? <p className="rounded-2xl bg-card p-5 font-bold shadow-document">Chargement…</p> : demandes.length ? demandes.map((d) => <article key={d.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex items-start justify-between gap-4"><div><span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{d.statut}</span><h2 className="mt-3 text-xl font-black">{d.employe_nom || "Employé"}</h2><p className="text-xs font-bold text-muted-foreground">{new Date(d.created_at).toLocaleString("fr-FR")}</p></div><ClipboardList className="size-7 text-primary" /></div><p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{d.raison || "—"}</p>{d.image_url && <img src={d.image_url} alt={`Justificatif congé ${d.employe_nom}`} className="mt-4 max-h-80 w-full rounded-2xl object-contain bg-muted" loading="lazy" />}</article>) : <p className="rounded-2xl bg-card p-5 text-sm text-muted-foreground shadow-document">Aucune demande de congé reçue.</p>}</section></div></main>;
+}
+
+function BilansSanteTool({ retour }: { retour: () => void }) {
+  const [bilans, setBilans] = useState<BilanSanteEmploye[]>([]);
+  const [chargement, setChargement] = useState(false);
+  useEffect(() => { charger(); }, []);
+  async function charger() { setChargement(true); try { setBilans(await listerBilansSanteEmployes()); } catch (e) { alert(e instanceof Error ? e.message : "Chargement impossible."); } finally { setChargement(false); } }
+  return <main className="min-h-screen bg-background px-4 py-5 sm:px-6 lg:px-8 tool-health-report"><div className="mx-auto max-w-7xl"><button type="button" onClick={retour} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Retour au tableau de bord</button><div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-8"><span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span><h1 className="max-w-3xl text-3xl font-black lg:text-5xl">Bilan de santé des employé</h1><p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">Rapports hebdomadaires complétés par les employés.</p></div><section className="grid gap-4 xl:grid-cols-2">{chargement ? <p className="rounded-2xl bg-card p-5 font-bold shadow-document">Chargement…</p> : bilans.length ? bilans.map((b) => <article key={b.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex items-start justify-between gap-4"><div><span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">Semaine du {new Date(b.semaine).toLocaleDateString("fr-FR")}</span><h2 className="mt-3 text-xl font-black">{b.employe_nom || "Employé"}</h2></div><HeartPulse className="size-7 text-primary" /></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><InfoMini label="État global" value={b.etat_global} /><InfoMini label="Groupe sanguin" value={b.groupe_sanguin} /><InfoMini label="Allergies" value={b.allergies || "Aucune"} /><InfoMini label="Blessure" value={b.blessure ? "Oui" : "Non"} /></div>{b.details_blessure && <p className="mt-4 rounded-xl bg-muted p-3 text-sm font-semibold text-muted-foreground">{b.details_blessure}</p>}</article>) : <p className="rounded-2xl bg-card p-5 text-sm text-muted-foreground shadow-document">Aucun bilan de santé reçu.</p>}</section></div></main>;
+}
+function InfoMini({ label, value }: { label: string; value: string }) { return <div className="rounded-xl border border-border bg-background p-3"><p className="text-xs font-black uppercase text-muted-foreground">{label}</p><p className="mt-1 text-sm font-bold">{value || "—"}</p></div>; }
+
 function OrganigrammeTool({ retour }: { retour: () => void }) {
   const [organigrammes, setOrganigrammes] = useState<OrganigrammeEntreprise[]>([]);
   const [editionId, setEditionId] = useState<string | undefined>();
@@ -292,6 +311,8 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   if (config.type === "formulaire_personnalise") return <CustomFormTool retour={retour} />;
   if (config.type === "historique_connexion") return <HistoriqueConnexionTool retour={retour} />;
   if (config.type === "calendrier_feries") return <CalendrierFeriesTool retour={retour} />;
+  if (config.type === "demandes_conges") return <DemandesCongesTool retour={retour} />;
+  if (config.type === "bilans_sante") return <BilansSanteTool retour={retour} />;
   if (config.type === "organigramme_entreprise") return <OrganigrammeTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
 }
