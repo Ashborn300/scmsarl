@@ -1,7 +1,7 @@
 import { ArrowLeft, FileCheck2, Plus, Save, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerPdf, enregistrerCarteService, enregistrerDocument, enregistrerRendu3D, mockupCarteServiceBase64, type DocumentRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
+import { creerPdf, enregistrerCarteService, enregistrerDocument, enregistrerRealisticSketchup, enregistrerRendu3D, mockupCarteServiceBase64, type DocumentRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea" | "image"; required?: boolean; defaultValue?: string };
@@ -39,6 +39,9 @@ export const configs: Config[] = [
   ]},
   { type: "rendu_3d", titre: "Génération de rendu 3D", theme: "render-3d", description: "Transformation Nano Banana d’un plan 2D en rendu architectural isométrique 3D.", showTotal: false, fields: [
     { name: "planImage", label: "Image du plan", type: "image", required: true }, { name: "titre", label: "Titre du rendu", defaultValue: "Rendu 3D architectural" }, { name: "correctionPrompt", label: "Correction à appliquer au résultat", type: "textarea" },
+  ]},
+  { type: "realistic_sketchup", titre: "Realistic SketchUp", theme: "realistic-sketchup", description: "Transformation Nano Banana d’un modèle SketchUp en rendu architectural hyperréaliste.", showTotal: false, fields: [
+    { name: "sketchupImage", label: "Image du modèle SketchUp", type: "image", required: true }, { name: "titre", label: "Titre du rendu", defaultValue: "Realistic SketchUp" }, { name: "correctionPrompt", label: "Correction à appliquer au résultat", type: "textarea" },
   ]},
 ];
 
@@ -115,6 +118,14 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
         await enregistrerRendu3D({ ...formulaire, ...imagesChamps, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
         setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Rendu 3D corrigé et enregistré avec succès." : "Rendu 3D généré et enregistré avec succès."); return;
       }
+      if (config.type === "realistic_sketchup") {
+        const correction = formulaire.correctionPrompt?.trim();
+        const prompt = `Hyperrealistic architectural render using the original SketchUp geometry exactly as provided. Do not modify, redesign, or reinterpret the building form, massing, proportions, structure, or facade layout. Ultra-realistic materials applied precisely to existing surfaces: realistic concrete, brick, glass, metal, and wood with accurate scale and texture. Physically based lighting, natural daylight, realistic shadows and reflections. High-resolution details, sharp edges, correct material roughness. Realistic urban context, trees, people, and vehicles scaled correctly. Professional architectural visualization quality, true-to-life appearance.${correction ? ` Correction request: ${correction}` : ""}`;
+        const sketchupOptimise = await optimiserImagePourIA(imagesChamps.sketchupImage, 896, 0.78);
+        const image = await genererImageOpenRouter({ data: { prompt, images: [sketchupOptimise].filter(Boolean), model: "google/gemini-2.5-flash-image" } });
+        await enregistrerRealisticSketchup({ ...formulaire, ...imagesChamps, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
+        setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Rendu Realistic SketchUp corrigé et enregistré avec succès." : "Rendu Realistic SketchUp généré et enregistré avec succès."); return;
+      }
       const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
       const signatureBase64 = estCommunication ? undefined : await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
       const champs: Array<[string, string]> = config.fields.map((field) => [field.label, field.type === "image" ? imagesChamps[field.name] || "—" : formulaire[field.name] || "—"]);
@@ -166,12 +177,12 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
               <div className="space-y-3">{lignes.map((ligne, index) => <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_90px_120px_40px]"><input placeholder={config.type === "devis" ? "Achat à faire" : "Description"} value={ligne.description} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, description: e.target.value } : l))} className="form-control" /><input type="number" min="1" value={ligne.quantite} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, quantite: Number(e.target.value) } : l))} className="form-control" /><input type="number" min="0" value={ligne.prix} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, prix: Number(e.target.value) } : l))} placeholder={config.type === "devis" ? "Coût" : "Prix"} className="form-control" /><button type="button" onClick={() => setLignes(lignes.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button></div>)}</div>
             </div>}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {config.type !== "carte_service" && config.type !== "rendu_3d" && <><label><span className="mb-1 block text-sm font-semibold text-foreground">{estCommunication ? "Dénominateur de celui qui impose le sceau" : "Texte au-dessus du sceau"}</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
+              {config.type !== "carte_service" && config.type !== "rendu_3d" && config.type !== "realistic_sketchup" && <><label><span className="mb-1 block text-sm font-semibold text-foreground">{estCommunication ? "Dénominateur de celui qui impose le sceau" : "Texte au-dessus du sceau"}</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
               {!estCommunication && <label><span className="mb-1 block text-sm font-semibold text-foreground">Texte au-dessus de la signature</span><input value={libelleSignature} onChange={(e) => setLibelleSignature(e.target.value)} className="form-control" /></label>}
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer le sceau de l’entreprise</span><input type="file" accept="image/*" onChange={(e) => setSceau(e.target.files?.[0])} className="file-input" /></label>
               {!estCommunication && <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer la signature du client</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label>}</>}
             </div>
-            <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">{config.showTotal === false ? <span className="text-sm font-semibold text-foreground">{documentEdite ? `Modification de ${documentEdite.numero}` : "Fiche prête à générer"}</span> : <strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong>}<button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : documentEdite ? (config.type === "carte_service" || config.type === "rendu_3d" ? "Réenregistrer l’image" : "Réenregistrer le PDF") : (config.type === "carte_service" || config.type === "rendu_3d" ? "Générer et enregistrer l’image" : "Générer et enregistrer le PDF")}</button></div>
+            <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">{config.showTotal === false ? <span className="text-sm font-semibold text-foreground">{documentEdite ? `Modification de ${documentEdite.numero}` : "Fiche prête à générer"}</span> : <strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong>}<button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : documentEdite ? (config.type === "carte_service" || config.type === "rendu_3d" || config.type === "realistic_sketchup" ? "Réenregistrer l’image" : "Réenregistrer le PDF") : (config.type === "carte_service" || config.type === "rendu_3d" || config.type === "realistic_sketchup" ? "Générer et enregistrer l’image" : "Générer et enregistrer le PDF")}</button></div>
           </form>
           <div className="space-y-6"><div className="rounded-2xl border border-border bg-card p-5 shadow-document"><FileCheck2 className="mb-3 size-8 text-primary" /><h2 className="text-xl font-bold text-foreground">Document officiel prêt à l’emploi</h2><p className="mt-2 text-sm text-muted-foreground">Chaque PDF inclut le logo SCM SARL, le drapeau de la RDC, une mise en page structurée, ainsi que les zones sceau et signature.</p></div><DocumentHistory type={config.type} actualisation={actualisation} onEdit={editerDocument} /></div>
         </div>

@@ -6,7 +6,7 @@ export function DocumentHistory({ type, actualisation, onEdit }: { type: OutilTy
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [recherche, setRecherche] = useState("");
   const [chargement, setChargement] = useState(true);
-  const estImage = type === "carte_service" || type === "rendu_3d";
+  const estImage = type === "carte_service" || type === "rendu_3d" || type === "realistic_sketchup";
 
   useEffect(() => {
     setChargement(true);
