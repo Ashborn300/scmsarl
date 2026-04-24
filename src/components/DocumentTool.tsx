@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { DocumentHistory } from "./DocumentHistory";
 import { creerPdf, enregistrerDocument, type DocumentRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
 
-type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea"; required?: boolean; defaultValue?: string };
+type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea" | "image"; required?: boolean; defaultValue?: string };
 type Config = { type: OutilType; titre: string; theme: string; description: string; fields: Field[]; hasLines?: boolean; showTotal?: boolean; totalLabel?: string };
 
 const aujourdhui = new Date().toISOString().slice(0, 10);
@@ -30,6 +30,9 @@ export const configs: Config[] = [
   { type: "communiquer", titre: "Communiquer", theme: "coral", description: "Annonces, communications internes et diffusion d’informations officielles.", showTotal: false, fields: [
     { name: "titre", label: "Titre de la communication", required: true }, { name: "destinataires", label: "Destinataires", defaultValue: "Tous les employés et chefs de chantier" }, { name: "date", label: "Date", type: "date", defaultValue: aujourdhui }, { name: "objet", label: "Objet", required: true }, { name: "message", label: "Annonce ou communication", type: "textarea", required: true },
   ]},
+  { type: "certificat", titre: "Générateur de certificat", theme: "certificate", description: "Certificat A4 personnalisable avec logo, sceau et deux signatures importées.", showTotal: false, fields: [
+    { name: "titreCertificat", label: "Titre du certificat", defaultValue: "CERTIFICAT", required: true }, { name: "sousTitre", label: "Sous-titre", defaultValue: "DE RECONNAISSANCE" }, { name: "beneficiaire", label: "Nom du bénéficiaire", required: true }, { name: "date", label: "Date", type: "date", defaultValue: aujourdhui }, { name: "texte", label: "Texte du certificat", type: "textarea", defaultValue: "Ce certificat est décerné en reconnaissance de l’excellence, de l’engagement et du professionnalisme démontrés." }, { name: "logoPersonnalise", label: "Logo personnalisé", type: "image" }, { name: "signatureGauche", label: "Image signature gauche", type: "image" },
+  ]},
 ];
 
 function lireImage(fichier?: File) {
@@ -46,6 +49,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   const estCommunication = config.type === "communiquer";
   const [formulaire, setFormulaire] = useState<Record<string, string>>(() => Object.fromEntries(config.fields.map((field) => [field.name, field.defaultValue || ""])));
   const [lignes, setLignes] = useState<LignePrestation[]>([{ description: "", quantite: 1, prix: 0 }]);
+  const [imagesFormulaire, setImagesFormulaire] = useState<Record<string, File | undefined>>({});
   const [sceau, setSceau] = useState<File>();
   const [signature, setSignature] = useState<File>();
   const [libelleSceau, setLibelleSceau] = useState(estCommunication ? "Nom / fonction de celui qui impose le sceau" : "Sceau de l’entreprise");
@@ -57,6 +61,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   const total = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
 
   function changer(name: string, value: string) { setFormulaire((actuel) => ({ ...actuel, [name]: value })); }
+  function changerImage(name: string, file?: File) { setImagesFormulaire((actuel) => ({ ...actuel, [name]: file })); }
 
   async function soumettre(event: React.FormEvent) {
     event.preventDefault();
@@ -67,12 +72,13 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
     try {
       const numero = documentEdite?.numero || await (await import("@/lib/scmDocuments")).genererNumero(config.type);
       const ancienPayload = (documentEdite?.donnees_formulaire || {}) as Record<string, unknown>;
+      const imagesChamps = Object.fromEntries(await Promise.all(config.fields.filter((field) => field.type === "image").map(async (field) => [field.name, await lireImage(imagesFormulaire[field.name]) || String(ancienPayload[field.name] || "")]))) as Record<string, string>;
       const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
       const signatureBase64 = estCommunication ? undefined : await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
-      const champs: Array<[string, string]> = config.fields.map((field) => [field.label, formulaire[field.name] || "—"]);
+      const champs: Array<[string, string]> = config.fields.map((field) => [field.label, field.type === "image" ? imagesChamps[field.name] || "—" : formulaire[field.name] || "—"]);
       if (config.type === "facture") champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
       const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, total });
-      await enregistrerDocument(config.type, { ...formulaire, lignes, total, titreCourt: config.titre, libelleSceau, libelleSignature, sceauBase64, signatureBase64 }, pdf, numero, documentEdite?.id);
+      await enregistrerDocument(config.type, { ...formulaire, ...imagesChamps, lignes, total, titreCourt: config.titre, libelleSceau, libelleSignature, sceauBase64, signatureBase64 }, pdf, numero, documentEdite?.id);
       setDocumentEdite(null);
       setActualisation((valeur) => valeur + 1);
       alert(documentEdite ? "Document PDF modifié et réenregistré avec succès." : "Document PDF généré et enregistré avec succès.");
@@ -88,6 +94,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
     setLignes(Array.isArray(donnees.lignes) && donnees.lignes.length ? donnees.lignes as LignePrestation[] : [{ description: "", quantite: 1, prix: 0 }]);
     setLibelleSceau(String(donnees.libelleSceau || (estCommunication ? "Nom / fonction de celui qui impose le sceau" : "Sceau de l’entreprise")));
     setLibelleSignature(String(donnees.libelleSignature || "Signature du client"));
+    setImagesFormulaire({});
     setSceau(undefined);
     setSignature(undefined);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -108,7 +115,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
               {config.fields.map((field) => (
                 <label key={field.name} className={field.type === "textarea" ? "sm:col-span-2" : ""}>
                   <span className="mb-1 block text-sm font-semibold text-foreground">{field.label}{field.required ? " *" : ""}</span>
-                  {field.type === "textarea" ? <textarea value={formulaire[field.name] || ""} onChange={(e) => changer(field.name, e.target.value)} rows={4} className="form-control min-h-28" /> : <input value={formulaire[field.name] || ""} onChange={(e) => changer(field.name, e.target.value)} type={field.type || "text"} className="form-control" />}
+                  {field.type === "textarea" ? <textarea value={formulaire[field.name] || ""} onChange={(e) => changer(field.name, e.target.value)} rows={4} className="form-control min-h-28" /> : field.type === "image" ? <input type="file" accept="image/*" onChange={(e) => changerImage(field.name, e.target.files?.[0])} className="file-input" /> : <input value={formulaire[field.name] || ""} onChange={(e) => changer(field.name, e.target.value)} type={field.type || "text"} className="form-control" />}
                 </label>
               ))}
             </div>

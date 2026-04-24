@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/scm-logo.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 
-export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer";
+export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat";
 
 export type DocumentRecord = {
   id: string;
@@ -29,6 +29,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   contrat_employe: { principal: [20, 184, 166], secondaire: [6, 182, 212], doux: [224, 250, 247] },
   description_projet: { principal: [239, 68, 68], secondaire: [249, 115, 22], doux: [255, 235, 232] },
   communiquer: { principal: [236, 72, 153], secondaire: [249, 115, 22], doux: [255, 232, 243] },
+  certificat: { principal: [3, 76, 120], secondaire: [245, 181, 72], doux: [238, 248, 252] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -39,6 +40,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   contrat_employe: "contrats_employes",
   description_projet: "descriptions_projets",
   communiquer: "communications",
+  certificat: "certificats",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -49,6 +51,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   contrat_employe: "CEM",
   description_projet: "PRJ",
   communiquer: "COM",
+  certificat: "CRT",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -59,6 +62,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   contrat_employe: ["nom_fichier", "numero", "employe"],
   description_projet: ["nom_fichier", "numero", "projet"],
   communiquer: ["nom_fichier", "numero", "titre"],
+  certificat: ["nom_fichier", "numero", "beneficiaire"],
 };
 
 const db = supabase as any;
@@ -115,6 +119,7 @@ export async function enregistrerDocument(type: OutilType, payload: Record<strin
     ...(type === "contrat_employe" ? { employe: String(payload.employe || "") } : {}),
     ...(type === "description_projet" ? { projet: String(payload.projet || payload.nomProjet || "") } : {}),
     ...(type === "communiquer" ? { titre: String(payload.titre || payload.objet || "") } : {}),
+    ...(type === "certificat" ? { beneficiaire: String(payload.beneficiaire || "") } : {}),
   };
   const requete = id ? db.from(table).update(ligne).eq("id", id).select().single() : db.from(table).insert(ligne).select().single();
   const { data, error } = await requete;
@@ -253,11 +258,53 @@ function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, 
   piedDePage(pdf, couleur, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
 }
 
+function formatImage(image?: string): "JPEG" | "PNG" { return image?.startsWith("data:image/png") ? "PNG" : "JPEG"; }
+
+function ajouterImageSiValide(pdf: jsPDF, image: string | undefined, x: number, y: number, w: number, h: number) {
+  if (!image) return;
+  pdf.addImage(image, formatImage(image), x, y, w, h, undefined, "FAST");
+}
+
+function creerPdfCertificat(pdf: jsPDF, champs: Array<[string, string]>, numero: string, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string }) {
+  const logoCertificat = valeurChamp(champs, "Logo personnalisé");
+  const signatureGauche = valeurChamp(champs, "Signature gauche");
+  const titre = valeurChamp(champs, "Titre du certificat");
+  const sousTitre = valeurChamp(champs, "Sous-titre");
+  const beneficiaire = valeurChamp(champs, "Nom du bénéficiaire");
+  const texte = valeurChamp(champs, "Texte du certificat");
+  const date = valeurChamp(champs, "Date");
+  pdf.setFillColor(255, 255, 255);
+  pdf.rect(0, 0, 210, 297, "F");
+  pdf.setFillColor(3, 76, 120); pdf.triangle(0, 0, 0, 42, 105, 0, "F"); pdf.triangle(210, 0, 210, 42, 105, 0, "F");
+  pdf.setFillColor(246, 181, 73); pdf.triangle(0, 0, 0, 15, 91, 41, "F"); pdf.triangle(210, 0, 210, 15, 119, 41, "F");
+  pdf.setFillColor(31, 126, 161); pdf.triangle(0, 38, 0, 63, 93, 51, "F"); pdf.triangle(210, 38, 210, 63, 117, 51, "F");
+  pdf.setDrawColor(246, 181, 73); pdf.setLineWidth(1.3); pdf.rect(16, 48, 178, 223); pdf.setLineWidth(0.45); pdf.rect(20, 52, 170, 215);
+  ajouterImageSiValide(pdf, logoCertificat && logoCertificat !== "—" ? logoCertificat : undefined, 85, 23, 40, 24);
+  pdf.setFont("times", "bold"); pdf.setTextColor(255, 255, 255); pdf.setFontSize(28); pdf.text((titre || "CERTIFICAT").toUpperCase(), 105, 18, { align: "center" });
+  pdf.setFontSize(13); pdf.text((sousTitre || "DE RECONNAISSANCE").toUpperCase(), 105, 28, { align: "center" });
+  pdf.setTextColor(42, 48, 63); pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.text("CE CERTIFICAT EST FIÈREMENT PRÉSENTÉ À :", 105, 92, { align: "center" });
+  pdf.setFont("times", "italic"); pdf.setFontSize(30); pdf.setTextColor(18, 38, 58); pdf.text(beneficiaire || "Nom du bénéficiaire", 105, 121, { align: "center" });
+  pdf.setDrawColor(130, 137, 150); pdf.line(52, 128, 158, 128);
+  pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); pdf.setTextColor(52, 61, 78); pdf.text(pdf.splitTextToSize(texte || "Pour attester officiellement de cette distinction.", 130), 105, 150, { align: "center" });
+  pdf.setFontSize(8); pdf.setTextColor(95, 103, 118); pdf.text(`N° ${numero}`, 24, 260); pdf.text(date || new Date().toLocaleDateString("fr-FR"), 58, 231, { align: "center" });
+  pdf.setDrawColor(80, 88, 105); pdf.line(36, 220, 80, 220); pdf.line(130, 220, 174, 220);
+  ajouterImageSiValide(pdf, signatureGauche && signatureGauche !== "—" ? signatureGauche : undefined, 38, 196, 40, 18);
+  ajouterImageSiValide(pdf, options.signature, 132, 196, 40, 18);
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(32, 40, 58); pdf.text(options.libelleSceau || "DATE", 58, 228, { align: "center" }); pdf.text(options.libelleSignature || "SIGNATURE", 152, 228, { align: "center" });
+  ajouterImageSiValide(pdf, options.sceau, 88, 40, 34, 34);
+}
+
 export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string; lignes?: LignePrestation[]; total?: number }) {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const couleurs = couleursPdfParOutil[type];
   const logo = await imageVersBase64(logoUrl);
   const drapeauRdc = await drapeauRdcVersPng();
+
+  if (type === "certificat") {
+    creerPdfCertificat(pdf, champs, numero, options);
+    return pdf.output("datauristring");
+  }
+
   pdf.setFillColor(247, 249, 252);
   pdf.rect(0, 0, 210, 297, "F");
   pdf.setFillColor(255, 255, 255);
