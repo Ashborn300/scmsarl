@@ -26,7 +26,7 @@ function extraireImageDepuisReponse(payload: unknown) {
   if (imageDepuisImages?.image_url?.url || imageDepuisImages?.url) return imageDepuisImages.image_url?.url || imageDepuisImages.url;
 
   const contenu = Array.isArray(message?.content) ? message.content : [message?.content].filter(Boolean);
-  const imageDepuisContenu = contenu.find((part) => typeof part !== "string" && (part.image_url?.url || part.url));
+  const imageDepuisContenu = contenu.find((part): part is Exclude<OpenRouterContentPart, string> => Boolean(part && typeof part !== "string" && (part.image_url?.url || part.url)));
   if (typeof imageDepuisContenu !== "string") return imageDepuisContenu?.image_url?.url || imageDepuisContenu?.url;
 
   return undefined;
