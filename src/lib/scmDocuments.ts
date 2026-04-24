@@ -439,6 +439,33 @@ export async function listerRapportsMateriel() {
   return (data ?? []) as RapportMateriel[];
 }
 
+export async function televerserImageIncidentChantier(fichier: File) {
+  const extension = fichier.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+  const chemin = `incidents-chantiers/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from("scm-images").upload(chemin, fichier, { cacheControl: "3600", contentType: fichier.type || "image/png", upsert: false });
+  if (error) throw new Error(error.message);
+  return supabase.storage.from("scm-images").getPublicUrl(chemin).data.publicUrl;
+}
+
+export async function listerIncidentsChantier() {
+  const { data, error } = await db.from("incidents_chantier").select("*").order("date_evenement", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as IncidentChantier[];
+}
+
+export async function listerArchivesChantiers() {
+  const { data, error } = await db.from("archives_chantiers").select("*").order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ArchiveChantier[];
+}
+
+export async function enregistrerArchiveChantier(payload: Omit<ArchiveChantier, "id" | "created_at" | "updated_at">, id?: string) {
+  const requete = id ? db.from("archives_chantiers").update(payload).eq("id", id).select().single() : db.from("archives_chantiers").insert(payload).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as ArchiveChantier;
+}
+
 export async function supprimerDocument(type: OutilType, id: string) {
   const { error } = await db.from(tablesParOutil[type]).delete().eq("id", id);
   if (error) throw new Error(error.message);
