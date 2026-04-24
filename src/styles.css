@@ -147,6 +147,17 @@
     border: 1px solid color-mix(in oklab, var(--border) 72%, white);
     box-shadow: 0 24px 65px -48px oklch(0.24 0.07 270 / 0.78);
   }
+  .tool-card {
+    background:
+      linear-gradient(145deg, color-mix(in oklab, var(--tool-1) 15%, white), var(--card) 48%),
+      var(--card);
+    border-color: color-mix(in oklab, var(--tool-1) 32%, var(--border));
+  }
+  .tool-card:hover {
+    background:
+      linear-gradient(145deg, color-mix(in oklab, var(--tool-1) 23%, white), color-mix(in oklab, var(--tool-2) 10%, var(--card)) 58%),
+      var(--card);
+  }
   .dashboard-sidebar { background: oklch(1 0 0 / 86%); backdrop-filter: blur(18px); }
   .dashboard-hero { background: linear-gradient(135deg, var(--dash-violet), var(--dash-cyan) 48%, var(--dash-emerald)); color: var(--primary-foreground); }
 }
