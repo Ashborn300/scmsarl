@@ -21,6 +21,7 @@ import {
   MapPin,
   Menu,
   Network,
+  PackageCheck,
   Plus,
   Search,
   ShieldCheck,
@@ -48,7 +49,7 @@ export const Route = createFileRoute("/employe")({
 });
 
 type RoleSession = "admin" | "employe" | "chef_chantier";
-type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante";
+type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante" | "gestion_materiel";
 type StatutPresence = "présent" | "absent" | "en retard" | "excusé";
 type ModeEdition = { type: "projets" | "employes" | "chantiers"; id?: string } | null;
 type Detail = { type: "projets" | "employes" | "chantiers" | "presences" | "annonces"; id: string } | null;
@@ -142,6 +143,8 @@ type BlocOrganigramme = { id: string; titre: string; niveau: number; couleur: "b
 type OrganigrammeEntreprise = { id: string; titre: string; description: string; blocs: BlocOrganigramme[]; actif: boolean; created_at: string; updated_at: string };
 type DemandeConge = { id: string; employe_id: string; employe_nom: string; raison: string; image_url: string; statut: string; created_at: string; updated_at: string };
 type BilanSanteEmploye = { id: string; employe_id: string; employe_nom: string; semaine: string; etat_global: string; groupe_sanguin: string; allergies: string; blessure: boolean; details_blessure: string; created_at: string; updated_at: string };
+type LigneMateriel = { nom: string; quantite: number };
+type RapportMateriel = { id: string; chef_chantier_id: string; chef_chantier_nom: string; chantier_id: string | null; chantier_nom: string; semaine: string; materiel_prevu: LigneMateriel[]; materiel_utilise: LigneMateriel[]; materiel_recupere: LigneMateriel[]; materiel_perdu: LigneMateriel[]; notes: string; statut: string; created_at: string; updated_at: string };
 
 type ProjetForm = Omit<Projet, "id" | "created_at" | "budget_estime"> & { budget_estime: string };
 type EmployeForm = Omit<Employe, "id" | "created_at" | "salaire" | "salaire_total" | "salaire_recu" | "salaire_restant"> & { salaire_total: string; salaire_recu: string };
@@ -161,6 +164,7 @@ const chantierInitial: ChantierForm = { nom_chantier: "", localisation: "", chef
 const annonceInitial: AnnonceForm = { titre: "", contenu: "", image_url: "", publiee: true };
 const congeInitial = { raison: "", image_url: "" };
 const bilanSanteInitial = { semaine: new Date().toISOString().slice(0, 10), etat_global: "", groupe_sanguin: "", allergies: "", blessure: false, details_blessure: "" };
+const materielInitial = { semaine: new Date().toISOString().slice(0, 10), chantier_id: "", materiel_prevu: [{ nom: "", quantite: 1 }], materiel_utilise: [] as LigneMateriel[], materiel_recupere: [] as LigneMateriel[], materiel_perdu: [] as LigneMateriel[], notes: "" };
 
 function nombre(value: number) { return new Intl.NumberFormat("fr-FR").format(value || 0); }
 function devise(value: number) { return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value || 0); }
