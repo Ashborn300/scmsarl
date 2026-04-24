@@ -26,19 +26,64 @@ const icones: Record<OutilType, React.ElementType> = {
   description_projet: Building2,
 };
 
-type ToolCardStyle = CSSProperties & {
-  "--tool-1": string;
-  "--tool-2": string;
-  "--tool-foreground": string;
+type ToolVisual = {
+  action: CSSProperties;
+  badge: CSSProperties;
+  banner: CSSProperties;
+  card: CSSProperties;
+  footer: CSSProperties;
+  icon: CSSProperties;
 };
 
-const stylesOutils: Record<OutilType, ToolCardStyle> = {
-  facture: { "--tool-1": "oklch(0.5 0.2 260)", "--tool-2": "oklch(0.68 0.14 225)", "--tool-foreground": "oklch(0.99 0.003 95)" },
-  devis: { "--tool-1": "oklch(0.82 0.17 95)", "--tool-2": "oklch(0.74 0.19 70)", "--tool-foreground": "oklch(0.18 0.04 260)" },
-  recu: { "--tool-1": "oklch(0.55 0.16 150)", "--tool-2": "oklch(0.73 0.14 165)", "--tool-foreground": "oklch(0.99 0.003 95)" },
-  contrat_construction: { "--tool-1": "oklch(0.51 0.2 305)", "--tool-2": "oklch(0.65 0.17 285)", "--tool-foreground": "oklch(0.99 0.003 95)" },
-  contrat_employe: { "--tool-1": "oklch(0.58 0.15 190)", "--tool-2": "oklch(0.74 0.13 180)", "--tool-foreground": "oklch(0.99 0.003 95)" },
-  description_projet: { "--tool-1": "oklch(0.55 0.2 28)", "--tool-2": "oklch(0.67 0.17 18)", "--tool-foreground": "oklch(0.99 0.003 95)" },
+const stylesOutils: Record<OutilType, ToolVisual> = {
+  facture: {
+    card: { background: "linear-gradient(180deg, rgba(34,125,255,0.14) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(34,125,255,0.24)" },
+    banner: { background: "linear-gradient(135deg, #2563eb, #0891b2)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.16)", color: "white" },
+    footer: { background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.14)" },
+    action: { background: "rgba(37,99,235,0.12)", border: "1px solid rgba(37,99,235,0.16)" },
+    icon: { background: "linear-gradient(135deg, #2563eb, #0891b2)", color: "white" },
+  },
+  devis: {
+    card: { background: "linear-gradient(180deg, rgba(245,158,11,0.2) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(245,158,11,0.32)" },
+    banner: { background: "linear-gradient(135deg, #f59e0b, #facc15)", color: "#172033" },
+    badge: { background: "rgba(255,255,255,0.32)", color: "#172033" },
+    footer: { background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.18)" },
+    action: { background: "rgba(250,204,21,0.18)", border: "1px solid rgba(245,158,11,0.22)" },
+    icon: { background: "linear-gradient(135deg, #f59e0b, #facc15)", color: "#172033" },
+  },
+  recu: {
+    card: { background: "linear-gradient(180deg, rgba(16,185,129,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(16,185,129,0.28)" },
+    banner: { background: "linear-gradient(135deg, #10b981, #22c55e)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.16)", color: "white" },
+    footer: { background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.16)" },
+    action: { background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.18)" },
+    icon: { background: "linear-gradient(135deg, #10b981, #22c55e)", color: "white" },
+  },
+  contrat_construction: {
+    card: { background: "linear-gradient(180deg, rgba(168,85,247,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(168,85,247,0.28)" },
+    banner: { background: "linear-gradient(135deg, #a855f7, #7c3aed)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.16)", color: "white" },
+    footer: { background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.16)" },
+    action: { background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.18)" },
+    icon: { background: "linear-gradient(135deg, #a855f7, #7c3aed)", color: "white" },
+  },
+  contrat_employe: {
+    card: { background: "linear-gradient(180deg, rgba(20,184,166,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(20,184,166,0.28)" },
+    banner: { background: "linear-gradient(135deg, #14b8a6, #06b6d4)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.16)", color: "white" },
+    footer: { background: "rgba(20,184,166,0.08)", border: "1px solid rgba(20,184,166,0.16)" },
+    action: { background: "rgba(20,184,166,0.12)", border: "1px solid rgba(20,184,166,0.18)" },
+    icon: { background: "linear-gradient(135deg, #14b8a6, #06b6d4)", color: "white" },
+  },
+  description_projet: {
+    card: { background: "linear-gradient(180deg, rgba(239,68,68,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(239,68,68,0.28)" },
+    banner: { background: "linear-gradient(135deg, #ef4444, #f97316)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.16)", color: "white" },
+    footer: { background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.16)" },
+    action: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.18)" },
+    icon: { background: "linear-gradient(135deg, #ef4444, #f97316)", color: "white" },
+  },
 };
 
 function Index() {
