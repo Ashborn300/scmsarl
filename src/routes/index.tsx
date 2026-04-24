@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, Building2, CalendarDays, ClipboardList, Cuboid, HeartPulse, FileClock, FileText, FilePlus2, Hammer, HardHat, IdCard, Megaphone, Network, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Warehouse } from "lucide-react";
+import { Award, Building2, CalendarDays, ClipboardList, Cuboid, HeartPulse, FileClock, FileText, FilePlus2, Hammer, HardHat, IdCard, Megaphone, Network, PackageCheck, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Warehouse } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -37,6 +37,7 @@ const icones: Record<OutilType, React.ElementType> = {
   organigramme_entreprise: Network,
   demandes_conges: FilePlus2,
   bilans_sante: HeartPulse,
+  gestion_materiel: PackageCheck,
 };
 
 type ToolVisual = {
