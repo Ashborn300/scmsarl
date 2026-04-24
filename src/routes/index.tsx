@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, Building2, FileText, Hammer, HardHat, Megaphone, ReceiptText, ShieldCheck, UsersRound } from "lucide-react";
+import { Award, Building2, FileText, Hammer, HardHat, IdCard, Megaphone, ReceiptText, ShieldCheck, UsersRound } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -26,6 +26,7 @@ const icones: Record<OutilType, React.ElementType> = {
   description_projet: Building2,
   communiquer: Megaphone,
   certificat: Award,
+  carte_service: IdCard,
 };
 
 type ToolVisual = {
@@ -102,6 +103,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     action: { background: "rgba(245,181,72,0.14)", border: "1px solid rgba(3,76,120,0.16)" },
     icon: { background: "linear-gradient(135deg, #034c78, #f5b548)", color: "white" },
   },
+  carte_service: {
+    card: { background: "linear-gradient(180deg, rgba(10,132,216,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(30,45,55,0.24)" },
+    banner: { background: "linear-gradient(135deg, #0a84d8, #1e2d37)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(10,132,216,0.08)", border: "1px solid rgba(30,45,55,0.16)" },
+    action: { background: "rgba(10,132,216,0.12)", border: "1px solid rgba(30,45,55,0.16)" },
+    icon: { background: "linear-gradient(135deg, #0a84d8, #1e2d37)", color: "white" },
+  },
 };
 
 function Index() {
@@ -134,7 +143,7 @@ function Index() {
               <h2 className="max-w-3xl text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">Gestion documentaire professionnelle pour chantier.</h2>
               <p className="mt-4 max-w-2xl text-base opacity-90 sm:text-lg">Générez, archivez, consultez, téléchargez et supprimez vos factures, devis, reçus, contrats et descriptions de projets en français.</p>
               <div className="mt-7 grid grid-cols-3 gap-3 text-center">
-                <div className="rounded-2xl bg-tool-foreground/12 p-3"><strong className="block text-2xl">7</strong><span className="text-xs">outils</span></div>
+                <div className="rounded-2xl bg-tool-foreground/12 p-3"><strong className="block text-2xl">8</strong><span className="text-xs">outils</span></div>
                 <div className="rounded-2xl bg-tool-foreground/12 p-3"><strong className="block text-2xl">PDF</strong><span className="text-xs">officiels</span></div>
                 <div className="rounded-2xl bg-tool-foreground/12 p-3"><strong className="block text-2xl">Cloud</strong><span className="text-xs">persistant</span></div>
               </div>
