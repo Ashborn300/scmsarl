@@ -1,9 +1,9 @@
-import { ArrowLeft, Copy, Eye, FileCheck2, FileDown, Link2, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, Copy, Eye, FileCheck2, FileDown, Link2, Plus, Save, Trash2, UsersRound } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerRealisticSketchup, enregistrerRendu3D, listerEmployes, listerFormulairesPersonnalises, listerReponsesFormulaire, mockupCarteServiceBase64, type ChampPersonnalise, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type LignePrestation, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfFicheEmploye, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerRealisticSketchup, enregistrerRendu3D, listerConnexionsScm, listerEmployes, listerFormulairesPersonnalises, listerJoursNonTravailles, listerReponsesFormulaire, mockupCarteServiceBase64, supprimerJourNonTravaille, type ChampPersonnalise, type ConnexionScm, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type JourNonTravaille, type LignePrestation, type OutilType, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea" | "image"; required?: boolean; defaultValue?: string };
@@ -49,6 +49,8 @@ export const configs: Config[] = [
   { type: "fiche_employe", titre: "Générateur de fiche d’employé", theme: "employee-sheet", description: "Fiche individuelle complète ou fiche collective avec photo, nom, matricule et genre.", showTotal: false, fields: [] },
   { type: "code_qr", titre: "Générateur Code QR", theme: "qr-code", description: "Code QR public menant vers une fiche web accessible avec les informations personnelles d’un employé.", showTotal: false, fields: [] },
   { type: "formulaire_personnalise", titre: "Créateur de formulaire personnalisable", theme: "custom-form", description: "Formulaire champ par champ avec lien public externe et consultation des réponses.", showTotal: false, fields: [] },
+  { type: "historique_connexion", titre: "Historique de connexion", theme: "login-history", description: "Consultez les connexions par date et téléchargez le rapport journalier en PDF.", showTotal: false, fields: [] },
+  { type: "calendrier_feries", titre: "Calendrier des jours fériés", theme: "holiday-calendar", description: "Définissez les jours fériés et non travaillés visibles sur les dashboards employés.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
@@ -138,6 +140,8 @@ function CustomFormTool({ retour }: { retour: () => void }) {
 
 export function DocumentTool({ config, retour }: { config: Config; retour: () => void }) {
   if (config.type === "formulaire_personnalise") return <CustomFormTool retour={retour} />;
+  if (config.type === "historique_connexion") return <HistoriqueConnexionTool retour={retour} />;
+  if (config.type === "calendrier_feries") return <CalendrierFeriesTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
 }
 
