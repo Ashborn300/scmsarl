@@ -300,6 +300,17 @@ export async function creerFormulairePersonnalise(titre: string, description: st
   return data as FormulairePersonnalise;
 }
 
+export async function modifierFormulairePersonnalise(id: string, titre: string, description: string, champs: ChampPersonnalise[]) {
+  const { data, error } = await db.from("formulaires_personnalises").update({ titre, description, champs, publie: true }).eq("id", id).select().single();
+  if (error) throw new Error(error.message);
+  return data as FormulairePersonnalise;
+}
+
+export async function supprimerFormulairePersonnalise(id: string) {
+  const { error } = await db.from("formulaires_personnalises").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 export async function listerFormulairesPersonnalises() {
   const { data, error } = await db.from("formulaires_personnalises").select("*").order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
@@ -347,6 +358,24 @@ export async function enregistrerJourNonTravaille(payload: Pick<JourNonTravaille
 
 export async function supprimerJourNonTravaille(id: string) {
   const { error } = await db.from("jours_non_travailles").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function listerOrganigrammesEntreprise() {
+  const { data, error } = await db.from("organigrammes_entreprise").select("*").order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as OrganigrammeEntreprise[];
+}
+
+export async function enregistrerOrganigrammeEntreprise(payload: Pick<OrganigrammeEntreprise, "titre" | "description" | "blocs" | "actif">, id?: string) {
+  const requete = id ? db.from("organigrammes_entreprise").update(payload).eq("id", id).select().single() : db.from("organigrammes_entreprise").insert(payload).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as OrganigrammeEntreprise;
+}
+
+export async function supprimerOrganigrammeEntreprise(id: string) {
+  const { error } = await db.from("organigrammes_entreprise").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }
 
