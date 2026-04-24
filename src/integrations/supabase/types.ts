@@ -157,6 +157,60 @@ export type Database = {
         }
         Relationships: []
       }
+      arrivages_materiel: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          chef_chantier_id: string
+          chef_chantier_nom: string
+          created_at: string
+          date_livraison: string
+          entreprise_partenaire: string
+          id: string
+          informations_supplementaires: string
+          nom_materiel: string
+          preuve_image_url: string
+          prix_total: number
+          quantite: number
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id: string
+          chef_chantier_nom?: string
+          created_at?: string
+          date_livraison?: string
+          entreprise_partenaire?: string
+          id?: string
+          informations_supplementaires?: string
+          nom_materiel?: string
+          preuve_image_url?: string
+          prix_total?: number
+          quantite?: number
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id?: string
+          chef_chantier_nom?: string
+          created_at?: string
+          date_livraison?: string
+          entreprise_partenaire?: string
+          id?: string
+          informations_supplementaires?: string
+          nom_materiel?: string
+          preuve_image_url?: string
+          prix_total?: number
+          quantite?: number
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bilans_sante_employes: {
         Row: {
           allergies: string
