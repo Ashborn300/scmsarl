@@ -257,6 +257,40 @@ function creerPdfDescriptionProjet(pdf: jsPDF, champs: Array<[string, string]>, 
   piedDePage(pdf, couleur, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
 }
 
+function ajouterImageSiValide(pdf: jsPDF, image: string | undefined, format: "JPEG" | "PNG", x: number, y: number, w: number, h: number) {
+  if (!image) return;
+  try { pdf.addImage(image, format, x, y, w, h, undefined, "FAST"); } catch { pdf.addImage(image, "JPEG", x, y, w, h, undefined, "FAST"); }
+}
+
+function creerPdfCertificat(pdf: jsPDF, champs: Array<[string, string]>, numero: string, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string }) {
+  const logoCertificat = valeurChamp(champs, "Logo personnalisé");
+  const signatureGauche = valeurChamp(champs, "Signature gauche");
+  const titre = valeurChamp(champs, "Titre du certificat");
+  const sousTitre = valeurChamp(champs, "Sous-titre");
+  const beneficiaire = valeurChamp(champs, "Nom du bénéficiaire");
+  const texte = valeurChamp(champs, "Texte du certificat");
+  const date = valeurChamp(champs, "Date");
+  pdf.setFillColor(255, 255, 255);
+  pdf.rect(0, 0, 210, 297, "F");
+  pdf.setFillColor(3, 76, 120); pdf.triangle(0, 0, 0, 42, 105, 0, "F"); pdf.triangle(210, 0, 210, 42, 105, 0, "F");
+  pdf.setFillColor(246, 181, 73); pdf.triangle(0, 0, 0, 15, 91, 41, "F"); pdf.triangle(210, 0, 210, 15, 119, 41, "F");
+  pdf.setFillColor(31, 126, 161); pdf.triangle(0, 38, 0, 63, 93, 51, "F"); pdf.triangle(210, 38, 210, 63, 117, 51, "F");
+  pdf.setDrawColor(246, 181, 73); pdf.setLineWidth(1.3); pdf.rect(16, 48, 178, 223); pdf.setLineWidth(0.45); pdf.rect(20, 52, 170, 215);
+  ajouterImageSiValide(pdf, logoCertificat && logoCertificat !== "—" ? logoCertificat : undefined, "JPEG", 85, 23, 40, 24);
+  pdf.setFont("times", "bold"); pdf.setTextColor(255, 255, 255); pdf.setFontSize(28); pdf.text((titre || "CERTIFICAT").toUpperCase(), 105, 18, { align: "center" });
+  pdf.setFontSize(13); pdf.text((sousTitre || "DE RECONNAISSANCE").toUpperCase(), 105, 28, { align: "center" });
+  pdf.setTextColor(42, 48, 63); pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.text("CE CERTIFICAT EST FIÈREMENT PRÉSENTÉ À :", 105, 92, { align: "center" });
+  pdf.setFont("times", "italic"); pdf.setFontSize(30); pdf.setTextColor(18, 38, 58); pdf.text(beneficiaire || "Nom du bénéficiaire", 105, 121, { align: "center" });
+  pdf.setDrawColor(130, 137, 150); pdf.line(52, 128, 158, 128);
+  pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); pdf.setTextColor(52, 61, 78); pdf.text(pdf.splitTextToSize(texte || "Pour attester officiellement de cette distinction.", 130), 105, 150, { align: "center" });
+  pdf.setFontSize(8); pdf.setTextColor(95, 103, 118); pdf.text(`N° ${numero}`, 24, 260); pdf.text(date || new Date().toLocaleDateString("fr-FR"), 58, 231, { align: "center" });
+  pdf.setDrawColor(80, 88, 105); pdf.line(36, 220, 80, 220); pdf.line(130, 220, 174, 220);
+  ajouterImageSiValide(pdf, signatureGauche && signatureGauche !== "—" ? signatureGauche : undefined, "JPEG", 38, 196, 40, 18);
+  ajouterImageSiValide(pdf, options.signature, "JPEG", 132, 196, 40, 18);
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(32, 40, 58); pdf.text(options.libelleSceau || "DATE", 58, 228, { align: "center" }); pdf.text(options.libelleSignature || "SIGNATURE", 152, 228, { align: "center" });
+  ajouterImageSiValide(pdf, options.sceau, "JPEG", 88, 40, 34, 34);
+}
+
 export async function creerPdf(type: OutilType, titre: string, numero: string, champs: Array<[string, string]>, options: { sceau?: string; signature?: string; libelleSceau?: string; libelleSignature?: string; lignes?: LignePrestation[]; total?: number }) {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const couleurs = couleursPdfParOutil[type];
