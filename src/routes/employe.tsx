@@ -333,7 +333,7 @@ function EmployePage() {
     if (!currentSession) return;
     setChargement(true);
     setMessage("");
-    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes, orgRes, congesRes, santeRes, materielRes, incidentsRes] = await Promise.all([
+    const [projetsRes, employesRes, chantiersRes, presencesRes, annoncesRes, masqueesRes, joursRes, orgRes, congesRes, santeRes, materielRes, arrivagesRes, incidentsRes] = await Promise.all([
       db.from("projets").select("*").order("created_at", { ascending: false }),
       db.from("employes").select("*").order("created_at", { ascending: false }),
       db.from("chantiers").select("*").order("created_at", { ascending: false }),
@@ -345,9 +345,10 @@ function EmployePage() {
       db.from("demandes_conges").select("*").order("created_at", { ascending: false }),
       db.from("bilans_sante_employes").select("*").order("semaine", { ascending: false }),
       db.from("rapports_materiel").select("*").order("semaine", { ascending: false }),
+      db.from("arrivages_materiel").select("*").order("date_livraison", { ascending: false }),
       db.from("incidents_chantier").select("*").order("date_evenement", { ascending: false }),
     ]);
-    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error || orgRes.error || congesRes.error || santeRes.error || materielRes.error || incidentsRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
+    if (projetsRes.error || employesRes.error || chantiersRes.error || presencesRes.error || annoncesRes.error || masqueesRes.error || joursRes.error || orgRes.error || congesRes.error || santeRes.error || materielRes.error || arrivagesRes.error || incidentsRes.error) setMessage("Impossible de charger les données Lovable Cloud.");
     setProjets(projetsRes.data || []);
     setEmployes(projetsRes.error ? [] : (employesRes.data || []));
     setChantiers(chantiersRes.data || []);
@@ -359,6 +360,7 @@ function EmployePage() {
     setDemandesConges(congesRes.data || []);
     setBilansSante(santeRes.data || []);
     setRapportsMateriel(materielRes.data || []);
+    setArrivagesMateriel(arrivagesRes.data || []);
     setIncidentsChantier(incidentsRes.data || []);
     if (currentSession.role !== "admin") {
       const today = new Date().toISOString().slice(0, 10);
