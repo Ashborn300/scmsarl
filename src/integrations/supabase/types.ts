@@ -106,6 +106,54 @@ export type Database = {
           },
         ]
       }
+      archives_chantiers: {
+        Row: {
+          adresse_projet: string
+          budget_estime_debut: number
+          budget_final: number
+          created_at: string
+          date_debut_construction: string | null
+          date_finalisation_construction: string | null
+          employes_participants: Json
+          id: string
+          nom_chantier: string
+          nom_client: string
+          nom_fichier: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          adresse_projet?: string
+          budget_estime_debut?: number
+          budget_final?: number
+          created_at?: string
+          date_debut_construction?: string | null
+          date_finalisation_construction?: string | null
+          employes_participants?: Json
+          id?: string
+          nom_chantier?: string
+          nom_client?: string
+          nom_fichier?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse_projet?: string
+          budget_estime_debut?: number
+          budget_final?: number
+          created_at?: string
+          date_debut_construction?: string | null
+          date_finalisation_construction?: string | null
+          employes_participants?: Json
+          id?: string
+          nom_chantier?: string
+          nom_client?: string
+          nom_fichier?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bilans_sante_employes: {
         Row: {
           allergies: string
@@ -794,6 +842,51 @@ export type Database = {
           titre?: string
           updated_at?: string
           url_publique?: string
+        }
+        Relationships: []
+      }
+      incidents_chantier: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          chef_chantier_id: string
+          chef_chantier_nom: string
+          created_at: string
+          date_evenement: string
+          explication: string
+          id: string
+          images: string[]
+          statut: string
+          type_evenement: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id: string
+          chef_chantier_nom?: string
+          created_at?: string
+          date_evenement?: string
+          explication?: string
+          id?: string
+          images?: string[]
+          statut?: string
+          type_evenement?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id?: string
+          chef_chantier_nom?: string
+          created_at?: string
+          date_evenement?: string
+          explication?: string
+          id?: string
+          images?: string[]
+          statut?: string
+          type_evenement?: string
+          updated_at?: string
         }
         Relationships: []
       }
