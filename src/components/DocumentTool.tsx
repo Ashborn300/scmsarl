@@ -1,7 +1,8 @@
 import { ArrowLeft, FileCheck2, Plus, Save, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DocumentHistory } from "./DocumentHistory";
-import { creerPdf, enregistrerDocument, type DocumentRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
+import { creerPdf, enregistrerCarteService, enregistrerDocument, mockupCarteServiceBase64, type DocumentRecord, type LignePrestation, type OutilType } from "@/lib/scmDocuments";
+import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 
 type Field = { name: string; label: string; type?: "text" | "number" | "date" | "textarea" | "image"; required?: boolean; defaultValue?: string };
 type Config = { type: OutilType; titre: string; theme: string; description: string; fields: Field[]; hasLines?: boolean; showTotal?: boolean; totalLabel?: string };
@@ -32,6 +33,9 @@ export const configs: Config[] = [
   ]},
   { type: "certificat", titre: "Générateur de certificat", theme: "certificate", description: "Certificat A4 personnalisable avec logo, sceau et deux signatures importées.", showTotal: false, fields: [
     { name: "titreCertificat", label: "Titre du certificat", defaultValue: "CERTIFICAT", required: true }, { name: "sousTitre", label: "Sous-titre", defaultValue: "DE RECONNAISSANCE" }, { name: "beneficiaire", label: "Nom du bénéficiaire", required: true }, { name: "date", label: "Date", type: "date", defaultValue: aujourdhui }, { name: "texte", label: "Texte du certificat", type: "textarea", defaultValue: "Ce certificat est décerné en reconnaissance de l’excellence, de l’engagement et du professionnalisme démontrés." }, { name: "logoPersonnalise", label: "Logo personnalisé", type: "image" }, { name: "signatureGauche", label: "Image signature gauche", type: "image" },
+  ]},
+  { type: "carte_service", titre: "Génération Carte de service", theme: "service-card", description: "Carte de service générée par Nano Banana à partir du mockup SCM SARL.", showTotal: false, fields: [
+    { name: "profileImage", label: "Image du profil", type: "image", required: true }, { name: "qrCodeImage", label: "Image du code QR", type: "image", required: true }, { name: "nomComplet", label: "Nom complet", required: true }, { name: "matricule", label: "Matricule", required: true }, { name: "genre", label: "Genre", required: true }, { name: "telephone", label: "Téléphone", required: true }, { name: "adresse", label: "Adresse", required: true }, { name: "poste", label: "Poste", required: true },
   ]},
 ];
 
@@ -66,13 +70,22 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   async function soumettre(event: React.FormEvent) {
     event.preventDefault();
     const manquant = config.fields.find((field) => field.required && !formulaire[field.name]?.trim());
-    if (manquant) return alert(`Veuillez renseigner le champ : ${manquant.label}`);
+    const imageManquante = config.fields.find((field) => field.required && field.type === "image" && !imagesFormulaire[field.name] && !(documentEdite?.donnees_formulaire || {})[field.name]);
+    if (manquant && manquant.type !== "image") return alert(`Veuillez renseigner le champ : ${manquant.label}`);
+    if (imageManquante) return alert(`Veuillez importer : ${imageManquante.label}`);
     if (config.hasLines && lignes.some((ligne) => !ligne.description.trim())) return alert("Veuillez renseigner toutes les descriptions de prestations.");
     setChargement(true);
     try {
       const numero = documentEdite?.numero || await (await import("@/lib/scmDocuments")).genererNumero(config.type);
       const ancienPayload = (documentEdite?.donnees_formulaire || {}) as Record<string, unknown>;
       const imagesChamps = Object.fromEntries(await Promise.all(config.fields.filter((field) => field.type === "image").map(async (field) => [field.name, await lireImage(imagesFormulaire[field.name]) || String(ancienPayload[field.name] || "")]))) as Record<string, string>;
+      if (config.type === "carte_service") {
+        const mockup = await mockupCarteServiceBase64();
+        const prompt = `Use the provided ID card mockup image as the exact base template.\n\nDo not redesign the layout. Do not change the background, card proportions, wave shapes, colors, shadows, spacing, or general design.\n\nOnly replace the following elements:\n\n1. Replace the circular profile photo on the front card with the uploaded profile image [PROFILE_IMAGE].\n2. Replace the QR code on the front card with the uploaded QR code image [QR_CODE_IMAGE].\n3. Keep the logo on the back card exactly as it appears in the mockup image.\n4. Replace the employee information text with:\n\nNom complet : ${formulaire.nomComplet}\nMatricule : ${formulaire.matricule}\nGenre : ${formulaire.genre}\nTéléphone : ${formulaire.telephone}\nAdresse : ${formulaire.adresse}\nPoste : ${formulaire.poste}\n\n5. Keep the back card text exactly as:\n\nInformations supplémentaires\n\nLe détenteur de cette carte est un employé Agréé de SCM SARL.\n\nRCCM : CD/KNM/RCCM/ 24-B-01256\nIDNAT : 01-F4200-N55523N\nN°IMPÔT : A2442 173S\n\nImportant:\n- Use the uploaded mockup image as the reference/base image.\n- Preserve the exact original design.\n- Only edit the specified images and text.\n- Do not invent new layout.\n- Do not add random text.\n- Keep everything clean, readable, aligned, and print-ready.`;
+        const image = await genererImageOpenRouter({ data: { prompt, images: [mockup, imagesChamps.profileImage, imagesChamps.qrCodeImage].filter(Boolean) } });
+        await enregistrerCarteService({ ...formulaire, ...imagesChamps, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
+        setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Carte de service modifiée avec succès." : "Carte de service générée et enregistrée avec succès."); return;
+      }
       const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
       const signatureBase64 = estCommunication ? undefined : await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
       const champs: Array<[string, string]> = config.fields.map((field) => [field.label, field.type === "image" ? imagesChamps[field.name] || "—" : formulaire[field.name] || "—"]);
@@ -124,10 +137,10 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
               <div className="space-y-3">{lignes.map((ligne, index) => <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_90px_120px_40px]"><input placeholder={config.type === "devis" ? "Achat à faire" : "Description"} value={ligne.description} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, description: e.target.value } : l))} className="form-control" /><input type="number" min="1" value={ligne.quantite} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, quantite: Number(e.target.value) } : l))} className="form-control" /><input type="number" min="0" value={ligne.prix} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, prix: Number(e.target.value) } : l))} placeholder={config.type === "devis" ? "Coût" : "Prix"} className="form-control" /><button type="button" onClick={() => setLignes(lignes.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button></div>)}</div>
             </div>}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">{estCommunication ? "Dénominateur de celui qui impose le sceau" : "Texte au-dessus du sceau"}</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
+              {config.type !== "carte_service" && <><label><span className="mb-1 block text-sm font-semibold text-foreground">{estCommunication ? "Dénominateur de celui qui impose le sceau" : "Texte au-dessus du sceau"}</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
               {!estCommunication && <label><span className="mb-1 block text-sm font-semibold text-foreground">Texte au-dessus de la signature</span><input value={libelleSignature} onChange={(e) => setLibelleSignature(e.target.value)} className="form-control" /></label>}
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer le sceau de l’entreprise</span><input type="file" accept="image/*" onChange={(e) => setSceau(e.target.files?.[0])} className="file-input" /></label>
-              {!estCommunication && <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer la signature du client</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label>}
+              {!estCommunication && <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer la signature du client</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label>}</>}
             </div>
             <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">{config.showTotal === false ? <span className="text-sm font-semibold text-foreground">{documentEdite ? `Modification de ${documentEdite.numero}` : "Fiche prête à générer"}</span> : <strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong>}<button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : documentEdite ? "Réenregistrer le PDF" : "Générer et enregistrer le PDF"}</button></div>
           </form>
