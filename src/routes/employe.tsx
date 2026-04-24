@@ -544,11 +544,27 @@ function EmployePage() {
     if (error) setMessage(error.message || "Bilan non envoyé."); else { setMessage("Bilan de santé hebdomadaire envoyé."); setFormBilanSante({ ...bilanSanteInitial, semaine: new Date().toISOString().slice(0, 10) }); await chargerDonnees(); }
   }
 
+  async function envoyerRapportMateriel(event: React.FormEvent) {
+    event.preventDefault();
+    if (!isChef || !session?.employeId || !employeConnecte) return setMessage("Seul le chef de chantier peut envoyer un rapport matériel.");
+    const chantier = chantiersVisibles.find((c) => c.id === formMateriel.chantier_id) || chantiersVisibles[0];
+    if (!chantier) return setMessage("Aucun chantier disponible pour ce rapport.");
+    const materiel_prevu = formMateriel.materiel_prevu.filter((m) => m.nom.trim()).map((m) => ({ nom: m.nom.trim(), quantite: Number(m.quantite) || 1 }));
+    const materiel_utilise = formMateriel.materiel_utilise.filter((m) => m.nom.trim()).map((m) => ({ nom: m.nom.trim(), quantite: Number(m.quantite) || 1 }));
+    const materiel_recupere = formMateriel.materiel_recupere.filter((m) => m.nom.trim()).map((m) => ({ nom: m.nom.trim(), quantite: Number(m.quantite) || 1 }));
+    const materiel_perdu = formMateriel.materiel_perdu.filter((m) => m.nom.trim()).map((m) => ({ nom: m.nom.trim(), quantite: Number(m.quantite) || 1 }));
+    if (!materiel_prevu.length) return setMessage("Ajoutez au moins un matériel prévu pour la semaine.");
+    setSauvegarde(true);
+    const { error } = await db.from("rapports_materiel").insert({ chef_chantier_id: session.employeId, chef_chantier_nom: employeConnecte.nom_complet, chantier_id: chantier.id, chantier_nom: chantier.nom_chantier, semaine: formMateriel.semaine, materiel_prevu, materiel_utilise, materiel_recupere, materiel_perdu, notes: formMateriel.notes.trim(), statut: "Rapport envoyé" });
+    setSauvegarde(false);
+    if (error) setMessage(error.message || "Rapport matériel non envoyé."); else { setMessage("Rapport matériel envoyé à l’admin."); setFormMateriel({ ...materielInitial, semaine: new Date().toISOString().slice(0, 10) }); await chargerDonnees(); }
+  }
+
   function changerOnglet(tab: Onglet) { setOnglet(tab); setRecherche(""); setMenuOuvert(false); }
 
   if (!session) return <LoginScreen mode={loginMode} setMode={setLoginMode} identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
-  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : "Présences";
+  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
   const chantierPresence = chantiersVisibles.find((c) => c.id === presenceChantier) || chantiersVisibles[0];
   const employesPresence = chantierPresence ? employes.filter((e) => (chantierPresence.employes_assignes || []).includes(e.id)) : [];
