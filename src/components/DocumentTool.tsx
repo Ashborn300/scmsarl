@@ -669,6 +669,14 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
         await enregistrerRendu3D({ ...formulaire, ...imagesChamps, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
         setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Rendu 3D corrigé et enregistré avec succès." : "Rendu 3D généré et enregistré avec succès."); return;
       }
+      if (config.type === "version_nuit") {
+        const correction = formulaire.correctionPrompt?.trim();
+        const prompt = `Donne la version nuit ultra réaliste et fidèle au détail de ce rendu. En ajoutant des lampes a l'extérieur et a l'intérieur. Rend le résultat réaliste comme une vrai image de maison. Preserve exactly the same building geometry, architecture, materials, framing, camera angle and composition as the source image. Apply realistic night lighting: dark blue night sky with subtle stars or moonlight, warm interior lights glowing through every window, exterior lamps along the path, garden spotlights uplighting facades and trees, porch lights, accent lights on the architecture, soft reflections on surfaces. Keep all original details, textures and surroundings intact, only change the time of day to a photorealistic night scene.${correction ? ` Correction request: ${correction}` : ""}`;
+        const imageOptimisee = await optimiserImagePourIA(imagesChamps.imageMaison, 896, 0.78);
+        const image = await genererImageOpenRouter({ data: { prompt, images: [imageOptimisee].filter(Boolean), model: "google/gemini-2.5-flash-image" } });
+        await enregistrerVersionNuit({ ...formulaire, ...imagesChamps, titreCourt: config.titre }, image.imageUrl, numero, documentEdite?.id);
+        setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Version nuit corrigée et enregistrée avec succès." : "Version nuit générée et enregistrée avec succès."); return;
+      }
       if (config.type === "realistic_sketchup") {
         const correction = formulaire.correctionPrompt?.trim();
         const prompt = `Hyperrealistic architectural render using the original SketchUp geometry exactly as provided. Do not modify, redesign, or reinterpret the building form, massing, proportions, structure, or facade layout. Ultra-realistic materials applied precisely to existing surfaces: realistic concrete, brick, glass, metal, and wood with accurate scale and texture. Physically based lighting, natural daylight, realistic shadows and reflections. High-resolution details, sharp edges, correct material roughness. Realistic urban context, trees, people, and vehicles scaled correctly. Professional architectural visualization quality, true-to-life appearance.${correction ? ` Correction request: ${correction}` : ""}`;
