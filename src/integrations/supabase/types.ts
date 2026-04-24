@@ -755,6 +755,36 @@ export type Database = {
         }
         Relationships: []
       }
+      organigrammes_entreprise: {
+        Row: {
+          actif: boolean
+          blocs: Json
+          created_at: string
+          description: string
+          id: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          blocs?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          blocs?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       presences: {
         Row: {
           chantier_id: string
