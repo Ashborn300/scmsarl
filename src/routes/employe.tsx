@@ -453,9 +453,20 @@ function EmployePage() {
     if (formEmploye.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formEmploye.email.trim())) return setMessage("Adresse email invalide.");
     const total = Number(formEmploye.salaire_total) || 0;
     const recu = Number(formEmploye.salaire_recu) || 0;
+    const matriculeNettoye = formEmploye.matricule.trim();
     setSauvegarde(true);
-    const payload = { ...formEmploye, nom_complet: formEmploye.nom_complet.trim(), matricule: formEmploye.matricule.trim(), poste: formEmploye.poste.trim(), telephone: formEmploye.telephone.trim(), adresse: formEmploye.adresse.trim(), email: (formEmploye.email || "").trim(), numero_piece_identite: (formEmploye.numero_piece_identite || "").trim(), contact_urgence: (formEmploye.contact_urgence || "").trim(), salaire: total, salaire_total: total, salaire_recu: recu, salaire_restant: Math.max(total - recu, 0), chantier_assigne: formEmploye.chantier_assigne || null, date_admission: normaliserDate(formEmploye.date_admission || null), date_naissance: normaliserDate(formEmploye.date_naissance || null) };
+    // Vérification préalable de l'unicité du matricule
+    const { data: doublon } = await db.from("employes").select("id, nom_complet").eq("matricule", matriculeNettoye).maybeSingle();
+    if (doublon && doublon.id !== edition?.id) {
+      setSauvegarde(false);
+      return setMessage(`Ce matricule « ${matriculeNettoye} » est déjà attribué à ${doublon.nom_complet || "un autre employé"}. Choisissez un matricule unique.`);
+    }
+    const payload = { ...formEmploye, nom_complet: formEmploye.nom_complet.trim(), matricule: matriculeNettoye, poste: formEmploye.poste.trim(), telephone: formEmploye.telephone.trim(), adresse: formEmploye.adresse.trim(), email: (formEmploye.email || "").trim(), numero_piece_identite: (formEmploye.numero_piece_identite || "").trim(), contact_urgence: (formEmploye.contact_urgence || "").trim(), salaire: total, salaire_total: total, salaire_recu: recu, salaire_restant: Math.max(total - recu, 0), chantier_assigne: formEmploye.chantier_assigne || null, date_admission: normaliserDate(formEmploye.date_admission || null), date_naissance: normaliserDate(formEmploye.date_naissance || null) };
     const { error } = edition?.id ? await db.from("employes").update(payload).eq("id", edition.id) : await db.from("employes").insert(payload);
+    if (error && (error as { code?: string }).code === "23505") {
+      setSauvegarde(false);
+      return setMessage(`Ce matricule « ${matriculeNettoye} » est déjà utilisé par un autre employé. Veuillez en choisir un autre.`);
+    }
     await finaliserSauvegarde(error, "Employé enregistré.");
   }
 
