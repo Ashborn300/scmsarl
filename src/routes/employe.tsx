@@ -1033,9 +1033,19 @@ function EmployesAffectesChantier({ chantierId, employes, viewerId, viewerRole }
     .map((id) => ({ id, employe: employes.find((e) => e.id === id), montant: salaires[id] || 0 }))
     .filter((l) => l.employe);
   const total = lignes.reduce((sum, l) => sum + (l.montant || 0), 0);
+  const estEmploye = viewerRole === "employe" || viewerRole === "chef_chantier";
+  const monSalaire = viewerId && (viewerId in salaires) ? salaires[viewerId] : null;
+  const moiAffecte = !!viewerId && idsAffectes.includes(viewerId);
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-document">
+      {estEmploye && moiAffecte && (
+        <article className="mb-4 rounded-2xl bg-tool-gradient p-4 text-tool-foreground shadow-tool">
+          <p className="text-xs font-black uppercase tracking-wide opacity-85">Mon salaire sur ce chantier</p>
+          <p className="mt-2 text-3xl font-black">{devise(monSalaire ?? 0)}</p>
+          <p className="mt-1 text-xs opacity-85">Inclus dans votre salaire total cumulé.</p>
+        </article>
+      )}
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <UsersRound className="size-5 text-primary" />
@@ -1047,22 +1057,25 @@ function EmployesAffectesChantier({ chantierId, employes, viewerId, viewerRole }
         <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">Chargement…</p>
       ) : lignes.length ? (
         <ul className="space-y-2">
-          {lignes.map((l) => (
-            <li key={l.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3">
-              <div className="flex items-center gap-3 min-w-0">
-                {l.employe?.photo_profil ? (
-                  <img src={l.employe.photo_profil} alt={`Photo ${l.employe.nom_complet}`} className="size-10 rounded-full object-cover" loading="lazy" />
-                ) : (
-                  <span className="flex size-10 items-center justify-center rounded-full bg-muted"><UserRound className="size-5 text-muted-foreground" /></span>
-                )}
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-black">{l.employe?.nom_complet}</p>
-                  <p className="truncate text-xs text-muted-foreground">{l.employe?.poste || "—"} · {l.employe?.matricule || "Sans matricule"}</p>
+          {lignes.map((l) => {
+            const cestMoi = !!viewerId && l.id === viewerId;
+            return (
+              <li key={l.id} className={`flex items-center justify-between gap-3 rounded-xl border p-3 ${cestMoi ? "border-primary bg-primary/5" : "border-border bg-background"}`}>
+                <div className="flex items-center gap-3 min-w-0">
+                  {l.employe?.photo_profil ? (
+                    <img src={l.employe.photo_profil} alt={`Photo ${l.employe.nom_complet}`} className="size-10 rounded-full object-cover" loading="lazy" />
+                  ) : (
+                    <span className="flex size-10 items-center justify-center rounded-full bg-muted"><UserRound className="size-5 text-muted-foreground" /></span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black">{l.employe?.nom_complet}{cestMoi && <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-black uppercase text-primary-foreground">Vous</span>}</p>
+                    <p className="truncate text-xs text-muted-foreground">{l.employe?.poste || "—"} · {l.employe?.matricule || "Sans matricule"}</p>
+                  </div>
                 </div>
-              </div>
-              <span className="shrink-0 rounded-lg bg-primary/10 px-3 py-1 text-sm font-black text-primary">{devise(l.montant)}</span>
-            </li>
-          ))}
+                <span className="shrink-0 rounded-lg bg-primary/10 px-3 py-1 text-sm font-black text-primary">{devise(l.montant)}</span>
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">Aucun employé affecté à ce chantier.</p>
