@@ -969,23 +969,55 @@ function FormChantier({ form, setForm, projets, employes, onSubmit, saving, tele
 function Details({ detail, projets, employes, chantiers, presences, annonces, admin, role, viewerId, saving, televerserPhotoProfil, retirerPhotoProfil, modifier, supprimer }: any) { const item = detail.type === "projets" ? projets.find((x: Projet) => x.id === detail.id) : detail.type === "employes" ? employes.find((x: Employe) => x.id === detail.id) : detail.type === "chantiers" ? chantiers.find((x: Chantier) => x.id === detail.id) : detail.type === "annonces" ? annonces.find((x: Annonce) => x.id === detail.id) : presences.find((x: Presence) => x.id === detail.id); if (!item) return <p>Donnée introuvable.</p>; const canEdit = admin && detail.type !== "presences"; if (detail.type === "annonces") { const a = item as Annonce; return <div className="space-y-4">{a.image_url && <img src={a.image_url} alt={`Image annonce ${a.titre}`} className="max-h-80 w-full rounded-2xl object-cover" loading="lazy" />}<div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">{dateFr(a.created_at)}</p><h3 className="mt-1 text-2xl font-black">{a.titre}</h3></div><p className="whitespace-pre-wrap rounded-xl bg-muted p-4 text-sm leading-6">{a.contenu}</p>{admin && <button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button>}</div>; } if (detail.type === "presences") { const p = item as Presence; return <div className="space-y-4"><Info icone={CalendarDays} label="Date" valeur={dateFr(p.date)} /><Info icone={HardHat} label="Chantier" valeur={nomChantier(chantiers, p.chantier_id)} /><Info icone={UserRound} label="Chef" valeur={nomEmploye(employes, p.chef_chantier_id)} /><div className="space-y-2">{p.employes_presence.map((e) => <div key={e.employe_id} className="rounded-xl border border-border bg-background p-3 font-bold">{e.nom_complet} — {e.statut}</div>)}</div><p className="rounded-xl bg-muted p-4 text-sm">{p.notes || "Aucune note."}</p></div>; } if (detail.type === "chantiers") { const c = item as Chantier; const canSeeBudget = admin || (role === "chef_chantier" && c.chef_chantier === viewerId && c.autoriser_budget_chef); return <div className="space-y-4"><h3 className="text-2xl font-black">{c.nom_chantier}</h3><div className="grid gap-3 sm:grid-cols-2"><Info icone={MapPin} label="Localisation" valeur={c.localisation || "Non définie"} /><Info icone={HardHat} label="Chef" valeur={nomEmploye(employes, c.chef_chantier)} /><Info icone={BriefcaseBusiness} label="Projet" valeur={nomProjet(projets, c.projet_lie)} /><Info icone={canSeeBudget ? Eye : EyeOff} label="Budget global" valeur={canSeeBudget ? devise(c.budget_global || 0) : "Masqué"} /></div><p className="rounded-xl bg-muted p-4 text-sm">{c.description || "Aucune description."}</p><div className="grid gap-3 sm:grid-cols-2">{(c.images_chantier || []).map((url) => <img key={url} src={url} alt={`Image du chantier ${c.nom_chantier}`} className="h-48 w-full rounded-2xl object-cover" loading="lazy" />)}</div><EmployesAffectesChantier chantierId={c.id} employes={employes} />{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; } if (detail.type === "employes") { const e = item as Employe; const canUpdateOwnPhoto = !admin && e.id === viewerId; return <div className="space-y-4">{e.photo_profil ? <img src={e.photo_profil} alt={`Photo de ${e.nom_complet}`} className="h-28 w-28 rounded-2xl object-cover" loading="lazy" /> : <span className="flex h-28 w-28 items-center justify-center rounded-2xl bg-muted"><UserRound className="size-10 text-muted-foreground" /></span>}{canUpdateOwnPhoto && <div className="rounded-2xl border border-border bg-background p-4"><p className="mb-3 text-sm font-black">Photo de profil</p><input type="file" accept="image/*" className="file-input" disabled={saving} onChange={(event) => televerserPhotoProfil(event.target.files)} />{e.photo_profil && <button type="button" className="mini-button mt-3" disabled={saving} onClick={retirerPhotoProfil}>Retirer la photo</button>}</div>}<h3 className="text-2xl font-black">{e.nom_complet}</h3><div className="grid gap-3 sm:grid-cols-2"><Info icone={UserRound} label="Matricule" valeur={e.matricule || "Non défini"} /><Info icone={BriefcaseBusiness} label="Poste" valeur={e.poste || "Non défini"} /><Info icone={UsersRound} label="Genre" valeur={e.genre || "Non précisé"} /><Info icone={CalendarDays} label="Admission" valeur={dateFr(e.date_admission)} /><Info icone={CalendarDays} label="Naissance" valeur={dateFr(e.date_naissance)} /><Info icone={UserRound} label="Email" valeur={e.email || "Non défini"} /><Info icone={UserRound} label="Téléphone" valeur={e.telephone || "Non défini"} /><Info icone={ClipboardList} label="Pièce d’identité" valeur={e.numero_piece_identite || "Non définie"} /><Info icone={ShieldCheck} label="Contact d’urgence" valeur={e.contact_urgence || "Non défini"} /><Info icone={HardHat} label="Chantier" valeur={nomChantier(chantiers, e.chantier_assigne)} /></div><p className="rounded-xl bg-muted p-4 text-sm">{e.adresse || "Adresse non définie."}</p>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; } return <div className="space-y-4"><h3 className="text-2xl font-black">{(item as any).nom_projet || (item as any).nom_complet}</h3><pre className="overflow-auto rounded-xl bg-muted p-4 text-xs">{JSON.stringify(item, null, 2)}</pre>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; }
 function EmployesAffectesChantier({ chantierId, employes }: { chantierId: string; employes: Employe[] }) {
   const [salaires, setSalaires] = useState<Record<string, number>>({});
+  const [idsAffectes, setIdsAffectes] = useState<string[]>([]);
   const [chargement, setChargement] = useState(true);
 
   useEffect(() => {
     let actif = true;
     setChargement(true);
-    db.from("salaires_chantier").select("employe_id, montant").eq("chantier_id", chantierId).then(({ data }: { data: { employe_id: string; montant: number }[] | null }) => {
+    (async () => {
+      // Charger en parallèle : lignes salaires + chantier (pour employes_assignes)
+      const [{ data: lignesSalaires }, { data: chantier }] = await Promise.all([
+        db.from("salaires_chantier").select("employe_id, montant").eq("chantier_id", chantierId),
+        db.from("chantiers").select("employes_assignes").eq("id", chantierId).maybeSingle(),
+      ]);
       if (!actif) return;
-      const map: Record<string, number> = {};
-      (data || []).forEach((s) => { map[s.employe_id] = Number(s.montant || 0); });
-      setSalaires(map);
-      setChargement(false);
-    });
-    return () => { actif = false; };
-  }, [chantierId]);
 
-  const ids = Object.keys(salaires);
-  const lignes = ids.map((id) => ({ id, employe: employes.find((e) => e.id === id), montant: salaires[id] })).filter((l) => l.employe);
+      const map: Record<string, number> = {};
+      (lignesSalaires || []).forEach((s: { employe_id: string; montant: number }) => { map[s.employe_id] = Number(s.montant || 0); });
+
+      // Fusion des 3 sources : salaires_chantier + employes_assignes + employes.chantier_assigne
+      const idsSalaires = Object.keys(map);
+      const idsAssignes = (chantier?.employes_assignes || []) as string[];
+      const idsParFiche = employes.filter((e) => e.chantier_assigne === chantierId).map((e) => e.id);
+      const idsUnion = Array.from(new Set([...idsSalaires, ...idsAssignes, ...idsParFiche]));
+
+      // Auto-réparation silencieuse : créer une ligne salaire à 0 pour les employés affectés sans salaire
+      const aCreer = idsUnion.filter((id) => !(id in map));
+      if (aCreer.length) {
+        await db.from("salaires_chantier").upsert(
+          aCreer.map((employe_id) => ({ chantier_id: chantierId, employe_id, montant: 0 })),
+          { onConflict: "chantier_id,employe_id" },
+        );
+        aCreer.forEach((id) => { map[id] = 0; });
+      }
+      // Auto-réparation : ajouter dans employes_assignes ceux qui manquent
+      const aAjouter = idsUnion.filter((id) => !idsAssignes.includes(id));
+      if (aAjouter.length) {
+        await db.from("chantiers").update({ employes_assignes: [...idsAssignes, ...aAjouter] }).eq("id", chantierId);
+      }
+
+      if (!actif) return;
+      setSalaires(map);
+      setIdsAffectes(idsUnion);
+      setChargement(false);
+    })();
+    return () => { actif = false; };
+  }, [chantierId, employes]);
+
+  const lignes = idsAffectes
+    .map((id) => ({ id, employe: employes.find((e) => e.id === id), montant: salaires[id] || 0 }))
+    .filter((l) => l.employe);
   const total = lignes.reduce((sum, l) => sum + (l.montant || 0), 0);
 
   return (
