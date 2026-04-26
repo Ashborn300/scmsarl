@@ -482,9 +482,35 @@ function EmployePage() {
   async function enregistrerChantier(event: React.FormEvent) {
     event.preventDefault(); if (!formChantier.nom_chantier.trim()) return setMessage("Le nom du chantier est obligatoire.");
     setSauvegarde(true);
-    const payload = { ...formChantier, projet_lie: formChantier.projet_lie || null, chef_chantier: formChantier.chef_chantier || "", budget_global: Number(formChantier.budget_global) || 0, date_debut: normaliserDate(formChantier.date_debut), date_fin_prevue: normaliserDate(formChantier.date_fin_prevue) };
-    const { error } = edition?.id ? await db.from("chantiers").update(payload).eq("id", edition.id) : await db.from("chantiers").insert(payload);
-    await finaliserSauvegarde(error, "Chantier enregistré.");
+    const { salaires_employes, ...formSansSalaires } = formChantier;
+    const payload = { ...formSansSalaires, projet_lie: formChantier.projet_lie || null, chef_chantier: formChantier.chef_chantier || "", budget_global: Number(formChantier.budget_global) || 0, date_debut: normaliserDate(formChantier.date_debut), date_fin_prevue: normaliserDate(formChantier.date_fin_prevue) };
+    const { data: chantierSauvegarde, error } = edition?.id
+      ? await db.from("chantiers").update(payload).eq("id", edition.id).select().single()
+      : await db.from("chantiers").insert(payload).select().single();
+    if (error || !chantierSauvegarde) { setSauvegarde(false); setMessage(error?.message || "Erreur lors de l’enregistrement du chantier."); return; }
+
+    const chantierId = chantierSauvegarde.id;
+    // Persister les salaires par employé pour ce chantier (uniquement employés affectés)
+    const lignesSalaires = (formChantier.employes_assignes || [])
+      .map((employeId) => ({ employe_id: employeId, montant: Number(salaires_employes?.[employeId] || 0) }))
+      .filter((l) => Number.isFinite(l.montant));
+    await db.from("salaires_chantier").delete().eq("chantier_id", chantierId);
+    if (lignesSalaires.length) {
+      await db.from("salaires_chantier").insert(lignesSalaires.map((l) => ({ chantier_id: chantierId, employe_id: l.employe_id, montant: l.montant })));
+    }
+
+    // Recalculer salaire_total et salaire_restant pour chaque employé impacté (anciens + nouveaux)
+    const ancienChantier = chantiers.find((c) => c.id === chantierId);
+    const idsImpactes = new Set<string>([...(ancienChantier?.employes_assignes || []), ...(formChantier.employes_assignes || [])]);
+    for (const employeId of idsImpactes) {
+      const { data: toutesLignes } = await db.from("salaires_chantier").select("montant").eq("employe_id", employeId);
+      const totalCumule = (toutesLignes || []).reduce((sum: number, l: { montant: number }) => sum + Number(l.montant || 0), 0);
+      const emp = employes.find((e) => e.id === employeId);
+      const recu = Number(emp?.salaire_recu || 0);
+      await db.from("employes").update({ salaire: totalCumule, salaire_total: totalCumule, salaire_restant: Math.max(totalCumule - recu, 0) }).eq("id", employeId);
+    }
+
+    await finaliserSauvegarde(null, "Chantier enregistré.");
   }
 
   async function finaliserSauvegarde(error: { message?: string } | null, succes: string) {
