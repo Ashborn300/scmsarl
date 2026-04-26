@@ -51,7 +51,7 @@ export const Route = createFileRoute("/employe")({
 });
 
 type RoleSession = "admin" | "employe" | "chef_chantier";
-type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante" | "gestion_materiel" | "arrivage_materiel" | "incident_chantier";
+type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante" | "gestion_materiel" | "arrivage_materiel" | "incident_chantier" | "paiement";
 type StatutPresence = "présent" | "absent" | "en retard" | "excusé";
 type ModeEdition = { type: "projets" | "employes" | "chantiers"; id?: string } | null;
 type Detail = { type: "projets" | "employes" | "chantiers" | "presences" | "annonces"; id: string } | null;
@@ -152,7 +152,8 @@ type IncidentChantier = { id: string; chef_chantier_id: string; chef_chantier_no
 
 type ProjetForm = Omit<Projet, "id" | "created_at" | "budget_estime"> & { budget_estime: string };
 type EmployeForm = Omit<Employe, "id" | "created_at" | "salaire" | "salaire_total" | "salaire_recu" | "salaire_restant"> & { salaire_total: string; salaire_recu: string };
-type ChantierForm = Omit<Chantier, "id" | "created_at" | "budget_global" | "images_chantier"> & { budget_global: string; images_chantier: string[] };
+type ChantierForm = Omit<Chantier, "id" | "created_at" | "budget_global" | "images_chantier"> & { budget_global: string; images_chantier: string[]; salaires_employes?: Record<string, string> };
+type RecuEmployePaiement = { id: string; numero: string; employe_id: string; employe_nom: string; matricule: string; chantier_id: string | null; chantier_nom: string; montant: number; motif: string; statut: "en_attente" | "confirme" | "refuse"; date_envoi: string; date_confirmation: string | null; pdf_base64: string; created_at: string };
 type AnnonceForm = Pick<Annonce, "titre" | "contenu" | "image_url" | "publiee">;
 
 const db = supabase as any;
@@ -164,7 +165,7 @@ const statutsPresence: StatutPresence[] = ["présent", "absent", "en retard", "e
 
 const projetInitial: ProjetForm = { nom_projet: "", client: "", localisation: "", description: "", budget_estime: "", statut: "Planifié", date_debut: "", date_fin_prevue: "" };
 const employeInitial: EmployeForm = { nom_complet: "", poste: "", matricule: "", telephone: "", adresse: "", salaire_total: "", salaire_recu: "0", role: "employe", statut: "actif", chantier_assigne: "", peut_voir_budget: false, photo_profil: "", genre: "", date_admission: "", date_naissance: "", email: "", numero_piece_identite: "", contact_urgence: "" };
-const chantierInitial: ChantierForm = { nom_chantier: "", localisation: "", chef_chantier: "", projet_lie: "", employes_assignes: [], description: "", budget_global: "", images_chantier: [], autoriser_budget_chef: false, statut: "Planifié", date_debut: "", date_fin_prevue: "" };
+const chantierInitial: ChantierForm = { nom_chantier: "", localisation: "", chef_chantier: "", projet_lie: "", employes_assignes: [], description: "", budget_global: "", images_chantier: [], autoriser_budget_chef: false, statut: "Planifié", date_debut: "", date_fin_prevue: "", salaires_employes: {} };
 const annonceInitial: AnnonceForm = { titre: "", contenu: "", image_url: "", publiee: true };
 const congeInitial = { raison: "", image_url: "" };
 const bilanSanteInitial = { semaine: new Date().toISOString().slice(0, 10), etat_global: "", groupe_sanguin: "", allergies: "", blessure: false, details_blessure: "" };
@@ -200,6 +201,7 @@ function EmployePage() {
   const [rapportsMateriel, setRapportsMateriel] = useState<RapportMateriel[]>([]);
   const [arrivagesMateriel, setArrivagesMateriel] = useState<ArrivageMateriel[]>([]);
   const [incidentsChantier, setIncidentsChantier] = useState<IncidentChantier[]>([]);
+  const [recusEmploye, setRecusEmploye] = useState<RecuEmployePaiement[]>([]);
   const [jourPopup, setJourPopup] = useState<JourNonTravaille | null>(null);
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
@@ -368,6 +370,12 @@ function EmployePage() {
     setRapportsMateriel(materielRes.data || []);
     setArrivagesMateriel(arrivagesRes.data || []);
     setIncidentsChantier(incidentsRes.data || []);
+    // Charger les reçus employé : tous pour admin, ses propres reçus pour employé/chef
+    const recusReq = currentSession.role === "admin"
+      ? db.from("recus_employes").select("*").order("created_at", { ascending: false })
+      : db.from("recus_employes").select("*").eq("employe_id", currentSession.employeId || "").order("created_at", { ascending: false });
+    const recusRes = await recusReq;
+    setRecusEmploye(recusRes.error ? [] : (recusRes.data || []));
     if (currentSession.role !== "admin") {
       const today = new Date().toISOString().slice(0, 10);
       const jour = (joursRes.data || []).find((item: JourNonTravaille) => item.actif && item.date_jour === today);
@@ -385,12 +393,20 @@ function EmployePage() {
     if (type === "chantiers") setFormChantier(chantierInitial);
   };
 
-  const ouvrirEdition = (type: Exclude<ModeEdition, null>["type"], id: string) => {
+  const ouvrirEdition = async (type: Exclude<ModeEdition, null>["type"], id: string) => {
     if (!isAdmin) return;
     setEdition({ type, id }); setDetail(null); setMessage("");
     if (type === "projets") { const item = projets.find((p) => p.id === id); if (item) setFormProjet({ ...item, budget_estime: String(item.budget_estime || ""), date_debut: item.date_debut || "", date_fin_prevue: item.date_fin_prevue || "" }); }
     if (type === "employes") { const item = employes.find((e) => e.id === id); if (item) setFormEmploye({ ...item, salaire_total: String(item.salaire_total ?? item.salaire ?? ""), salaire_recu: String(item.salaire_recu || 0), chantier_assigne: item.chantier_assigne || "", role: item.role || "employe", peut_voir_budget: !!item.peut_voir_budget, photo_profil: item.photo_profil || "", genre: item.genre || "", date_admission: item.date_admission || "", date_naissance: item.date_naissance || "", email: item.email || "", numero_piece_identite: item.numero_piece_identite || "", contact_urgence: item.contact_urgence || "" }); }
-    if (type === "chantiers") { const item = chantiers.find((c) => c.id === id); if (item) setFormChantier({ ...item, projet_lie: item.projet_lie || "", chef_chantier: item.chef_chantier || "", employes_assignes: item.employes_assignes || [], budget_global: String(item.budget_global || ""), images_chantier: item.images_chantier || [], date_debut: item.date_debut || "", date_fin_prevue: item.date_fin_prevue || "", autoriser_budget_chef: !!item.autoriser_budget_chef }); }
+    if (type === "chantiers") {
+      const item = chantiers.find((c) => c.id === id);
+      if (item) {
+        const { data: salairesExistants } = await db.from("salaires_chantier").select("employe_id, montant").eq("chantier_id", id);
+        const salairesMap: Record<string, string> = {};
+        (salairesExistants || []).forEach((s: { employe_id: string; montant: number }) => { salairesMap[s.employe_id] = String(s.montant || ""); });
+        setFormChantier({ ...item, projet_lie: item.projet_lie || "", chef_chantier: item.chef_chantier || "", employes_assignes: item.employes_assignes || [], budget_global: String(item.budget_global || ""), images_chantier: item.images_chantier || [], date_debut: item.date_debut || "", date_fin_prevue: item.date_fin_prevue || "", autoriser_budget_chef: !!item.autoriser_budget_chef, salaires_employes: salairesMap });
+      }
+    }
   };
 
   async function enregistrerAnnonce(event: React.FormEvent) {
@@ -473,9 +489,35 @@ function EmployePage() {
   async function enregistrerChantier(event: React.FormEvent) {
     event.preventDefault(); if (!formChantier.nom_chantier.trim()) return setMessage("Le nom du chantier est obligatoire.");
     setSauvegarde(true);
-    const payload = { ...formChantier, projet_lie: formChantier.projet_lie || null, chef_chantier: formChantier.chef_chantier || "", budget_global: Number(formChantier.budget_global) || 0, date_debut: normaliserDate(formChantier.date_debut), date_fin_prevue: normaliserDate(formChantier.date_fin_prevue) };
-    const { error } = edition?.id ? await db.from("chantiers").update(payload).eq("id", edition.id) : await db.from("chantiers").insert(payload);
-    await finaliserSauvegarde(error, "Chantier enregistré.");
+    const { salaires_employes, ...formSansSalaires } = formChantier;
+    const payload = { ...formSansSalaires, projet_lie: formChantier.projet_lie || null, chef_chantier: formChantier.chef_chantier || "", budget_global: Number(formChantier.budget_global) || 0, date_debut: normaliserDate(formChantier.date_debut), date_fin_prevue: normaliserDate(formChantier.date_fin_prevue) };
+    const { data: chantierSauvegarde, error } = edition?.id
+      ? await db.from("chantiers").update(payload).eq("id", edition.id).select().single()
+      : await db.from("chantiers").insert(payload).select().single();
+    if (error || !chantierSauvegarde) { setSauvegarde(false); setMessage(error?.message || "Erreur lors de l’enregistrement du chantier."); return; }
+
+    const chantierId = chantierSauvegarde.id;
+    // Persister les salaires par employé pour ce chantier (uniquement employés affectés)
+    const lignesSalaires = (formChantier.employes_assignes || [])
+      .map((employeId) => ({ employe_id: employeId, montant: Number(salaires_employes?.[employeId] || 0) }))
+      .filter((l) => Number.isFinite(l.montant));
+    await db.from("salaires_chantier").delete().eq("chantier_id", chantierId);
+    if (lignesSalaires.length) {
+      await db.from("salaires_chantier").insert(lignesSalaires.map((l) => ({ chantier_id: chantierId, employe_id: l.employe_id, montant: l.montant })));
+    }
+
+    // Recalculer salaire_total et salaire_restant pour chaque employé impacté (anciens + nouveaux)
+    const ancienChantier = chantiers.find((c) => c.id === chantierId);
+    const idsImpactes = new Set<string>([...(ancienChantier?.employes_assignes || []), ...(formChantier.employes_assignes || [])]);
+    for (const employeId of idsImpactes) {
+      const { data: toutesLignes } = await db.from("salaires_chantier").select("montant").eq("employe_id", employeId);
+      const totalCumule = (toutesLignes || []).reduce((sum: number, l: { montant: number }) => sum + Number(l.montant || 0), 0);
+      const emp = employes.find((e) => e.id === employeId);
+      const recu = Number(emp?.salaire_recu || 0);
+      await db.from("employes").update({ salaire: totalCumule, salaire_total: totalCumule, salaire_restant: Math.max(totalCumule - recu, 0) }).eq("id", employeId);
+    }
+
+    await finaliserSauvegarde(null, "Chantier enregistré.");
   }
 
   async function finaliserSauvegarde(error: { message?: string } | null, succes: string) {
@@ -669,9 +711,26 @@ function EmployePage() {
 
   function changerOnglet(tab: Onglet) { setOnglet(tab); setRecherche(""); setMenuOuvert(false); }
 
+  async function confirmerRecuPaiement(recuId: string) {
+    if (!session?.employeId) return;
+    if (!confirm("Confirmer la réception de ce paiement ? Le montant sera déduit de votre salaire restant.")) return;
+    setSauvegarde(true);
+    const { data, error } = await db.rpc("confirmer_recu_employe", { _recu_id: recuId, _employe_id: session.employeId });
+    setSauvegarde(false);
+    if (error || !data?.success) { setMessage(data?.message || error?.message || "Confirmation impossible."); return; }
+    setMessage("Reçu confirmé. Salaire restant mis à jour.");
+    await chargerDonnees();
+  }
+
+  function ouvrirPdfRecu(pdfBase64: string) {
+    if (!pdfBase64) return alert("PDF indisponible.");
+    const w = window.open();
+    if (w) w.document.write(`<iframe src="${pdfBase64}" style="width:100%;height:100vh;border:0;"></iframe>`);
+  }
+
   if (!session) return <LoginScreen identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
-  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "arrivage_materiel" ? "Rapport arrivage de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : "Présences";
+  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "arrivage_materiel" ? "Rapport arrivage de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : onglet === "paiement" ? "Paiement" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
   const chantierPresence = chantiersVisibles.find((c) => c.id === presenceChantier) || chantiersVisibles[0];
   const employesPresence = chantierPresence ? employes.filter((e) => (chantierPresence.employes_assignes || []).includes(e.id)) : [];
@@ -696,6 +755,7 @@ function EmployePage() {
             {isChef && <BoutonNav actif={onglet === "incident_chantier"} icone={AlertTriangle} label="Incident / Accident" onClick={() => changerOnglet("incident_chantier")} />}
             {!isAdmin && <BoutonNav actif={onglet === "demande_conge"} icone={FilePlus2} label="Demande de Congé" onClick={() => changerOnglet("demande_conge")} />}
             {!isAdmin && <BoutonNav actif={onglet === "bilan_sante"} icone={HeartPulse} label="Bilan de santé" onClick={() => changerOnglet("bilan_sante")} />}
+            {!isAdmin && <BoutonNav actif={onglet === "paiement"} icone={ClipboardList} label="Paiement" onClick={() => changerOnglet("paiement")} />}
           </nav>
           <div className="dashboard-hero mt-10 rounded-3xl p-4 shadow-tool"><Building2 className="mb-3 size-8" /><p className="text-sm font-black">{session.nom}</p><p className="mt-1 text-xs font-semibold leading-5 opacity-90">Accès filtré automatiquement selon le rôle connecté.</p><button className="mini-button mt-4 w-full bg-card/20 text-primary-foreground" onClick={deconnecter}><LogOut className="size-4" /> Déconnexion</button></div>
         </aside>
@@ -704,7 +764,7 @@ function EmployePage() {
           <header className="dashboard-card mb-6 flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><button className="tool-action lg:hidden" onClick={() => setMenuOuvert(true)} aria-label="Ouvrir"><Menu className="size-5" /></button><div className="tool-blue inline-flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><UserRound className="size-6" /></div><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Espace entreprise</p><h2 className="text-2xl font-black sm:text-3xl">{titreOnglet}</h2></div></div>{isAdmin && ["projets", "employes", "chantiers", "annonces"].includes(onglet) && <button className="primary-action" onClick={() => ouvrirCreation(onglet as any)}><Plus className="size-4" /> Nouveau</button>}</header>
           {message && <div className="mb-5 rounded-2xl border border-border bg-card p-4 text-sm font-semibold shadow-document">{message}</div>}
           {chargement ? <div className="flex min-h-[50vh] items-center justify-center rounded-3xl border border-border bg-card"><Loader2 className="size-8 animate-spin text-primary" /></div> : onglet === "dashboard" ? <Dashboard role={session.role} stats={stats} employe={employeConnecte} chantiers={chantiersVisibles} presences={presencesVisibles} annonces={annoncesVisibles} jours={joursVisibles} setOnglet={setOnglet} voirAnnonce={(id: string) => setDetail({ type: "annonces", id })} masquerAnnonce={masquerAnnonce} admin={isAdmin} /> : <div className="space-y-5">
-            {!["organigramme", "demande_conge", "bilan_sante", "gestion_materiel", "arrivage_materiel", "incident_chantier"].includes(onglet) && <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-document sm:flex-row sm:items-center sm:justify-between"><div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input className="form-control pl-10" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder={`Rechercher dans ${titreOnglet.toLowerCase()}...`} /></div><p className="text-sm font-bold text-muted-foreground">{onglet === "projets" ? projetsFiltres.length : onglet === "employes" ? employesFiltres.length : onglet === "chantiers" ? chantiersFiltres.length : presencesFiltrees.length} résultat(s)</p></div>}
+            {!["organigramme", "demande_conge", "bilan_sante", "gestion_materiel", "arrivage_materiel", "incident_chantier", "paiement"].includes(onglet) && <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-document sm:flex-row sm:items-center sm:justify-between"><div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input className="form-control pl-10" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder={`Rechercher dans ${titreOnglet.toLowerCase()}...`} /></div><p className="text-sm font-bold text-muted-foreground">{onglet === "projets" ? projetsFiltres.length : onglet === "employes" ? employesFiltres.length : onglet === "chantiers" ? chantiersFiltres.length : presencesFiltrees.length} résultat(s)</p></div>}
             {onglet === "projets" && <ListeProjets projets={projetsFiltres} admin={isAdmin} voir={(id: string) => setDetail({ type: "projets", id })} modifier={(id: string) => ouvrirEdition("projets", id)} supprimer={(id: string) => supprimer("projets", id)} />}
             {onglet === "employes" && <ListeEmployes employes={employesFiltres} chantiers={chantiersVisibles} admin={isAdmin} showSalary={isAdmin || (!isChef && employesFiltres.length === 1)} voir={(id: string) => setDetail({ type: "employes", id })} modifier={(id: string) => ouvrirEdition("employes", id)} supprimer={(id: string) => supprimer("employes", id)} />}
             {onglet === "chantiers" && <ListeChantiers chantiers={chantiersFiltres} projets={projets} employes={employes} admin={isAdmin} viewerRole={session.role} viewerId={session.employeId} voir={(id: string) => setDetail({ type: "chantiers", id })} modifier={(id: string) => ouvrirEdition("chantiers", id)} supprimer={(id: string) => supprimer("chantiers", id)} />}
@@ -716,6 +776,7 @@ function EmployePage() {
             {onglet === "gestion_materiel" && isChef && <GestionMaterielChef form={formMateriel} setForm={setFormMateriel} submit={envoyerRapportMateriel} saving={sauvegarde} chantiers={chantiersVisibles} rapports={rapportsMateriel.filter((r) => r.chef_chantier_id === session.employeId)} />}
             {onglet === "arrivage_materiel" && isChef && <ArrivageMaterielChef form={formArrivage} setForm={setFormArrivage} submit={envoyerArrivageMateriel} saving={sauvegarde} chantiers={chantiersVisibles} arrivages={arrivagesMateriel.filter((a) => a.chef_chantier_id === session.employeId)} televerserPreuve={televerserPreuveArrivage} />}
             {onglet === "incident_chantier" && isChef && <IncidentChantierChef form={formIncident} setForm={setFormIncident} submit={envoyerIncidentChantier} saving={sauvegarde} chantiers={chantiersVisibles} incidents={incidentsChantier.filter((i) => i.chef_chantier_id === session.employeId)} televerserImages={televerserImagesIncident} />}
+            {onglet === "paiement" && !isAdmin && <PaiementEmploye recus={recusEmploye} employe={employeConnecte} confirmer={confirmerRecuPaiement} ouvrirPdf={ouvrirPdfRecu} saving={sauvegarde} />}
             {onglet === "presences" && <PresencesSection admin={isAdmin} chef={isChef} presences={presencesFiltrees} chantiers={chantiers} employes={employes} chefs={chefOptions} filtreDate={filtreDate} setFiltreDate={setFiltreDate} filtreChantier={filtreChantier} setFiltreChantier={setFiltreChantier} filtreEmploye={filtreEmploye} setFiltreEmploye={setFiltreEmploye} filtreChef={filtreChef} setFiltreChef={setFiltreChef} voir={(id: string) => setDetail({ type: "presences", id })} presenceDate={presenceDate} setPresenceDate={setPresenceDate} presenceChantier={presenceChantier || chantierPresence?.id || ""} setPresenceChantier={setPresenceChantier} presenceNotes={presenceNotes} setPresenceNotes={setPresenceNotes} employesPresence={employesPresence} presenceStatuts={presenceStatuts} setPresenceStatuts={setPresenceStatuts} submit={enregistrerPresence} saving={sauvegarde} chantiersVisibles={chantiersVisibles} />}
           </div>}
         </section>
@@ -772,8 +833,123 @@ function FormAnnonce({ form, setForm, onSubmit, saving, televerserImage, retirer
 function PresencesSection(props: any) { return <div className="space-y-5">{props.chef && <form onSubmit={props.submit} className="rounded-2xl border border-border bg-card p-5 shadow-document"><h3 className="text-xl font-black">Nouvelle présence quotidienne</h3><div className="mt-4 grid gap-4 md:grid-cols-2"><Champ label="Date"><input type="date" className="form-control" value={props.presenceDate} onChange={(e) => props.setPresenceDate(e.target.value)} /></Champ><Champ label="Chantier"><Select value={props.presenceChantier} onChange={props.setPresenceChantier}>{props.chantiersVisibles.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select></Champ></div><div className="mt-4 space-y-3">{props.employesPresence.map((e: Employe) => <div key={e.id} className="flex flex-col gap-2 rounded-xl border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"><p className="font-bold">{e.nom_complet}</p><Select value={props.presenceStatuts[e.id] || "présent"} onChange={(v: StatutPresence) => props.setPresenceStatuts({ ...props.presenceStatuts, [e.id]: v })}>{statutsPresence.map((s) => <option key={s} value={s}>{s}</option>)}</Select></div>)}</div><Champ label="Notes"><textarea className="form-control mt-4 min-h-24" value={props.presenceNotes} onChange={(e) => props.setPresenceNotes(e.target.value)} /></Champ><button className="primary-action mt-4" disabled={props.saving}><ClipboardCheck className="size-4" /> Enregistrer la présence</button></form>}<div className="grid gap-3 rounded-2xl border border-border bg-card p-4 shadow-document md:grid-cols-4"><input type="date" className="form-control" value={props.filtreDate} onChange={(e) => props.setFiltreDate(e.target.value)} /><Select value={props.filtreChantier} onChange={props.setFiltreChantier}><option value="">Tous les chantiers</option>{props.chantiers.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select><Select value={props.filtreEmploye} onChange={props.setFiltreEmploye}><option value="">Tous les employés</option>{props.employes.map((e: Employe) => <option key={e.id} value={e.id}>{e.nom_complet}</option>)}</Select><Select value={props.filtreChef} onChange={props.setFiltreChef}><option value="">Tous les chefs</option>{props.chefs.map((e: Employe) => <option key={e.id} value={e.id}>{e.nom_complet}</option>)}</Select></div><div className="grid gap-4 xl:grid-cols-2">{props.presences.map((p: Presence) => <article key={p.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex items-start justify-between gap-4"><div><h3 className="text-xl font-black">{dateFr(p.date)}</h3><p className="text-sm text-muted-foreground">{nomChantier(props.chantiers, p.chantier_id)} • {nomEmploye(props.employes, p.chef_chantier_id)}</p></div><button className="mini-button" onClick={() => props.voir(p.id)}>Voir</button></div><p className="mt-3 text-sm font-bold">{p.employes_presence.length} employé(s)</p></article>)}</div></div>; }
 function FormProjet({ form, setForm, onSubmit, saving }: any) { return <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2"><Champ label="Nom du projet"><input className="form-control" value={form.nom_projet} onChange={(e) => setForm({ ...form, nom_projet: e.target.value })} /></Champ><Champ label="Client"><input className="form-control" value={form.client} onChange={(e) => setForm({ ...form, client: e.target.value })} /></Champ><Champ label="Localisation"><input className="form-control" value={form.localisation} onChange={(e) => setForm({ ...form, localisation: e.target.value })} /></Champ><Champ label="Budget estimé"><input type="number" className="form-control" value={form.budget_estime} onChange={(e) => setForm({ ...form, budget_estime: e.target.value })} /></Champ><Champ label="Statut"><Select value={form.statut} onChange={(v: string) => setForm({ ...form, statut: v })}>{statutsProjet.map((s) => <option key={s}>{s}</option>)}</Select></Champ><Champ label="Date début"><input type="date" className="form-control" value={form.date_debut} onChange={(e) => setForm({ ...form, date_debut: e.target.value })} /></Champ><Champ label="Date fin prévue"><input type="date" className="form-control" value={form.date_fin_prevue} onChange={(e) => setForm({ ...form, date_fin_prevue: e.target.value })} /></Champ><Champ label="Description"><textarea className="form-control min-h-24" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Champ><button className="primary-action sm:col-span-2" disabled={saving}>Enregistrer</button></form>; }
 function FormEmploye({ form, setForm, chantiers, onSubmit, saving, televerserPhoto, retirerPhoto }: any) { return <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2"><div className="rounded-2xl border border-border bg-background p-4 sm:col-span-2"><p className="mb-3 text-sm font-black text-foreground">Photo de profil</p><div className="flex flex-col gap-4 sm:flex-row sm:items-center"><div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-muted">{form.photo_profil ? <img src={form.photo_profil} alt="Photo de profil employé" className="h-full w-full object-cover" /> : <UserRound className="size-10 text-muted-foreground" />}</div><div className="flex-1 space-y-2"><input type="file" accept="image/*" className="file-input" onChange={(e) => televerserPhoto(e.target.files)} />{form.photo_profil && <button type="button" className="mini-button" onClick={retirerPhoto}>Retirer la photo</button>}</div></div></div><Champ label="Nom complet"><input className="form-control" maxLength={120} value={form.nom_complet} onChange={(e) => setForm({ ...form, nom_complet: e.target.value })} /></Champ><Champ label="Matricule unique"><input className="form-control" maxLength={40} value={form.matricule} onChange={(e) => setForm({ ...form, matricule: e.target.value })} /></Champ><Champ label="Genre"><Select value={form.genre || ""} onChange={(v: string) => setForm({ ...form, genre: v })}><option value="">Non précisé</option><option value="homme">Homme</option><option value="femme">Femme</option><option value="autre">Autre</option></Select></Champ><Champ label="Date d’admission"><input type="date" className="form-control" value={form.date_admission || ""} onChange={(e) => setForm({ ...form, date_admission: e.target.value })} /></Champ><Champ label="Date de naissance"><input type="date" className="form-control" value={form.date_naissance || ""} onChange={(e) => setForm({ ...form, date_naissance: e.target.value })} /></Champ><Champ label="Email"><input type="email" className="form-control" maxLength={160} value={form.email || ""} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Champ><Champ label="Poste"><input className="form-control" maxLength={100} value={form.poste} onChange={(e) => setForm({ ...form, poste: e.target.value })} /></Champ><Champ label="Téléphone"><input className="form-control" maxLength={40} value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} /></Champ><Champ label="Pièce d’identité"><input className="form-control" maxLength={80} value={form.numero_piece_identite || ""} onChange={(e) => setForm({ ...form, numero_piece_identite: e.target.value })} /></Champ><Champ label="Contact d’urgence"><input className="form-control" maxLength={120} value={form.contact_urgence || ""} onChange={(e) => setForm({ ...form, contact_urgence: e.target.value })} /></Champ><Champ label="Salaire total"><input type="number" className="form-control" value={form.salaire_total} onChange={(e) => setForm({ ...form, salaire_total: e.target.value })} /></Champ><Champ label="Salaire reçu"><input type="number" className="form-control" value={form.salaire_recu} onChange={(e) => setForm({ ...form, salaire_recu: e.target.value })} /></Champ><Champ label="Rôle"><Select value={form.role} onChange={(v: string) => setForm({ ...form, role: v })}><option value="employe">Employé</option><option value="chef_chantier">Chef de chantier</option></Select></Champ><Champ label="Statut"><Select value={form.statut} onChange={(v: string) => setForm({ ...form, statut: v })}>{statutsEmploye.map((s) => <option key={s}>{s}</option>)}</Select></Champ><Champ label="Chantier assigné"><Select value={form.chantier_assigne || ""} onChange={(v: string) => setForm({ ...form, chantier_assigne: v })}><option value="">Aucun</option>{chantiers.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select></Champ><Champ label="Adresse"><input className="form-control" maxLength={180} value={form.adresse} onChange={(e) => setForm({ ...form, adresse: e.target.value })} /></Champ><label className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 text-sm font-bold sm:col-span-2"><input type="checkbox" checked={!!form.peut_voir_budget} onChange={(e) => setForm({ ...form, peut_voir_budget: e.target.checked })} /> Autoriser cet employé à voir les budgets si nécessaire</label><button className="primary-action sm:col-span-2" disabled={saving}>Enregistrer</button></form>; }
-function FormChantier({ form, setForm, projets, employes, onSubmit, saving, televerserImages, retirerImage }: any) { const chefs = employes.filter((e: Employe) => e.role === "chef_chantier"); return <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2"><Champ label="Nom du chantier"><input className="form-control" value={form.nom_chantier} onChange={(e) => setForm({ ...form, nom_chantier: e.target.value })} /></Champ><Champ label="Localisation"><input className="form-control" value={form.localisation} onChange={(e) => setForm({ ...form, localisation: e.target.value })} /></Champ><Champ label="Projet lié"><Select value={form.projet_lie || ""} onChange={(v: string) => setForm({ ...form, projet_lie: v })}><option value="">Aucun</option>{projets.map((p: Projet) => <option key={p.id} value={p.id}>{p.nom_projet}</option>)}</Select></Champ><Champ label="Chef de chantier"><Select value={form.chef_chantier || ""} onChange={(v: string) => setForm({ ...form, chef_chantier: v })}><option value="">Aucun</option>{chefs.map((e: Employe) => <option key={e.id} value={e.id}>{e.nom_complet}</option>)}</Select></Champ><Champ label="Budget global"><input type="number" className="form-control" value={form.budget_global} onChange={(e) => setForm({ ...form, budget_global: e.target.value })} /></Champ><Champ label="Statut"><Select value={form.statut} onChange={(v: string) => setForm({ ...form, statut: v })}>{statutsChantier.map((s) => <option key={s}>{s}</option>)}</Select></Champ><Champ label="Date début"><input type="date" className="form-control" value={form.date_debut} onChange={(e) => setForm({ ...form, date_debut: e.target.value })} /></Champ><Champ label="Date fin prévue"><input type="date" className="form-control" value={form.date_fin_prevue} onChange={(e) => setForm({ ...form, date_fin_prevue: e.target.value })} /></Champ><div className="sm:col-span-2"><p className="mb-2 text-sm font-black">Employés assignés</p><div className="grid gap-2 sm:grid-cols-2">{employes.map((e: Employe) => <label key={e.id} className="flex items-center gap-2 rounded-xl border border-border bg-background p-3 text-sm font-bold"><input type="checkbox" checked={(form.employes_assignes || []).includes(e.id)} onChange={(ev) => setForm({ ...form, employes_assignes: ev.target.checked ? [...(form.employes_assignes || []), e.id] : (form.employes_assignes || []).filter((id: string) => id !== e.id) })} /> {e.nom_complet}</label>)}</div></div><label className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 text-sm font-bold sm:col-span-2"><input type="checkbox" checked={!!form.autoriser_budget_chef} onChange={(e) => setForm({ ...form, autoriser_budget_chef: e.target.checked })} /> Autoriser le chef de chantier à voir le budget global</label><Champ label="Images chantier"><input type="file" multiple accept="image/*" className="file-input" onChange={(e) => televerserImages(e.target.files)} /></Champ><div className="grid gap-2 sm:grid-cols-2">{(form.images_chantier || []).map((url: string) => <div key={url} className="relative"><img src={url} alt="Image chantier" className="h-28 w-full rounded-xl object-cover" /><button type="button" className="tool-action danger absolute right-2 top-2" onClick={() => retirerImage(url)}><Trash2 className="size-4" /></button></div>)}</div><Champ label="Description"><textarea className="form-control min-h-24" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Champ><button className="primary-action sm:col-span-2" disabled={saving}><Upload className="size-4" /> Enregistrer</button></form>; }
+function FormChantier({ form, setForm, projets, employes, onSubmit, saving, televerserImages, retirerImage }: any) {
+  const chefs = employes.filter((e: Employe) => e.role === "chef_chantier");
+  const employesAssignes: string[] = form.employes_assignes || [];
+  const salairesMap: Record<string, string> = form.salaires_employes || {};
+  const totalSalaires = employesAssignes.reduce((sum, id) => sum + (Number(salairesMap[id]) || 0), 0);
+
+  function basculerEmploye(employeId: string, ajoute: boolean) {
+    const nouveauxAssignes = ajoute ? [...employesAssignes, employeId] : employesAssignes.filter((id) => id !== employeId);
+    const nouveauxSalaires = { ...salairesMap };
+    if (!ajoute) delete nouveauxSalaires[employeId];
+    setForm({ ...form, employes_assignes: nouveauxAssignes, salaires_employes: nouveauxSalaires });
+  }
+
+  function changerSalaire(employeId: string, valeur: string) {
+    setForm({ ...form, salaires_employes: { ...salairesMap, [employeId]: valeur } });
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
+      <Champ label="Nom du chantier"><input className="form-control" value={form.nom_chantier} onChange={(e) => setForm({ ...form, nom_chantier: e.target.value })} /></Champ>
+      <Champ label="Localisation"><input className="form-control" value={form.localisation} onChange={(e) => setForm({ ...form, localisation: e.target.value })} /></Champ>
+      <Champ label="Projet lié"><Select value={form.projet_lie || ""} onChange={(v: string) => setForm({ ...form, projet_lie: v })}><option value="">Aucun</option>{projets.map((p: Projet) => <option key={p.id} value={p.id}>{p.nom_projet}</option>)}</Select></Champ>
+      <Champ label="Chef de chantier"><Select value={form.chef_chantier || ""} onChange={(v: string) => setForm({ ...form, chef_chantier: v })}><option value="">Aucun</option>{chefs.map((e: Employe) => <option key={e.id} value={e.id}>{e.nom_complet}</option>)}</Select></Champ>
+      <Champ label="Budget global"><input type="number" className="form-control" value={form.budget_global} onChange={(e) => setForm({ ...form, budget_global: e.target.value })} /></Champ>
+      <Champ label="Statut"><Select value={form.statut} onChange={(v: string) => setForm({ ...form, statut: v })}>{statutsChantier.map((s) => <option key={s}>{s}</option>)}</Select></Champ>
+      <Champ label="Date début"><input type="date" className="form-control" value={form.date_debut} onChange={(e) => setForm({ ...form, date_debut: e.target.value })} /></Champ>
+      <Champ label="Date fin prévue"><input type="date" className="form-control" value={form.date_fin_prevue} onChange={(e) => setForm({ ...form, date_fin_prevue: e.target.value })} /></Champ>
+
+      <div className="sm:col-span-2">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-sm font-black">Employés assignés &amp; salaire pour ce chantier</p>
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">Total: {devise(totalSalaires)}</span>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">Sélectionnez les employés et indiquez le salaire fixe versé pour ce chantier. Les salaires de tous les chantiers sont automatiquement cumulés sur la fiche de chaque employé.</p>
+        <div className="space-y-2">
+          {employes.map((e: Employe) => {
+            const coche = employesAssignes.includes(e.id);
+            return (
+              <div key={e.id} className="grid gap-2 rounded-xl border border-border bg-background p-3 sm:grid-cols-[1fr_180px]">
+                <label className="flex items-center gap-2 text-sm font-bold">
+                  <input type="checkbox" checked={coche} onChange={(ev) => basculerEmploye(e.id, ev.target.checked)} />
+                  <span>{e.nom_complet} <span className="text-xs font-normal text-muted-foreground">· {e.poste || "—"}</span></span>
+                </label>
+                {coche && (
+                  <div className="flex items-center gap-2">
+                    <input type="number" min="0" step="0.01" className="form-control" placeholder="Salaire ($)" value={salairesMap[e.id] || ""} onChange={(ev) => changerSalaire(e.id, ev.target.value)} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {!employes.length && <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">Aucun employé enregistré.</p>}
+        </div>
+      </div>
+
+      <label className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 text-sm font-bold sm:col-span-2"><input type="checkbox" checked={!!form.autoriser_budget_chef} onChange={(e) => setForm({ ...form, autoriser_budget_chef: e.target.checked })} /> Autoriser le chef de chantier à voir le budget global</label>
+      <Champ label="Images chantier"><input type="file" multiple accept="image/*" className="file-input" onChange={(e) => televerserImages(e.target.files)} /></Champ>
+      <div className="grid gap-2 sm:grid-cols-2">{(form.images_chantier || []).map((url: string) => <div key={url} className="relative"><img src={url} alt="Image chantier" className="h-28 w-full rounded-xl object-cover" /><button type="button" className="tool-action danger absolute right-2 top-2" onClick={() => retirerImage(url)}><Trash2 className="size-4" /></button></div>)}</div>
+      <Champ label="Description"><textarea className="form-control min-h-24" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Champ>
+      <button className="primary-action sm:col-span-2" disabled={saving}><Upload className="size-4" /> Enregistrer</button>
+    </form>
+  );
+}
 function Details({ detail, projets, employes, chantiers, presences, annonces, admin, role, viewerId, saving, televerserPhotoProfil, retirerPhotoProfil, modifier, supprimer }: any) { const item = detail.type === "projets" ? projets.find((x: Projet) => x.id === detail.id) : detail.type === "employes" ? employes.find((x: Employe) => x.id === detail.id) : detail.type === "chantiers" ? chantiers.find((x: Chantier) => x.id === detail.id) : detail.type === "annonces" ? annonces.find((x: Annonce) => x.id === detail.id) : presences.find((x: Presence) => x.id === detail.id); if (!item) return <p>Donnée introuvable.</p>; const canEdit = admin && detail.type !== "presences"; if (detail.type === "annonces") { const a = item as Annonce; return <div className="space-y-4">{a.image_url && <img src={a.image_url} alt={`Image annonce ${a.titre}`} className="max-h-80 w-full rounded-2xl object-cover" loading="lazy" />}<div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">{dateFr(a.created_at)}</p><h3 className="mt-1 text-2xl font-black">{a.titre}</h3></div><p className="whitespace-pre-wrap rounded-xl bg-muted p-4 text-sm leading-6">{a.contenu}</p>{admin && <button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button>}</div>; } if (detail.type === "presences") { const p = item as Presence; return <div className="space-y-4"><Info icone={CalendarDays} label="Date" valeur={dateFr(p.date)} /><Info icone={HardHat} label="Chantier" valeur={nomChantier(chantiers, p.chantier_id)} /><Info icone={UserRound} label="Chef" valeur={nomEmploye(employes, p.chef_chantier_id)} /><div className="space-y-2">{p.employes_presence.map((e) => <div key={e.employe_id} className="rounded-xl border border-border bg-background p-3 font-bold">{e.nom_complet} — {e.statut}</div>)}</div><p className="rounded-xl bg-muted p-4 text-sm">{p.notes || "Aucune note."}</p></div>; } if (detail.type === "chantiers") { const c = item as Chantier; const canSeeBudget = admin || (role === "chef_chantier" && c.chef_chantier === viewerId && c.autoriser_budget_chef); return <div className="space-y-4"><h3 className="text-2xl font-black">{c.nom_chantier}</h3><div className="grid gap-3 sm:grid-cols-2"><Info icone={MapPin} label="Localisation" valeur={c.localisation || "Non définie"} /><Info icone={HardHat} label="Chef" valeur={nomEmploye(employes, c.chef_chantier)} /><Info icone={BriefcaseBusiness} label="Projet" valeur={nomProjet(projets, c.projet_lie)} /><Info icone={canSeeBudget ? Eye : EyeOff} label="Budget global" valeur={canSeeBudget ? devise(c.budget_global || 0) : "Masqué"} /></div><p className="rounded-xl bg-muted p-4 text-sm">{c.description || "Aucune description."}</p><div className="grid gap-3 sm:grid-cols-2">{(c.images_chantier || []).map((url) => <img key={url} src={url} alt={`Image du chantier ${c.nom_chantier}`} className="h-48 w-full rounded-2xl object-cover" loading="lazy" />)}</div>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; } if (detail.type === "employes") { const e = item as Employe; const canUpdateOwnPhoto = !admin && e.id === viewerId; return <div className="space-y-4">{e.photo_profil ? <img src={e.photo_profil} alt={`Photo de ${e.nom_complet}`} className="h-28 w-28 rounded-2xl object-cover" loading="lazy" /> : <span className="flex h-28 w-28 items-center justify-center rounded-2xl bg-muted"><UserRound className="size-10 text-muted-foreground" /></span>}{canUpdateOwnPhoto && <div className="rounded-2xl border border-border bg-background p-4"><p className="mb-3 text-sm font-black">Photo de profil</p><input type="file" accept="image/*" className="file-input" disabled={saving} onChange={(event) => televerserPhotoProfil(event.target.files)} />{e.photo_profil && <button type="button" className="mini-button mt-3" disabled={saving} onClick={retirerPhotoProfil}>Retirer la photo</button>}</div>}<h3 className="text-2xl font-black">{e.nom_complet}</h3><div className="grid gap-3 sm:grid-cols-2"><Info icone={UserRound} label="Matricule" valeur={e.matricule || "Non défini"} /><Info icone={BriefcaseBusiness} label="Poste" valeur={e.poste || "Non défini"} /><Info icone={UsersRound} label="Genre" valeur={e.genre || "Non précisé"} /><Info icone={CalendarDays} label="Admission" valeur={dateFr(e.date_admission)} /><Info icone={CalendarDays} label="Naissance" valeur={dateFr(e.date_naissance)} /><Info icone={UserRound} label="Email" valeur={e.email || "Non défini"} /><Info icone={UserRound} label="Téléphone" valeur={e.telephone || "Non défini"} /><Info icone={ClipboardList} label="Pièce d’identité" valeur={e.numero_piece_identite || "Non définie"} /><Info icone={ShieldCheck} label="Contact d’urgence" valeur={e.contact_urgence || "Non défini"} /><Info icone={HardHat} label="Chantier" valeur={nomChantier(chantiers, e.chantier_assigne)} /></div><p className="rounded-xl bg-muted p-4 text-sm">{e.adresse || "Adresse non définie."}</p>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; } return <div className="space-y-4"><h3 className="text-2xl font-black">{(item as any).nom_projet || (item as any).nom_complet}</h3><pre className="overflow-auto rounded-xl bg-muted p-4 text-xs">{JSON.stringify(item, null, 2)}</pre>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; }
 function nomProjet(projets: Projet[], id?: string | null) { return projets.find((p) => p.id === id)?.nom_projet || "Non lié"; }
 function nomChantier(chantiers: Chantier[], id?: string | null) { return chantiers.find((c) => c.id === id)?.nom_chantier || "Non assigné"; }
 function nomEmploye(employes: Employe[], id?: string | null) { return employes.find((e) => e.id === id)?.nom_complet || "Non défini"; }
+
+function PaiementEmploye({ recus, employe, confirmer, ouvrirPdf, saving }: { recus: RecuEmployePaiement[]; employe: Employe | null; confirmer: (id: string) => void; ouvrirPdf: (pdf: string) => void; saving: boolean }) {
+  const enAttente = recus.filter((r) => r.statut === "en_attente");
+  const confirmes = recus.filter((r) => r.statut === "confirme");
+  return (
+    <div className="space-y-6">
+      <section className="grid gap-4 lg:grid-cols-3">
+        <article className="dashboard-card tool-teal rounded-3xl p-5"><p className="text-xs font-black uppercase tracking-wide opacity-85">Salaire total cumulé</p><p className="mt-3 text-3xl font-black">{devise(employe?.salaire_total ?? employe?.salaire ?? 0)}</p><p className="mt-1 text-xs opacity-85">Somme des salaires de tous vos chantiers.</p></article>
+        <article className="dashboard-card tool-green rounded-3xl p-5"><p className="text-xs font-black uppercase tracking-wide opacity-85">Salaire reçu</p><p className="mt-3 text-3xl font-black">{devise(employe?.salaire_recu ?? 0)}</p><p className="mt-1 text-xs opacity-85">Mis à jour à chaque reçu confirmé.</p></article>
+        <article className="dashboard-card tool-orange rounded-3xl p-5"><p className="text-xs font-black uppercase tracking-wide opacity-85">Salaire restant</p><p className="mt-3 text-3xl font-black">{devise(employe?.salaire_restant ?? 0)}</p><p className="mt-1 text-xs opacity-85">À recevoir.</p></article>
+      </section>
+
+      <section className="dashboard-card rounded-3xl p-5">
+        <div className="mb-4 flex items-center gap-3"><span className="tool-employee-receipt flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><ClipboardList className="size-6" /></span><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Notifications</p><h3 className="text-xl font-black">Reçus à confirmer ({enAttente.length})</h3></div></div>
+        <div className="space-y-3">
+          {enAttente.length ? enAttente.map((r) => (
+            <article key={r.id} className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs font-black uppercase text-primary">{r.numero} · {dateFr(r.date_envoi)}</p>
+                  <p className="mt-1 text-2xl font-black">{devise(r.montant)}</p>
+                  <p className="mt-1 text-sm font-bold text-foreground">Chantier : {r.chantier_nom || "—"}</p>
+                  {r.motif && <p className="mt-1 text-sm text-muted-foreground">{r.motif}</p>}
+                </div>
+                <div className="flex flex-col gap-2 sm:items-end">
+                  <button type="button" className="mini-button" onClick={() => ouvrirPdf(r.pdf_base64)}>Voir le PDF</button>
+                  <button type="button" className="primary-action" disabled={saving} onClick={() => confirmer(r.id)}><CheckCircle2 className="size-4" /> Confirmer la réception</button>
+                </div>
+              </div>
+            </article>
+          )) : <p className="rounded-2xl bg-muted p-4 text-sm text-muted-foreground">Aucun reçu en attente de confirmation.</p>}
+        </div>
+      </section>
+
+      <section className="dashboard-card rounded-3xl p-5">
+        <h3 className="mb-4 text-xl font-black">Historique des paiements confirmés ({confirmes.length})</h3>
+        <div className="space-y-3">
+          {confirmes.length ? confirmes.map((r) => (
+            <article key={r.id} className="grid gap-2 rounded-xl border border-border bg-background p-4 sm:grid-cols-[1fr_auto]">
+              <div>
+                <p className="text-xs font-black uppercase text-muted-foreground">{r.numero}</p>
+                <p className="mt-1 text-lg font-black">{devise(r.montant)} · {r.chantier_nom || "—"}</p>
+                <p className="text-xs text-muted-foreground">Confirmé le {r.date_confirmation ? dateFr(r.date_confirmation.slice(0, 10)) : dateFr(r.date_envoi)}</p>
+                {r.motif && <p className="mt-1 text-sm">{r.motif}</p>}
+              </div>
+              <button type="button" className="mini-button self-start" onClick={() => ouvrirPdf(r.pdf_base64)}>PDF</button>
+            </article>
+          )) : <p className="rounded-2xl bg-muted p-4 text-sm text-muted-foreground">Aucun paiement confirmé pour le moment.</p>}
+        </div>
+      </section>
+    </div>
+  );
+}
