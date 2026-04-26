@@ -624,7 +624,11 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
   const [employesSelectionnes, setEmployesSelectionnes] = useState<string[]>([]);
 
   const totalAvantDeduction = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
-  const totalDeductions = useMemo(() => avecDeductions ? deductions.reduce((somme, deduction) => somme + totalAvantDeduction * Number(deduction.pourcentage || 0) / 100, 0) : 0, [avecDeductions, deductions, totalAvantDeduction]);
+  const totalDeductions = useMemo(() => avecDeductions ? deductions.reduce((somme, deduction) => {
+    const montantFixe = Number(deduction.montant ?? NaN);
+    if (Number.isFinite(montantFixe)) return somme + montantFixe;
+    return somme + totalAvantDeduction * Number(deduction.pourcentage || 0) / 100;
+  }, 0) : 0, [avecDeductions, deductions, totalAvantDeduction]);
   const total = Math.max(0, totalAvantDeduction - totalDeductions);
 
   useEffect(() => { if (config.type === "fiche_employe" || config.type === "code_qr") listerEmployes().then(setEmployes).catch((erreur) => alert(erreur instanceof Error ? erreur.message : "Impossible de charger les employés.")); }, [config.type]);
@@ -730,7 +734,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
       const signatureBase64 = estCommunication ? undefined : await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
       const champs: Array<[string, string]> = config.fields.map((field) => [field.label, field.type === "image" ? imagesChamps[field.name] || "—" : formulaire[field.name] || "—"]);
       if (config.type === "facture") champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
-      const deductionsActives = avecDeductions ? deductions.filter((deduction) => deduction.libelle.trim() && Number(deduction.pourcentage || 0) > 0) : [];
+      const deductionsActives = avecDeductions ? deductions.filter((deduction) => deduction.libelle.trim() && (Number(deduction.montant || 0) > 0 || Number(deduction.pourcentage || 0) > 0)) : [];
       const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, deductions: deductionsActives, total, totalAvantDeduction });
       // Payload léger : on n'enregistre PAS sceauBase64/signatureBase64 dans donnees_formulaire (déjà rendus dans le PDF) — évite les timeouts DB sur gros fichiers.
       await enregistrerDocument(config.type, { ...formulaire, ...imagesChamps, lignes, deductions: deductionsActives, totalAvantDeduction, totalDeductions, totalFinal: total, total, titreCourt: config.titre, libelleSceau, libelleSignature }, pdf, numero, documentEdite?.id);
@@ -785,8 +789,20 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
               <div className="space-y-3">{lignes.map((ligne, index) => <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_90px_120px_40px]"><input placeholder={config.type === "devis" ? "Achat à faire" : "Description"} value={ligne.description} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, description: e.target.value } : l))} className="form-control" /><input type="number" min="1" value={ligne.quantite} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, quantite: Number(e.target.value) } : l))} className="form-control" /><input type="number" min="0" value={ligne.prix} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, prix: Number(e.target.value) } : l))} placeholder={config.type === "devis" ? "Coût" : "Prix"} className="form-control" /><button type="button" onClick={() => setLignes(lignes.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button></div>)}</div>
             </div>}
             {avecDeductions && <div className="mt-6 rounded-xl bg-muted p-3">
-              <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">Frais à déduire</h3><button type="button" onClick={() => setDeductions([...deductions, { libelle: "Frais d’entreprise", pourcentage: 1.2 }])} className="mini-button"><Plus className="size-4" /> Ajouter</button></div>
-              <div className="space-y-3">{deductions.map((deduction, index) => <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_120px_40px]"><input placeholder="Nom des frais" value={deduction.libelle} onChange={(e) => setDeductions(deductions.map((d, i) => i === index ? { ...d, libelle: e.target.value } : d))} className="form-control" /><input type="number" min="0" step="0.01" value={deduction.pourcentage} onChange={(e) => setDeductions(deductions.map((d, i) => i === index ? { ...d, pourcentage: Number(e.target.value) } : d))} placeholder="%" className="form-control" /><button type="button" onClick={() => setDeductions(deductions.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button></div>)}</div>
+              <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">Frais à déduire</h3><button type="button" onClick={() => setDeductions([...deductions, { libelle: "Frais d’entreprise", montant: 0 }])} className="mini-button"><Plus className="size-4" /> Ajouter</button></div>
+              <p className="mb-3 text-xs text-muted-foreground">Personnalisez le nom et le montant en $ des frais à déduire (ex : Transport, Taxes, Commission…).</p>
+              <div className="space-y-3">{deductions.map((deduction, index) => {
+                const montantAffiche = typeof deduction.montant === "number"
+                  ? deduction.montant
+                  : Math.round(totalAvantDeduction * Number(deduction.pourcentage || 0) / 100 * 100) / 100;
+                return (
+                  <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_140px_40px]">
+                    <input placeholder="Nom des frais (ex : Transport)" value={deduction.libelle} onChange={(e) => setDeductions(deductions.map((d, i) => i === index ? { ...d, libelle: e.target.value } : d))} className="form-control" />
+                    <input type="number" min="0" step="0.01" value={montantAffiche} onChange={(e) => setDeductions(deductions.map((d, i) => i === index ? { libelle: d.libelle, montant: Number(e.target.value) } : d))} placeholder="Montant ($)" className="form-control" />
+                    <button type="button" onClick={() => setDeductions(deductions.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button>
+                  </div>
+                );
+              })}</div>
               <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3"><span>Total avant déduction : {totalAvantDeduction.toLocaleString("fr-FR")} $</span><span>Déductions : {totalDeductions.toLocaleString("fr-FR")} $</span><span>Montant final : {total.toLocaleString("fr-FR")} $</span></div>
             </div>}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
