@@ -939,7 +939,7 @@ function FormChantier({ form, setForm, projets, employes, onSubmit, saving, tele
                 ) : <div />}
                 <div className="flex items-center justify-center text-xs">
                   {busy && <span className="animate-pulse text-muted-foreground">…</span>}
-                  {!busy && stat === "ok" && <span className="font-black text-emerald-600" title="Enregistré">✓</span>}
+                  {!busy && stat === "ok" && <span className="font-black text-primary" title="Enregistré">✓</span>}
                   {!busy && stat === "err" && <span className="font-black text-destructive" title="Erreur">!</span>}
                 </div>
               </div>
