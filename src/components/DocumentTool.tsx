@@ -722,7 +722,8 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
         const origineQr = window.location.hostname.endsWith(".lovable.app") ? window.location.origin : originePubliqueQr;
         const urlPublique = `${origineQr}/qr-employe/${employe.id}`;
         const qrBase64 = await QRCode.toDataURL(urlPublique, { width: 1200, margin: 2, errorCorrectionLevel: "H", color: { dark: "#0f172a", light: "#ffffff" } });
-        await enregistrerCodeQR({ employeId: employe.id, employeNom: employe.nom_complet, matricule: employe.matricule, urlPublique, employe }, qrBase64, urlPublique, numero, documentEdite?.id);
+        // Payload léger : on garde uniquement les identifiants (pas la photo base64 ni l'objet complet) pour éviter les timeouts DB.
+        await enregistrerCodeQR({ employeId: employe.id, employeNom: employe.nom_complet, matricule: employe.matricule, poste: employe.poste, telephone: employe.telephone, urlPublique }, qrBase64, urlPublique, numero, documentEdite?.id);
         setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert("Code QR généré et enregistré avec succès. Le lien public est fonctionnel."); return;
       }
       const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
@@ -731,7 +732,8 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
       if (config.type === "facture") champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
       const deductionsActives = avecDeductions ? deductions.filter((deduction) => deduction.libelle.trim() && Number(deduction.pourcentage || 0) > 0) : [];
       const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, deductions: deductionsActives, total, totalAvantDeduction });
-      await enregistrerDocument(config.type, { ...formulaire, ...imagesChamps, lignes, deductions: deductionsActives, totalAvantDeduction, totalDeductions, totalFinal: total, total, titreCourt: config.titre, libelleSceau, libelleSignature, sceauBase64, signatureBase64 }, pdf, numero, documentEdite?.id);
+      // Payload léger : on n'enregistre PAS sceauBase64/signatureBase64 dans donnees_formulaire (déjà rendus dans le PDF) — évite les timeouts DB sur gros fichiers.
+      await enregistrerDocument(config.type, { ...formulaire, ...imagesChamps, lignes, deductions: deductionsActives, totalAvantDeduction, totalDeductions, totalFinal: total, total, titreCourt: config.titre, libelleSceau, libelleSignature }, pdf, numero, documentEdite?.id);
       setDocumentEdite(null);
       setActualisation((valeur) => valeur + 1);
       alert(documentEdite ? "Document PDF modifié et réenregistré avec succès." : "Document PDF généré et enregistré avec succès.");
