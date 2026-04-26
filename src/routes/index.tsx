@@ -44,6 +44,7 @@ const icones: Record<OutilType, React.ElementType> = {
   archives_chantiers: Archive,
   lettre_licenciement: FileX2,
   facture_employe: Wallet,
+  recu_employe: HandCoins,
   version_nuit: Moon,
 };
 
