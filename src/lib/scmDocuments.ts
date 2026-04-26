@@ -120,6 +120,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   archives_chantiers: "archives_chantiers",
   lettre_licenciement: "lettres_licenciement",
   facture_employe: "factures_employes",
+  recu_employe: "recus_employes",
   version_nuit: "versions_nuit",
 };
 
