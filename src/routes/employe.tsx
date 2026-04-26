@@ -386,12 +386,20 @@ function EmployePage() {
     if (type === "chantiers") setFormChantier(chantierInitial);
   };
 
-  const ouvrirEdition = (type: Exclude<ModeEdition, null>["type"], id: string) => {
+  const ouvrirEdition = async (type: Exclude<ModeEdition, null>["type"], id: string) => {
     if (!isAdmin) return;
     setEdition({ type, id }); setDetail(null); setMessage("");
     if (type === "projets") { const item = projets.find((p) => p.id === id); if (item) setFormProjet({ ...item, budget_estime: String(item.budget_estime || ""), date_debut: item.date_debut || "", date_fin_prevue: item.date_fin_prevue || "" }); }
     if (type === "employes") { const item = employes.find((e) => e.id === id); if (item) setFormEmploye({ ...item, salaire_total: String(item.salaire_total ?? item.salaire ?? ""), salaire_recu: String(item.salaire_recu || 0), chantier_assigne: item.chantier_assigne || "", role: item.role || "employe", peut_voir_budget: !!item.peut_voir_budget, photo_profil: item.photo_profil || "", genre: item.genre || "", date_admission: item.date_admission || "", date_naissance: item.date_naissance || "", email: item.email || "", numero_piece_identite: item.numero_piece_identite || "", contact_urgence: item.contact_urgence || "" }); }
-    if (type === "chantiers") { const item = chantiers.find((c) => c.id === id); if (item) setFormChantier({ ...item, projet_lie: item.projet_lie || "", chef_chantier: item.chef_chantier || "", employes_assignes: item.employes_assignes || [], budget_global: String(item.budget_global || ""), images_chantier: item.images_chantier || [], date_debut: item.date_debut || "", date_fin_prevue: item.date_fin_prevue || "", autoriser_budget_chef: !!item.autoriser_budget_chef }); }
+    if (type === "chantiers") {
+      const item = chantiers.find((c) => c.id === id);
+      if (item) {
+        const { data: salairesExistants } = await db.from("salaires_chantier").select("employe_id, montant").eq("chantier_id", id);
+        const salairesMap: Record<string, string> = {};
+        (salairesExistants || []).forEach((s: { employe_id: string; montant: number }) => { salairesMap[s.employe_id] = String(s.montant || ""); });
+        setFormChantier({ ...item, projet_lie: item.projet_lie || "", chef_chantier: item.chef_chantier || "", employes_assignes: item.employes_assignes || [], budget_global: String(item.budget_global || ""), images_chantier: item.images_chantier || [], date_debut: item.date_debut || "", date_fin_prevue: item.date_fin_prevue || "", autoriser_budget_chef: !!item.autoriser_budget_chef, salaires_employes: salairesMap });
+      }
+    }
   };
 
   async function enregistrerAnnonce(event: React.FormEvent) {
