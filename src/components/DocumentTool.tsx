@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
+import { RecuEmployeTool } from "./RecuEmployeTool";
 import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFactureEmploye, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFactureEmploye, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerPlanArchitectural, enregistrerRealisticSketchup, enregistrerRendu3D, enregistrerVersionNuit, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerEmployes, listerFacturesEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, modifierFormulairePersonnalise, supprimerDocument, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, voirPdf, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FactureEmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
@@ -603,6 +604,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   if (config.type === "archives_chantiers") return <ArchivesChantiersTool retour={retour} />;
   if (config.type === "organigramme_entreprise") return <OrganigrammeTool retour={retour} />;
   if (config.type === "facture_employe") return <FactureEmployeTool retour={retour} />;
+  if (config.type === "recu_employe") return <RecuEmployeTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
 }
 
