@@ -597,33 +597,42 @@ export async function supprimerDocument(type: OutilType, id: string) {
 }
 
 async function imageVersBase64(url: string) {
-  const reponse = await fetch(url);
-  const blob = await reponse.blob();
-  return await new Promise<string>((resolve, reject) => {
-    const lecteur = new FileReader();
-    lecteur.onload = () => resolve(String(lecteur.result));
-    lecteur.onerror = reject;
-    lecteur.readAsDataURL(blob);
-  });
+  try {
+    const reponse = await fetch(url);
+    if (!reponse.ok) return "";
+    const blob = await reponse.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const lecteur = new FileReader();
+      lecteur.onload = () => resolve(String(lecteur.result));
+      lecteur.onerror = reject;
+      lecteur.readAsDataURL(blob);
+    });
+  } catch {
+    return "";
+  }
 }
 
 async function drapeauRdcVersPng() {
-  const svg = await fetch(drapeauRdcUrl).then((reponse) => reponse.text());
-  const image = new Image();
-  const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
-  await new Promise<void>((resolve, reject) => {
-    image.onload = () => resolve();
-    image.onerror = reject;
-    image.src = url;
-  });
-  const canvas = document.createElement("canvas");
-  canvas.width = 800;
-  canvas.height = 600;
-  const contexte = canvas.getContext("2d");
-  if (!contexte) throw new Error("Impossible de préparer le drapeau de la RDC.");
-  contexte.drawImage(image, 0, 0, canvas.width, canvas.height);
-  URL.revokeObjectURL(url);
-  return canvas.toDataURL("image/png");
+  try {
+    const svg = await fetch(drapeauRdcUrl).then((reponse) => reponse.text());
+    const image = new Image();
+    const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = reject;
+      image.src = url;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 600;
+    const contexte = canvas.getContext("2d");
+    if (!contexte) { URL.revokeObjectURL(url); return ""; }
+    contexte.drawImage(image, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    return canvas.toDataURL("image/png");
+  } catch {
+    return "";
+  }
 }
 
 function texteMultiligne(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170, couleur: [number, number, number] = [16, 42, 88]) {
