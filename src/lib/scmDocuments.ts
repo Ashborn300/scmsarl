@@ -1704,17 +1704,28 @@ function dessinerCarteServiceVerso(pdf: jsPDF, data: DonneesCarteService, logo: 
   pdf.setTextColor(...couleurTexte);
   pdf.text(pdf.splitTextToSize("Merci de retourner cette carte au siège SCM SARL ou au commissariat le plus proche.", cw - 4), cx + 2, ly + 8.5);
 
-  // Signatures
+  // Signature unique : Direction SCM SARL (avec image de signature optionnelle posée par-dessus la ligne)
+  const sigW = 50;
+  const sigImgH = 14;
   const sy = y + h - 18;
+  const sigX = cx + cw - sigW; // alignée à droite, élégante
+  // Image de signature (légère superposition par-dessus la ligne pour un rendu manuscrit naturel)
+  if (data.signatureDirection) {
+    try {
+      pdf.addImage(data.signatureDirection, formatImage(data.signatureDirection), sigX + (sigW - 32) / 2, sy - sigImgH + 2, 32, sigImgH, undefined, "FAST");
+    } catch { /* ignore */ }
+  }
   pdf.setDrawColor(...couleurPrincipale);
   pdf.setLineWidth(0.3);
-  pdf.line(cx, sy, cx + cw / 2 - 4, sy);
-  pdf.line(cx + cw / 2 + 4, sy, cx + cw, sy);
+  pdf.line(sigX, sy, sigX + sigW, sy);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(6);
+  pdf.setFontSize(6.2);
   pdf.setTextColor(...couleurPrincipale);
-  pdf.text("Signature du titulaire", cx + (cw / 2 - 4) / 2, sy + 3, { align: "center" });
-  pdf.text("Direction SCM SARL", cx + cw / 2 + 4 + (cw / 2 - 4) / 2, sy + 3, { align: "center" });
+  pdf.text("Direction SCM SARL", sigX + sigW / 2, sy + 3, { align: "center" });
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(5.4);
+  pdf.setTextColor(...couleurTexte);
+  pdf.text("Signature & cachet autorisés", sigX + sigW / 2, sy + 6.4, { align: "center" });
 
   pdf.setFillColor(...couleurPrincipale);
   pdf.rect(cx - 2, y + h - 5, cw + 4, 5, "F");
