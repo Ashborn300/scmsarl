@@ -270,7 +270,19 @@ export async function listerEmployes() {
 export async function enregistrerDocument(type: OutilType, payload: Record<string, unknown>, pdfBase64: string, numero?: string, id?: string) {
   const table = tablesParOutil[type];
   const documentNumero = numero || (await genererNumero(type));
-  const nomFichier = `${documentNumero}-${String(payload.titreCourt || payload.client || payload.employe || payload.projet || "document").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
+  // Priorité au nom métier (client / employé / projet / bénéficiaire / titre / objet) — le titre d'outil ne sert qu'en dernier recours.
+  const sourceNom =
+    payload.client ||
+    payload.nomClient ||
+    payload.employe ||
+    payload.beneficiaire ||
+    payload.projet ||
+    payload.nomProjet ||
+    payload.titre ||
+    payload.objet ||
+    payload.titreCourt ||
+    "document";
+  const nomFichier = `${documentNumero}-${String(sourceNom).replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
   const ligneBase = {
     numero: documentNumero,
     nom_fichier: nomFichier,
