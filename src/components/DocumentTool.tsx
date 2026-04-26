@@ -722,7 +722,8 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
         const origineQr = window.location.hostname.endsWith(".lovable.app") ? window.location.origin : originePubliqueQr;
         const urlPublique = `${origineQr}/qr-employe/${employe.id}`;
         const qrBase64 = await QRCode.toDataURL(urlPublique, { width: 1200, margin: 2, errorCorrectionLevel: "H", color: { dark: "#0f172a", light: "#ffffff" } });
-        await enregistrerCodeQR({ employeId: employe.id, employeNom: employe.nom_complet, matricule: employe.matricule, urlPublique, employe }, qrBase64, urlPublique, numero, documentEdite?.id);
+        // Payload léger : on garde uniquement les identifiants (pas la photo base64 ni l'objet complet) pour éviter les timeouts DB.
+        await enregistrerCodeQR({ employeId: employe.id, employeNom: employe.nom_complet, matricule: employe.matricule, poste: employe.poste, telephone: employe.telephone, urlPublique }, qrBase64, urlPublique, numero, documentEdite?.id);
         setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert("Code QR généré et enregistré avec succès. Le lien public est fonctionnel."); return;
       }
       const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
