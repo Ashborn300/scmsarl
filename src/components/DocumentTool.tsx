@@ -12,7 +12,7 @@ type Field = { name: string; label: string; type?: "text" | "number" | "date" | 
 type Config = { type: OutilType; titre: string; theme: string; description: string; fields: Field[]; hasLines?: boolean; showTotal?: boolean; totalLabel?: string };
 
 const aujourdhui = new Date().toISOString().slice(0, 10);
-const originePubliqueQr = "https://scm-tolls.lovable.app";
+const originePubliqueQr = "https://scmdarabase.lovable.app";
 
 export const configs: Config[] = [
   { type: "facture", titre: "Générateur de facture professionnelle", theme: "blue", description: "Factures numérotées avec prestations, calcul automatique et modalités de paiement.", hasLines: true, fields: [
