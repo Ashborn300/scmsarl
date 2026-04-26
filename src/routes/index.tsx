@@ -266,6 +266,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     action: { background: "rgba(202,138,4,0.12)", border: "1px solid rgba(21,94,117,0.16)" },
     icon: { background: "linear-gradient(135deg, #155e75, #ca8a04)", color: "white" },
   },
+  recu_employe: {
+    card: { background: "linear-gradient(180deg, rgba(13,148,136,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(22,163,74,0.28)" },
+    banner: { background: "linear-gradient(135deg, #0d9488, #16a34a)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(13,148,136,0.08)", border: "1px solid rgba(22,163,74,0.16)" },
+    action: { background: "rgba(22,163,74,0.12)", border: "1px solid rgba(13,148,136,0.16)" },
+    icon: { background: "linear-gradient(135deg, #0d9488, #16a34a)", color: "white" },
+  },
   version_nuit: {
     card: { background: "linear-gradient(180deg, rgba(15,23,42,0.18) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(99,102,241,0.32)" },
     banner: { background: "linear-gradient(135deg, #0f172a, #6366f1)", color: "white" },
