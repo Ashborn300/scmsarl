@@ -2164,8 +2164,8 @@ export type DonneesRecuEmploye = {
 export async function creerPdfRecuEmploye(data: DonneesRecuEmploye): Promise<string> {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const couleurs = couleursPdfParOutil.recu_employe;
-  const logo = await imageVersBase64(logoUrl);
-  const drapeau = await drapeauRdcVersPng();
+  const logo = await imageVersBase64(logoUrl).catch(() => "");
+  const drapeau = await drapeauRdcVersPng().catch(() => "");
   const pageW = 210;
   const pageH = 297;
 
@@ -2184,8 +2184,8 @@ export async function creerPdfRecuEmploye(data: DonneesRecuEmploye): Promise<str
   pdf.roundedRect(14, 14, 184, 269, 3, 3, "F");
 
   // En-tête : logo + identité + drapeau
-  pdf.addImage(logo, "JPEG", 20, 20, 40, 24, undefined, "FAST");
-  pdf.addImage(drapeau, "PNG", 170, 20, 22, 16, undefined, "FAST");
+  if (logo) { try { pdf.addImage(logo, "JPEG", 20, 20, 40, 24, undefined, "FAST"); } catch { /* ignore */ } }
+  if (drapeau) { try { pdf.addImage(drapeau, "PNG", 170, 20, 22, 16, undefined, "FAST"); } catch { /* ignore */ } }
   pdf.setTextColor(...couleurs.principal);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(13);
