@@ -330,10 +330,18 @@ function EmployePage() {
   }
 
   async function deconnecter() {
-    if (session?.token) await db.rpc("scm_logout", { _token_hash: await sha256(session.token) });
+    // Nettoyage local immédiat — la session expire côté UI même si l'appel réseau échoue.
+    const tokenActuel = session?.token;
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
-    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setAnnonces([]); setAnnoncesMasquees([]); setDemandesConges([]); setBilansSante([]); setRapportsMateriel([]); setArrivagesMateriel([]); setIncidentsChantier([]); setMessage(""); setOnglet("dashboard");
+    setProjets([]); setEmployes([]); setChantiers([]); setPresences([]); setAnnonces([]); setAnnoncesMasquees([]); setDemandesConges([]); setBilansSante([]); setRapportsMateriel([]); setArrivagesMateriel([]); setIncidentsChantier([]); setMessage(""); setOnglet("dashboard"); setMenuOuvert(false);
+    // Best-effort: invalider la session côté serveur en arrière-plan.
+    if (tokenActuel) {
+      try {
+        const tokenHash = await sha256(tokenActuel);
+        await db.rpc("scm_logout", { _token_hash: tokenHash });
+      } catch { /* déjà déconnecté localement */ }
+    }
   }
 
   async function chargerDonnees(currentSession = session) {
