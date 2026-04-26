@@ -662,6 +662,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
           adresse: formulaire.adresse || "",
           photoProfil: imagesChamps.profileImage || "",
           qrCode: imagesChamps.qrCodeImage || "",
+          signatureDirection: imagesChamps.signatureDirection || "",
           numero,
           dateEmission: new Date().toISOString().slice(0, 10),
         });
