@@ -89,6 +89,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   archives_chantiers: { principal: [52, 88, 74], secondaire: [180, 83, 9], doux: [238, 246, 241] },
   lettre_licenciement: { principal: [127, 29, 29], secondaire: [180, 83, 9], doux: [253, 240, 232] },
   facture_employe: { principal: [21, 94, 117], secondaire: [202, 138, 4], doux: [228, 244, 248] },
+  recu_employe: { principal: [13, 148, 136], secondaire: [22, 163, 74], doux: [224, 247, 240] },
   version_nuit: { principal: [15, 23, 42], secondaire: [99, 102, 241], doux: [226, 232, 240] },
 };
 
