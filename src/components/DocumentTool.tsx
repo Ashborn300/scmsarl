@@ -603,6 +603,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   if (config.type === "archives_chantiers") return <ArchivesChantiersTool retour={retour} />;
   if (config.type === "organigramme_entreprise") return <OrganigrammeTool retour={retour} />;
   if (config.type === "facture_employe") return <FactureEmployeTool retour={retour} />;
+  if (config.type === "recu_employe") return <RecuEmployeTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
 }
 
