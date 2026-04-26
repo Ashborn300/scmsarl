@@ -51,7 +51,7 @@ export const Route = createFileRoute("/employe")({
 });
 
 type RoleSession = "admin" | "employe" | "chef_chantier";
-type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante" | "gestion_materiel" | "arrivage_materiel" | "incident_chantier";
+type Onglet = "dashboard" | "projets" | "employes" | "chantiers" | "presences" | "annonces" | "calendrier" | "organigramme" | "demande_conge" | "bilan_sante" | "gestion_materiel" | "arrivage_materiel" | "incident_chantier" | "paiement";
 type StatutPresence = "présent" | "absent" | "en retard" | "excusé";
 type ModeEdition = { type: "projets" | "employes" | "chantiers"; id?: string } | null;
 type Detail = { type: "projets" | "employes" | "chantiers" | "presences" | "annonces"; id: string } | null;
@@ -152,7 +152,8 @@ type IncidentChantier = { id: string; chef_chantier_id: string; chef_chantier_no
 
 type ProjetForm = Omit<Projet, "id" | "created_at" | "budget_estime"> & { budget_estime: string };
 type EmployeForm = Omit<Employe, "id" | "created_at" | "salaire" | "salaire_total" | "salaire_recu" | "salaire_restant"> & { salaire_total: string; salaire_recu: string };
-type ChantierForm = Omit<Chantier, "id" | "created_at" | "budget_global" | "images_chantier"> & { budget_global: string; images_chantier: string[] };
+type ChantierForm = Omit<Chantier, "id" | "created_at" | "budget_global" | "images_chantier"> & { budget_global: string; images_chantier: string[]; salaires_employes: Record<string, string> };
+type RecuEmployePaiement = { id: string; numero: string; employe_id: string; employe_nom: string; matricule: string; chantier_id: string | null; chantier_nom: string; montant: number; motif: string; statut: "en_attente" | "confirme" | "refuse"; date_envoi: string; date_confirmation: string | null; pdf_base64: string; created_at: string };
 type AnnonceForm = Pick<Annonce, "titre" | "contenu" | "image_url" | "publiee">;
 
 const db = supabase as any;
@@ -164,7 +165,7 @@ const statutsPresence: StatutPresence[] = ["présent", "absent", "en retard", "e
 
 const projetInitial: ProjetForm = { nom_projet: "", client: "", localisation: "", description: "", budget_estime: "", statut: "Planifié", date_debut: "", date_fin_prevue: "" };
 const employeInitial: EmployeForm = { nom_complet: "", poste: "", matricule: "", telephone: "", adresse: "", salaire_total: "", salaire_recu: "0", role: "employe", statut: "actif", chantier_assigne: "", peut_voir_budget: false, photo_profil: "", genre: "", date_admission: "", date_naissance: "", email: "", numero_piece_identite: "", contact_urgence: "" };
-const chantierInitial: ChantierForm = { nom_chantier: "", localisation: "", chef_chantier: "", projet_lie: "", employes_assignes: [], description: "", budget_global: "", images_chantier: [], autoriser_budget_chef: false, statut: "Planifié", date_debut: "", date_fin_prevue: "" };
+const chantierInitial: ChantierForm = { nom_chantier: "", localisation: "", chef_chantier: "", projet_lie: "", employes_assignes: [], description: "", budget_global: "", images_chantier: [], autoriser_budget_chef: false, statut: "Planifié", date_debut: "", date_fin_prevue: "", salaires_employes: {} };
 const annonceInitial: AnnonceForm = { titre: "", contenu: "", image_url: "", publiee: true };
 const congeInitial = { raison: "", image_url: "" };
 const bilanSanteInitial = { semaine: new Date().toISOString().slice(0, 10), etat_global: "", groupe_sanguin: "", allergies: "", blessure: false, details_blessure: "" };
