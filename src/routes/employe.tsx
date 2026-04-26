@@ -755,6 +755,7 @@ function EmployePage() {
             {isChef && <BoutonNav actif={onglet === "incident_chantier"} icone={AlertTriangle} label="Incident / Accident" onClick={() => changerOnglet("incident_chantier")} />}
             {!isAdmin && <BoutonNav actif={onglet === "demande_conge"} icone={FilePlus2} label="Demande de Congé" onClick={() => changerOnglet("demande_conge")} />}
             {!isAdmin && <BoutonNav actif={onglet === "bilan_sante"} icone={HeartPulse} label="Bilan de santé" onClick={() => changerOnglet("bilan_sante")} />}
+            {!isAdmin && <BoutonNav actif={onglet === "paiement"} icone={ClipboardList} label="Paiement" onClick={() => changerOnglet("paiement")} />}
           </nav>
           <div className="dashboard-hero mt-10 rounded-3xl p-4 shadow-tool"><Building2 className="mb-3 size-8" /><p className="text-sm font-black">{session.nom}</p><p className="mt-1 text-xs font-semibold leading-5 opacity-90">Accès filtré automatiquement selon le rôle connecté.</p><button className="mini-button mt-4 w-full bg-card/20 text-primary-foreground" onClick={deconnecter}><LogOut className="size-4" /> Déconnexion</button></div>
         </aside>
