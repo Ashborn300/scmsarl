@@ -1500,10 +1500,15 @@ function dessinerCarteServiceRecto(pdf: jsPDF, data: DonneesCarteService, logo: 
   pdf.setFillColor(...couleurAccent);
   pdf.rect(x, y + bandeauH, w, 0.9, "F");
 
-  // Logo dans rond blanc
+  // Logo dans rond blanc (carte de service — logo officiel SCM SARL)
+  const logoCx = x + 11;
+  const logoCy = y + bandeauH / 2;
   pdf.setFillColor(255, 255, 255);
-  pdf.circle(x + 11, y + bandeauH / 2, 8, "F");
-  try { pdf.addImage(logo, "JPEG", x + 4, y + bandeauH / 2 - 7, 14, 14, undefined, "FAST"); } catch { /* ignore */ }
+  pdf.circle(logoCx, logoCy, 8.5, "F");
+  pdf.setDrawColor(...couleurAccent);
+  pdf.setLineWidth(0.4);
+  pdf.circle(logoCx, logoCy, 8.5, "S");
+  try { pdf.addImage(logo, "JPEG", logoCx - 7, logoCy - 7, 14, 14, undefined, "FAST"); } catch { /* ignore */ }
 
   // Titres bandeau
   pdf.setTextColor(255, 255, 255);
@@ -1633,8 +1638,11 @@ function dessinerCarteServiceVerso(pdf: jsPDF, data: DonneesCarteService, logo: 
   pdf.rect(x + bandeauW, y, 0.7, h, "F");
 
   pdf.setFillColor(255, 255, 255);
-  pdf.circle(x + bandeauW / 2, y + 16, 9, "F");
-  try { pdf.addImage(logo, "JPEG", x + bandeauW / 2 - 7.5, y + 8.5, 15, 15, undefined, "FAST"); } catch { /* ignore */ }
+  pdf.circle(x + bandeauW / 2, y + 16, 9.5, "F");
+  pdf.setDrawColor(...couleurAccent);
+  pdf.setLineWidth(0.4);
+  pdf.circle(x + bandeauW / 2, y + 16, 9.5, "S");
+  try { pdf.addImage(logo, "JPEG", x + bandeauW / 2 - 8, y + 8, 16, 16, undefined, "FAST"); } catch { /* ignore */ }
   try { pdf.addImage(drapeau, "PNG", x + bandeauW / 2 - 8, y + h - 22, 16, 11, undefined, "FAST"); } catch { /* ignore */ }
   pdf.setTextColor(255, 255, 255);
   pdf.setFont("helvetica", "bold");
