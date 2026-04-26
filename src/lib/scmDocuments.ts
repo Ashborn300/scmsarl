@@ -1313,10 +1313,7 @@ function dessinerCarteServiceRecto(pdf: jsPDF, data: DonneesCarteService, logo: 
   pdf.setTextColor(255, 255, 255);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(13);
-  pdf.text("SCM SARL", x + 22, y + bandeauH / 2 - 1);
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(7.5);
-  pdf.text("Société Civile et Minière", x + 22, y + bandeauH / 2 + 3);
+  pdf.text("SCM SARL", x + 22, y + bandeauH / 2 + 1);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(9);
   pdf.text("CARTE DE SERVICE", x + 22, y + bandeauH / 2 + 7.5);
@@ -1636,9 +1633,8 @@ export async function creerPdfFactureEmploye(data: DonneesFactureEmploye): Promi
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8.5);
   pdf.setTextColor(85, 92, 110);
-  pdf.text("Société Civile et Minière — Construction RDC", 64, 31);
-  pdf.text("RCCM : CD/KNM/RCCM/24-B-01256 · IDNAT : 01-F4200-N55523N", 64, 36);
-  pdf.text("N° Impôt : A2442 173S · Direction des Ressources Humaines", 64, 41);
+  pdf.text("RCCM : CD/KNM/RCCM/24-B-01256 · IDNAT : 01-F4200-N55523N", 64, 31);
+  pdf.text("N° Impôt : A2442 173S · Direction des Ressources Humaines", 64, 36);
 
   // Filet décoratif
   pdf.setDrawColor(...couleurs.secondaire);
