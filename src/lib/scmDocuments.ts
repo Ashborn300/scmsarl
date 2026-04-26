@@ -1508,7 +1508,11 @@ function dessinerCarteServiceRecto(pdf: jsPDF, data: DonneesCarteService, logo: 
   pdf.setDrawColor(...couleurAccent);
   pdf.setLineWidth(0.4);
   pdf.circle(logoCx, logoCy, 8.5, "S");
-  try { pdf.addImage(logo, "JPEG", logoCx - 7, logoCy - 7, 14, 14, undefined, "FAST"); } catch { /* ignore */ }
+  // Logo inscrit dans le cercle (côté = r*√2 ≈ 12 pour r=8.5) — aucun débordement
+  try {
+    const taille = 11.8;
+    pdf.addImage(logo, "JPEG", logoCx - taille / 2, logoCy - taille / 2, taille, taille, undefined, "FAST");
+  } catch { /* ignore */ }
 
   // Titres bandeau
   pdf.setTextColor(255, 255, 255);
@@ -1642,7 +1646,11 @@ function dessinerCarteServiceVerso(pdf: jsPDF, data: DonneesCarteService, logo: 
   pdf.setDrawColor(...couleurAccent);
   pdf.setLineWidth(0.4);
   pdf.circle(x + bandeauW / 2, y + 16, 9.5, "S");
-  try { pdf.addImage(logo, "JPEG", x + bandeauW / 2 - 8, y + 8, 16, 16, undefined, "FAST"); } catch { /* ignore */ }
+  // Logo inscrit dans le cercle (côté = r*√2 ≈ 13.4 pour r=9.5) — aucun débordement
+  try {
+    const taille = 13.2;
+    pdf.addImage(logo, "JPEG", x + bandeauW / 2 - taille / 2, y + 16 - taille / 2, taille, taille, undefined, "FAST");
+  } catch { /* ignore */ }
   try { pdf.addImage(drapeau, "PNG", x + bandeauW / 2 - 8, y + h - 22, 16, 11, undefined, "FAST"); } catch { /* ignore */ }
   pdf.setTextColor(255, 255, 255);
   pdf.setFont("helvetica", "bold");
