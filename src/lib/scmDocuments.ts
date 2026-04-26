@@ -41,7 +41,7 @@ export type DocumentRecord = {
 };
 
 export type LignePrestation = { description: string; quantite: number; prix: number };
-export type LigneDeduction = { libelle: string; pourcentage: number };
+export type LigneDeduction = { libelle: string; pourcentage?: number; montant?: number };
 
 export type EmployeRecord = {
   id: string;
@@ -1327,8 +1327,14 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     pdf.setTextColor(36, 45, 64);
     options.deductions.forEach((deduction) => {
       y += 7;
-      const montant = options.totalAvantDeduction! * Number(deduction.pourcentage || 0) / 100;
-      pdf.text(`${deduction.libelle || "Frais"} (${Number(deduction.pourcentage || 0).toLocaleString("fr-FR")} %)`, 23, y);
+      const montant = typeof deduction.montant === "number"
+        ? Number(deduction.montant || 0)
+        : options.totalAvantDeduction! * Number(deduction.pourcentage || 0) / 100;
+      const libelle = deduction.libelle || "Frais";
+      const detail = typeof deduction.montant === "number"
+        ? libelle
+        : `${libelle} (${Number(deduction.pourcentage || 0).toLocaleString("fr-FR")} %)`;
+      pdf.text(detail, 23, y);
       pdf.text(`- ${montant.toLocaleString("fr-FR")} $`, 146, y);
     });
     y += 6;
