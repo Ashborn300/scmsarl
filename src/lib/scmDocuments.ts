@@ -193,30 +193,38 @@ export async function genererNumero(type: OutilType) {
   return data as string;
 }
 
-const colonnesLourdesParOutil: Partial<Record<OutilType, string[]>> = {
-  facture: ["pdf_base64", "donnees_formulaire"],
-  devis: ["pdf_base64", "donnees_formulaire"],
-  recu: ["pdf_base64", "donnees_formulaire"],
-  contrat_construction: ["pdf_base64", "donnees_formulaire"],
-  contrat_employe: ["pdf_base64", "donnees_formulaire"],
-  description_projet: ["pdf_base64", "donnees_formulaire"],
-  communiquer: ["pdf_base64", "donnees_formulaire"],
-  certificat: ["pdf_base64", "donnees_formulaire"],
-  carte_service: ["pdf_base64", "image_base64", "donnees_formulaire"],
-  rendu_3d: ["image_base64", "donnees_formulaire"],
-  realistic_sketchup: ["image_base64", "donnees_formulaire"],
-  plan_architectural: ["image_base64", "donnees_formulaire"],
-  fiche_employe: ["pdf_base64", "donnees_formulaire"],
-  code_qr: ["qr_base64", "donnees_formulaire"],
-  lettre_licenciement: ["pdf_base64", "donnees_formulaire"],
-  facture_employe: ["pdf_base64", "donnees_formulaire"],
-  version_nuit: ["image_base64", "donnees_formulaire"],
+const colonnesListeParOutil: Partial<Record<OutilType, string>> = {
+  facture: "id,numero,nom_fichier,client,montant_total,date_document,created_at",
+  devis: "id,numero,nom_fichier,client,montant_total,date_document,created_at",
+  recu: "id,numero,nom_fichier,client,montant_total,date_document,created_at",
+  contrat_construction: "id,numero,nom_fichier,client,date_document,created_at",
+  contrat_employe: "id,numero,nom_fichier,employe,date_document,created_at",
+  description_projet: "id,numero,nom_fichier,projet,date_document,created_at",
+  communiquer: "id,numero,nom_fichier,titre,date_document,created_at",
+  certificat: "id,numero,nom_fichier,beneficiaire,date_document,created_at",
+  carte_service: "id,numero,nom_fichier,nom_complet,matricule,date_document,created_at",
+  rendu_3d: "id,numero,nom_fichier,titre,date_document,created_at",
+  realistic_sketchup: "id,numero,nom_fichier,titre,date_document,created_at",
+  plan_architectural: "id,numero,nom_fichier,titre,date_document,created_at",
+  fiche_employe: "id,numero,nom_fichier,titre,type_fiche,date_document,created_at,updated_at",
+  code_qr: "id,numero,nom_fichier,employe_nom,matricule,date_document,created_at,url_publique",
+  formulaire_personnalise: "id,titre,description,url_publique,publie,created_at,updated_at",
+  historique_connexion: "id,role,nom_utilisateur,matricule,type_connexion,connected_at,created_at",
+  calendrier_feries: "id,date_jour,titre,description,type_jour,actif,created_at,updated_at",
+  organigramme_entreprise: "id,titre,description,actif,created_at,updated_at",
+  demandes_conges: "id,employe_nom,raison,statut,image_url,created_at,updated_at",
+  bilans_sante: "id,employe_nom,semaine,etat_global,groupe_sanguin,allergies,blessure,created_at,updated_at",
+  gestion_materiel: "id,chef_chantier_nom,chantier_nom,semaine,statut,notes,created_at,updated_at",
+  arrivages_materiel: "id,chef_chantier_nom,chantier_nom,date_livraison,nom_materiel,quantite,entreprise_partenaire,prix_total,statut,created_at,updated_at",
+  incidents_chantier: "id,chef_chantier_nom,chantier_nom,type_evenement,date_evenement,statut,created_at,updated_at",
+  archives_chantiers: "id,nom_chantier,nom_client,adresse_projet,nom_fichier,created_at,updated_at",
+  lettre_licenciement: "id,numero,nom_fichier,employe,date_document,created_at",
+  facture_employe: "id,numero,nom_fichier,employe_nom,matricule,poste,salaire_brut,salaire_net,date_document,created_at",
+  version_nuit: "id,numero,nom_fichier,titre,date_document,created_at",
 };
 
 function colonnesLegeresPourOutil(type: OutilType) {
-  const lourdes = colonnesLourdesParOutil[type];
-  if (!lourdes || lourdes.length === 0) return "*";
-  return lourdes.map((colonne) => `-${colonne}`).join(",");
+  return colonnesListeParOutil[type] ?? "id,numero,nom_fichier,date_document,created_at";
 }
 
 export async function listerDocuments(type: OutilType, recherche = "") {
