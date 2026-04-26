@@ -270,7 +270,19 @@ export async function listerEmployes() {
 export async function enregistrerDocument(type: OutilType, payload: Record<string, unknown>, pdfBase64: string, numero?: string, id?: string) {
   const table = tablesParOutil[type];
   const documentNumero = numero || (await genererNumero(type));
-  const nomFichier = `${documentNumero}-${String(payload.titreCourt || payload.client || payload.employe || payload.projet || "document").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
+  // Priorité au nom métier (client / employé / projet / bénéficiaire / titre / objet) — le titre d'outil ne sert qu'en dernier recours.
+  const sourceNom =
+    payload.client ||
+    payload.nomClient ||
+    payload.employe ||
+    payload.beneficiaire ||
+    payload.projet ||
+    payload.nomProjet ||
+    payload.titre ||
+    payload.objet ||
+    payload.titreCourt ||
+    "document";
+  const nomFichier = `${documentNumero}-${String(sourceNom).replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
   const ligneBase = {
     numero: documentNumero,
     nom_fichier: nomFichier,
@@ -597,33 +609,42 @@ export async function supprimerDocument(type: OutilType, id: string) {
 }
 
 async function imageVersBase64(url: string) {
-  const reponse = await fetch(url);
-  const blob = await reponse.blob();
-  return await new Promise<string>((resolve, reject) => {
-    const lecteur = new FileReader();
-    lecteur.onload = () => resolve(String(lecteur.result));
-    lecteur.onerror = reject;
-    lecteur.readAsDataURL(blob);
-  });
+  try {
+    const reponse = await fetch(url);
+    if (!reponse.ok) return "";
+    const blob = await reponse.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const lecteur = new FileReader();
+      lecteur.onload = () => resolve(String(lecteur.result));
+      lecteur.onerror = reject;
+      lecteur.readAsDataURL(blob);
+    });
+  } catch {
+    return "";
+  }
 }
 
 async function drapeauRdcVersPng() {
-  const svg = await fetch(drapeauRdcUrl).then((reponse) => reponse.text());
-  const image = new Image();
-  const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
-  await new Promise<void>((resolve, reject) => {
-    image.onload = () => resolve();
-    image.onerror = reject;
-    image.src = url;
-  });
-  const canvas = document.createElement("canvas");
-  canvas.width = 800;
-  canvas.height = 600;
-  const contexte = canvas.getContext("2d");
-  if (!contexte) throw new Error("Impossible de préparer le drapeau de la RDC.");
-  contexte.drawImage(image, 0, 0, canvas.width, canvas.height);
-  URL.revokeObjectURL(url);
-  return canvas.toDataURL("image/png");
+  try {
+    const svg = await fetch(drapeauRdcUrl).then((reponse) => reponse.text());
+    const image = new Image();
+    const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = reject;
+      image.src = url;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 600;
+    const contexte = canvas.getContext("2d");
+    if (!contexte) { URL.revokeObjectURL(url); return ""; }
+    contexte.drawImage(image, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    return canvas.toDataURL("image/png");
+  } catch {
+    return "";
+  }
 }
 
 function texteMultiligne(pdf: jsPDF, label: string, valeur: string, x: number, y: number, largeur = 170, couleur: [number, number, number] = [16, 42, 88]) {
@@ -808,8 +829,8 @@ function ajouterEnteteFicheEmploye(pdf: jsPDF, logo: string, drapeauRdc: string,
   pdf.rect(0, 0, 210, 297, "F");
   pdf.setFillColor(255, 255, 255);
   pdf.roundedRect(12, 12, 186, 273, 3, 3, "F");
-  pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST");
-  pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST");
+  if (logo) { try { pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST"); } catch { /* ignore */ } }
+  if (drapeauRdc) { try { pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST"); } catch { /* ignore */ } }
   pdf.setTextColor(...couleur);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(18);
@@ -958,8 +979,8 @@ function creerPdfLettreLicenciement(pdf: jsPDF, logo: string, drapeauRdc: string
   pdf.roundedRect(14, 14, 184, 269, 2, 2, "S");
 
   // En-tête : logo + drapeau + identité
-  pdf.addImage(logo, "JPEG", 20, 20, 36, 22, undefined, "FAST");
-  pdf.addImage(drapeauRdc, "PNG", 170, 20, 22, 16, undefined, "FAST");
+  if (logo) { try { pdf.addImage(logo, "JPEG", 20, 20, 36, 22, undefined, "FAST"); } catch { /* ignore */ } }
+  if (drapeauRdc) { try { pdf.addImage(drapeauRdc, "PNG", 170, 20, 22, 16, undefined, "FAST"); } catch { /* ignore */ } }
 
   pdf.setTextColor(...couleurs.principal);
   pdf.setFont("helvetica", "bold");
@@ -1164,8 +1185,8 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     pdf.rect(0, 0, 210, 297, "F");
     pdf.setFillColor(255, 255, 255);
     pdf.roundedRect(12, 12, 186, 273, 3, 3, "F");
-    pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST");
-    pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST");
+    if (logo) { try { pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST"); } catch { /* ignore */ } }
+    if (drapeauRdc) { try { pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST"); } catch { /* ignore */ } }
     pdf.setTextColor(...couleurs.principal);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(19);
@@ -1797,8 +1818,8 @@ export async function creerPdfFactureEmploye(data: DonneesFactureEmploye): Promi
   pdf.roundedRect(14, 14, 184, 269, 3, 3, "F");
 
   // En-tête : logo + identité + drapeau
-  pdf.addImage(logo, "JPEG", 20, 20, 40, 24, undefined, "FAST");
-  pdf.addImage(drapeau, "PNG", 170, 20, 22, 16, undefined, "FAST");
+  if (logo) { try { pdf.addImage(logo, "JPEG", 20, 20, 40, 24, undefined, "FAST"); } catch { /* ignore */ } }
+  if (drapeau) { try { pdf.addImage(drapeau, "PNG", 170, 20, 22, 16, undefined, "FAST"); } catch { /* ignore */ } }
 
   pdf.setTextColor(...couleurs.principal);
   pdf.setFont("helvetica", "bold");
