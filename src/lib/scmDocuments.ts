@@ -1468,6 +1468,7 @@ type DonneesCarteService = {
   adresse: string;
   photoProfil: string;
   qrCode: string;
+  signatureDirection?: string;
   numero: string;
   dateEmission?: string;
 };
