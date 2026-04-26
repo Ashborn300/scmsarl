@@ -40,7 +40,7 @@ export const configs: Config[] = [
     { name: "titreCertificat", label: "Titre du certificat", defaultValue: "CERTIFICAT", required: true }, { name: "sousTitre", label: "Sous-titre", defaultValue: "DE RECONNAISSANCE" }, { name: "beneficiaire", label: "Nom du bénéficiaire", required: true }, { name: "date", label: "Date", type: "date", defaultValue: aujourdhui }, { name: "texte", label: "Texte du certificat", type: "textarea", defaultValue: "Ce certificat est décerné en reconnaissance de l’excellence, de l’engagement et du professionnalisme démontrés." }, { name: "logoPersonnalise", label: "Logo personnalisé", type: "image" }, { name: "signatureGauche", label: "Image signature gauche", type: "image" },
   ]},
   { type: "carte_service", titre: "Génération Carte de service", theme: "service-card", description: "Carte de service professionnelle PDF (recto/verso, format paysage CR80) avec logo SCM, drapeau RDC, photo et code QR.", showTotal: false, fields: [
-    { name: "profileImage", label: "Photo de profil", type: "image", required: true }, { name: "qrCodeImage", label: "Image du code QR", type: "image", required: true }, { name: "nomComplet", label: "Nom complet", required: true }, { name: "matricule", label: "Matricule", required: true }, { name: "genre", label: "Genre", required: true }, { name: "telephone", label: "Téléphone", required: true }, { name: "adresse", label: "Adresse", required: true }, { name: "poste", label: "Poste", required: true },
+    { name: "profileImage", label: "Photo de profil", type: "image", required: true }, { name: "qrCodeImage", label: "Image du code QR", type: "image", required: true }, { name: "signatureDirection", label: "Signature de la Direction SCM SARL (image, fond transparent recommandé)", type: "image" }, { name: "nomComplet", label: "Nom complet", required: true }, { name: "matricule", label: "Matricule", required: true }, { name: "genre", label: "Genre", required: true }, { name: "telephone", label: "Téléphone", required: true }, { name: "adresse", label: "Adresse", required: true }, { name: "poste", label: "Poste", required: true },
   ]},
   { type: "rendu_3d", titre: "Génération de rendu 3D", theme: "render-3d", description: "Transformation IA d’un plan 2D en rendu architectural isométrique 3D.", showTotal: false, fields: [
     { name: "planImage", label: "Image du plan", type: "image", required: true }, { name: "titre", label: "Titre du rendu", defaultValue: "Rendu 3D architectural" }, { name: "correctionPrompt", label: "Correction à appliquer au résultat", type: "textarea" },
@@ -662,6 +662,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
           adresse: formulaire.adresse || "",
           photoProfil: imagesChamps.profileImage || "",
           qrCode: imagesChamps.qrCodeImage || "",
+          signatureDirection: imagesChamps.signatureDirection || "",
           numero,
           dateEmission: new Date().toISOString().slice(0, 10),
         });
