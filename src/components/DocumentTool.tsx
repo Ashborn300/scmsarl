@@ -12,7 +12,7 @@ type Field = { name: string; label: string; type?: "text" | "number" | "date" | 
 type Config = { type: OutilType; titre: string; theme: string; description: string; fields: Field[]; hasLines?: boolean; showTotal?: boolean; totalLabel?: string };
 
 const aujourdhui = new Date().toISOString().slice(0, 10);
-const originePubliqueQr = "https://scm-tolls.lovable.app";
+const originePubliqueQr = "https://scmdarabase.lovable.app";
 
 export const configs: Config[] = [
   { type: "facture", titre: "Générateur de facture professionnelle", theme: "blue", description: "Factures numérotées avec prestations, calcul automatique et modalités de paiement.", hasLines: true, fields: [
@@ -727,8 +727,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
         if (employesSelectionnes.length !== 1) return alert("Veuillez sélectionner un seul employé pour générer son code QR.");
         const employe = employes.find((item) => item.id === employesSelectionnes[0]);
         if (!employe) return alert("Employé introuvable.");
-        const origineQr = window.location.hostname.endsWith(".lovable.app") ? window.location.origin : originePubliqueQr;
-        const urlPublique = `${origineQr}/qr-employe/${employe.id}`;
+        const urlPublique = `${originePubliqueQr}/qr-employe/${employe.id}`;
         const qrBase64 = await QRCode.toDataURL(urlPublique, { width: 1200, margin: 2, errorCorrectionLevel: "H", color: { dark: "#0f172a", light: "#ffffff" } });
         // Payload léger : on garde uniquement les identifiants (pas la photo base64 ni l'objet complet) pour éviter les timeouts DB.
         await enregistrerCodeQR({ employeId: employe.id, employeNom: employe.nom_complet, matricule: employe.matricule, poste: employe.poste, telephone: employe.telephone, urlPublique }, qrBase64, urlPublique, numero, documentEdite?.id);
