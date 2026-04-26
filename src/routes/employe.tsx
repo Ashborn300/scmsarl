@@ -201,6 +201,7 @@ function EmployePage() {
   const [rapportsMateriel, setRapportsMateriel] = useState<RapportMateriel[]>([]);
   const [arrivagesMateriel, setArrivagesMateriel] = useState<ArrivageMateriel[]>([]);
   const [incidentsChantier, setIncidentsChantier] = useState<IncidentChantier[]>([]);
+  const [recusEmploye, setRecusEmploye] = useState<RecuEmployePaiement[]>([]);
   const [jourPopup, setJourPopup] = useState<JourNonTravaille | null>(null);
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
