@@ -370,6 +370,12 @@ function EmployePage() {
     setRapportsMateriel(materielRes.data || []);
     setArrivagesMateriel(arrivagesRes.data || []);
     setIncidentsChantier(incidentsRes.data || []);
+    // Charger les reçus employé : tous pour admin, ses propres reçus pour employé/chef
+    const recusReq = currentSession.role === "admin"
+      ? db.from("recus_employes").select("*").order("created_at", { ascending: false })
+      : db.from("recus_employes").select("*").eq("employe_id", currentSession.employeId || "").order("created_at", { ascending: false });
+    const recusRes = await recusReq;
+    setRecusEmploye(recusRes.error ? [] : (recusRes.data || []));
     if (currentSession.role !== "admin") {
       const today = new Date().toISOString().slice(0, 10);
       const jour = (joursRes.data || []).find((item: JourNonTravaille) => item.actif && item.date_jour === today);
