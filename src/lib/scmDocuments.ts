@@ -224,6 +224,7 @@ const colonnesListeParOutil: Partial<Record<OutilType, string>> = {
   archives_chantiers: "id,nom_chantier,nom_client,adresse_projet,nom_fichier,created_at,updated_at",
   lettre_licenciement: "id,numero,nom_fichier,employe,date_document,created_at",
   facture_employe: "id,numero,nom_fichier,employe_nom,matricule,poste,salaire_brut,salaire_net,date_document,created_at",
+  recu_employe: "id,numero,nom_fichier,employe_id,employe_nom,matricule,chantier_id,chantier_nom,montant,motif,statut,date_envoi,date_confirmation,created_at,updated_at",
   version_nuit: "id,numero,nom_fichier,titre,date_document,created_at",
 };
 
