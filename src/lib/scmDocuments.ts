@@ -817,8 +817,8 @@ function ajouterEnteteFicheEmploye(pdf: jsPDF, logo: string, drapeauRdc: string,
   pdf.rect(0, 0, 210, 297, "F");
   pdf.setFillColor(255, 255, 255);
   pdf.roundedRect(12, 12, 186, 273, 3, 3, "F");
-  pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST");
-  pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST");
+  if (logo) { try { pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST"); } catch { /* ignore */ } }
+  if (drapeauRdc) { try { pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST"); } catch { /* ignore */ } }
   pdf.setTextColor(...couleur);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(18);
