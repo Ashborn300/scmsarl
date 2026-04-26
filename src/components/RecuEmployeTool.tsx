@@ -87,38 +87,56 @@ export function RecuEmployeTool({ retour }: { retour: () => void }) {
     if (!cibles.length) return alert("Sélectionnez au moins un employé avec un montant > 0.");
     if (!confirm(`Envoyer ${cibles.length} reçu(s) pour un total de ${totalEnvoi.toLocaleString("fr-FR")} $ ?`)) return;
     setEnvoi(true);
+    const nouveaux: RecuEmployeRecord[] = [];
+    const echecs: { nom: string; erreur: string }[] = [];
     try {
-      const nouveaux: RecuEmployeRecord[] = [];
       for (const cible of cibles) {
-        const pdf = await creerPdfRecuEmploye({
-          numero: "",
-          date,
-          employe: { nom_complet: cible.employe.nom_complet, matricule: cible.employe.matricule, poste: cible.employe.poste },
-          chantierNom: chantierActif.nom_chantier,
-          montant: cible.montant,
-          motif,
-          modePaiement,
-          signataireNom,
-          signataireFonction,
-        });
-        const enregistre = await enregistrerRecuEmploye({
-          employeId: cible.employe.id,
-          employeNom: cible.employe.nom_complet,
-          matricule: cible.employe.matricule,
-          chantierId: chantierActif.id,
-          chantierNom: chantierActif.nom_chantier,
-          montant: cible.montant,
-          motif,
-          date,
-          donneesFormulaire: { modePaiement, signataireNom, signataireFonction },
-        }, pdf);
-        nouveaux.push(enregistre);
+        try {
+          const pdf = await creerPdfRecuEmploye({
+            numero: "",
+            date,
+            employe: { nom_complet: cible.employe.nom_complet, matricule: cible.employe.matricule, poste: cible.employe.poste },
+            chantierNom: chantierActif.nom_chantier,
+            montant: cible.montant,
+            motif,
+            modePaiement,
+            signataireNom,
+            signataireFonction,
+          });
+          // Retry léger sur "Failed to fetch" (réseau transitoire)
+          let enregistre: RecuEmployeRecord | null = null;
+          let derniereErreur: unknown = null;
+          for (let tentative = 0; tentative < 3 && !enregistre; tentative++) {
+            try {
+              enregistre = await enregistrerRecuEmploye({
+                employeId: cible.employe.id,
+                employeNom: cible.employe.nom_complet,
+                matricule: cible.employe.matricule,
+                chantierId: chantierActif.id,
+                chantierNom: chantierActif.nom_chantier,
+                montant: cible.montant,
+                motif,
+                date,
+                donneesFormulaire: { modePaiement, signataireNom, signataireFonction },
+              }, pdf);
+            } catch (e) {
+              derniereErreur = e;
+              await new Promise((r) => setTimeout(r, 600 * (tentative + 1)));
+            }
+          }
+          if (!enregistre) throw derniereErreur instanceof Error ? derniereErreur : new Error("Envoi impossible (réseau).");
+          nouveaux.push(enregistre);
+        } catch (e) {
+          echecs.push({ nom: cible.employe.nom_complet, erreur: e instanceof Error ? e.message : String(e) });
+        }
       }
-      setRecus((r) => [...nouveaux, ...r]);
-      setSelection({});
-      alert(`${nouveaux.length} reçu(s) envoyé(s). En attente de confirmation par les employés.`);
-    } catch (erreur) {
-      alert(erreur instanceof Error ? erreur.message : "Envoi impossible.");
+      if (nouveaux.length) setRecus((r) => [...nouveaux, ...r]);
+      if (nouveaux.length) setSelection({});
+      if (echecs.length) {
+        alert(`${nouveaux.length} reçu(s) envoyé(s). ${echecs.length} échec(s) :\n` + echecs.map((f) => `• ${f.nom} : ${f.erreur}`).join("\n"));
+      } else {
+        alert(`${nouveaux.length} reçu(s) envoyé(s). En attente de confirmation par les employés.`);
+      }
     } finally {
       setEnvoi(false);
     }
