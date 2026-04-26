@@ -1136,7 +1136,6 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
   champs.forEach(([label, valeur]) => {
     y = texteMultiligne(pdf, label, valeur, 20, y, 165, couleurs.principal);
     if (y > 218) {
-      type === "communiquer" ? piedDePageCommunication(pdf, couleurs.principal, options.sceau, options.libelleSceau) : piedDePage(pdf, couleurs.principal, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
       pdf.addPage();
       y = 24;
     }
