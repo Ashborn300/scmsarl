@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/scm-logo.jpeg";
+import logoCarteServiceUrl from "@/assets/logo-scm-carte.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
@@ -1710,7 +1711,7 @@ function dessinerCarteServiceVerso(pdf: jsPDF, data: DonneesCarteService, logo: 
 
 export async function creerPdfCarteService(data: DonneesCarteService) {
   const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
-  const logo = await imageVersBase64(logoUrl);
+  const logo = await imageVersBase64(logoCarteServiceUrl).catch(() => "");
   const drapeau = await drapeauRdcVersPng();
 
   const pageW = 297;
