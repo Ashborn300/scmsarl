@@ -2079,3 +2079,263 @@ export async function enregistrerFactureEmploye(payload: Record<string, unknown>
   return data as FactureEmployeRecord;
 }
 
+// ============================================================================
+// Reçus employés (paiements) + salaires par chantier
+// ============================================================================
+
+export type SalaireChantier = {
+  id: string;
+  employe_id: string;
+  chantier_id: string;
+  montant: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RecuEmployeRecord = {
+  id: string;
+  numero: string;
+  nom_fichier: string;
+  employe_id: string;
+  employe_nom: string;
+  matricule: string;
+  chantier_id: string | null;
+  chantier_nom: string;
+  montant: number;
+  motif: string;
+  statut: "en_attente" | "confirme" | "refuse";
+  date_envoi: string;
+  date_confirmation: string | null;
+  pdf_base64: string;
+  donnees_formulaire: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listerSalairesChantier() {
+  const { data, error } = await db.from("salaires_chantier").select("*");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as SalaireChantier[];
+}
+
+export async function definirSalairesChantier(chantierId: string, lignes: { employe_id: string; montant: number }[]) {
+  // Supprime puis réinsère pour ce chantier (simple et fiable, peu de lignes)
+  const { error: delErr } = await db.from("salaires_chantier").delete().eq("chantier_id", chantierId);
+  if (delErr) throw new Error(delErr.message);
+  if (!lignes.length) return;
+  const payload = lignes.map((l) => ({ chantier_id: chantierId, employe_id: l.employe_id, montant: Number(l.montant) || 0 }));
+  const { error: insErr } = await db.from("salaires_chantier").insert(payload);
+  if (insErr) throw new Error(insErr.message);
+}
+
+export async function listerRecusEmployes(recherche = "", employeId?: string) {
+  let requete = db.from("recus_employes").select("*").order("created_at", { ascending: false });
+  if (employeId) requete = requete.eq("employe_id", employeId);
+  if (recherche.trim()) {
+    const terme = `%${recherche.trim()}%`;
+    requete = requete.or(`nom_fichier.ilike.${terme},numero.ilike.${terme},employe_nom.ilike.${terme},matricule.ilike.${terme},chantier_nom.ilike.${terme},motif.ilike.${terme}`);
+  }
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as RecuEmployeRecord[];
+}
+
+export async function confirmerRecuEmploye(recuId: string, employeId: string) {
+  const { data, error } = await db.rpc("confirmer_recu_employe", { _recu_id: recuId, _employe_id: employeId });
+  if (error) throw new Error(error.message);
+  if (!data?.success) throw new Error(data?.message || "Confirmation impossible.");
+  return true;
+}
+
+export type DonneesRecuEmploye = {
+  numero: string;
+  date: string;
+  employe: { nom_complet: string; matricule: string; poste: string };
+  chantierNom: string;
+  montant: number;
+  motif: string;
+  modePaiement: string;
+  signataireNom: string;
+  signataireFonction: string;
+  sceau?: string;
+  signature?: string;
+};
+
+export async function creerPdfRecuEmploye(data: DonneesRecuEmploye): Promise<string> {
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const couleurs = couleursPdfParOutil.recu_employe;
+  const logo = await imageVersBase64(logoUrl);
+  const drapeau = await drapeauRdcVersPng();
+  const pageW = 210;
+  const pageH = 297;
+
+  // Fond crème léger
+  pdf.setFillColor(247, 252, 250);
+  pdf.rect(0, 0, pageW, pageH, "F");
+
+  // Bande latérale
+  pdf.setFillColor(...couleurs.principal);
+  pdf.rect(0, 0, 6, pageH, "F");
+  pdf.setFillColor(...couleurs.secondaire);
+  pdf.rect(6, 0, 1.5, pageH, "F");
+
+  // Carte blanche
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(14, 14, 184, 269, 3, 3, "F");
+
+  // En-tête : logo + identité + drapeau
+  pdf.addImage(logo, "JPEG", 20, 20, 40, 24, undefined, "FAST");
+  pdf.addImage(drapeau, "PNG", 170, 20, 22, 16, undefined, "FAST");
+  pdf.setTextColor(...couleurs.principal);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(13);
+  pdf.text("SCM SARL", 64, 26);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(85, 92, 110);
+  pdf.text("RCCM : CD/KNM/RCCM/24-B-01256 · IDNAT : 01-F4200-N55523N", 64, 31);
+  pdf.text("N° Impôt : A2442 173S · Direction des Ressources Humaines", 64, 36);
+
+  pdf.setDrawColor(...couleurs.secondaire);
+  pdf.setLineWidth(0.7);
+  pdf.line(20, 50, 192, 50);
+  pdf.setLineWidth(0.2);
+  pdf.line(20, 51.5, 192, 51.5);
+
+  // Titre
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(20);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("REÇU DE PAIEMENT EMPLOYÉ", pageW / 2, 62, { align: "center" });
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+  pdf.setTextColor(85, 92, 110);
+  pdf.text(`N° ${data.numero}  ·  Date : ${new Date(data.date).toLocaleDateString("fr-FR")}`, pageW / 2, 70, { align: "center" });
+
+  // Bloc bénéficiaire
+  let y = 84;
+  pdf.setFillColor(...couleurs.doux);
+  pdf.roundedRect(20, y - 6, 172, 36, 2.5, 2.5, "F");
+  pdf.setTextColor(...couleurs.principal);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.text("BÉNÉFICIAIRE", 24, y);
+  pdf.setTextColor(15, 23, 42);
+  pdf.setFontSize(11);
+  pdf.text(data.employe.nom_complet || "—", 24, y + 7);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(71, 85, 105);
+  pdf.text(`Matricule : ${data.employe.matricule || "—"}`, 24, y + 14);
+  pdf.text(`Poste : ${data.employe.poste || "—"}`, 24, y + 20);
+  pdf.text(`Chantier concerné : ${data.chantierNom || "—"}`, 24, y + 26);
+
+  // Bloc montant principal
+  y = 134;
+  pdf.setFillColor(...couleurs.principal);
+  pdf.roundedRect(20, y - 6, 172, 30, 3, 3, "F");
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.text("MONTANT VERSÉ", 28, y + 2);
+  pdf.setFontSize(26);
+  pdf.text(`${Number(data.montant || 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $`, 28, y + 16);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.text(`Mode de paiement : ${data.modePaiement || "—"}`, 132, y + 16);
+
+  // Motif / description
+  y = 178;
+  pdf.setTextColor(...couleurs.principal);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.text("MOTIF DU PAIEMENT", 20, y);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+  pdf.setTextColor(40, 50, 70);
+  const motifLignes = pdf.splitTextToSize(data.motif || "Paiement de salaire pour le chantier indiqué.", 172);
+  pdf.text(motifLignes, 20, y + 7);
+
+  // Mention légale
+  y = 224;
+  pdf.setFillColor(245, 247, 250);
+  pdf.roundedRect(20, y - 6, 172, 22, 2, 2, "F");
+  pdf.setTextColor(71, 85, 105);
+  pdf.setFont("helvetica", "italic");
+  pdf.setFontSize(8.5);
+  const mention = "Je soussigné(e) reconnais avoir reçu de SCM SARL la somme indiquée ci-dessus en règlement du motif décrit. La confirmation électronique de ce reçu via mon espace personnel vaut acquittement définitif.";
+  const mentionLignes = pdf.splitTextToSize(mention, 164);
+  pdf.text(mentionLignes, 24, y);
+
+  // Sceau / signatures
+  y = 254;
+  if (data.sceau) {
+    try { pdf.addImage(data.sceau, "PNG", 24, y - 12, 26, 26, undefined, "FAST"); } catch { /* ignore */ }
+  }
+  if (data.signature) {
+    try { pdf.addImage(data.signature, "PNG", 142, y - 12, 44, 22, undefined, "FAST"); } catch { /* ignore */ }
+  }
+  pdf.setDrawColor(180, 188, 200);
+  pdf.setLineWidth(0.2);
+  pdf.line(20, y + 18, 88, y + 18);
+  pdf.line(122, y + 18, 192, y + 18);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("Sceau & émetteur SCM SARL", 24, y + 23);
+  pdf.text("Signature du bénéficiaire", 126, y + 23);
+  pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(71, 85, 105);
+  pdf.setFontSize(8);
+  pdf.text(`${data.signataireNom || "—"} · ${data.signataireFonction || "Direction RH"}`, 24, y + 28);
+  pdf.text(`${data.employe.nom_complet || "—"}`, 126, y + 28);
+
+  // Pied de page
+  pdf.setDrawColor(...couleurs.principal);
+  pdf.setLineWidth(0.2);
+  pdf.line(20, 274, 192, 274);
+  pdf.setFont("helvetica", "italic");
+  pdf.setFontSize(7);
+  pdf.setTextColor(120, 125, 140);
+  pdf.text("SCM SARL — Reçu de paiement employé — Confirmation requise dans l'espace personnel pour acquittement.", pageW / 2, 279, { align: "center" });
+
+  return pdf.output("datauristring");
+}
+
+export async function enregistrerRecuEmploye(payload: {
+  employeId: string;
+  employeNom: string;
+  matricule: string;
+  chantierId: string | null;
+  chantierNom: string;
+  montant: number;
+  motif: string;
+  date: string;
+  donneesFormulaire?: Record<string, unknown>;
+}, pdfBase64: string, numero?: string) {
+  const documentNumero = numero || (await genererNumero("recu_employe"));
+  const nomFichier = `${documentNumero}-${(payload.employeNom || "recu-employe").replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
+  const ligne = {
+    numero: documentNumero,
+    nom_fichier: nomFichier,
+    employe_id: payload.employeId,
+    employe_nom: payload.employeNom,
+    matricule: payload.matricule,
+    chantier_id: payload.chantierId,
+    chantier_nom: payload.chantierNom,
+    montant: Number(payload.montant) || 0,
+    motif: payload.motif,
+    statut: "en_attente",
+    date_envoi: payload.date,
+    pdf_base64: pdfBase64,
+    donnees_formulaire: payload.donneesFormulaire || {},
+  };
+  const { data, error } = await db.from("recus_employes").insert(ligne).select().single();
+  if (error) throw new Error(error.message);
+  return data as RecuEmployeRecord;
+}
+
+export async function supprimerRecuEmploye(id: string) {
+  const { error } = await db.from("recus_employes").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
