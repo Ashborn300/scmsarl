@@ -708,8 +708,11 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
         if (typeFiche === "individuelle" && employesSelectionnes.length !== 1) return alert("La fiche individuelle nécessite un seul employé.");
         const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
         const selection = employes.filter((employe) => employesSelectionnes.includes(employe.id));
+        if (!selection.length) return alert("Les employés sélectionnés sont introuvables.");
         const pdf = await creerPdfFicheEmploye(typeFiche, selection, numero, sceauBase64);
-        await enregistrerFicheEmploye({ typeFiche, titre: typeFiche === "collective" ? "Fiche collective employés" : selection[0]?.nom_complet || "Fiche employé", employeIds: employesSelectionnes, employes: selection, sceauBase64 }, pdf, numero, documentEdite?.id);
+        // Payload léger : pas de photos base64 pour éviter les timeouts DB
+        const employesResume = selection.map((e) => ({ id: e.id, nom_complet: e.nom_complet, matricule: e.matricule, genre: e.genre, telephone: e.telephone, poste: e.poste, email: e.email }));
+        await enregistrerFicheEmploye({ typeFiche, titre: typeFiche === "collective" ? "Fiche collective employés" : selection[0]?.nom_complet || "Fiche employé", employeIds: employesSelectionnes, employesResume, sceauBase64 }, pdf, numero, documentEdite?.id);
         setDocumentEdite(null); setActualisation((valeur) => valeur + 1); alert(documentEdite ? "Fiche employé modifiée avec succès." : "Fiche employé générée et enregistrée avec succès."); return;
       }
       if (config.type === "code_qr") {
