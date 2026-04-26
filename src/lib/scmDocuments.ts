@@ -802,7 +802,6 @@ export async function creerPdfFicheEmploye(typeFiche: string, employes: EmployeR
     employes.forEach((employe, index) => {
       const indexPage = index % 6;
       if (indexPage === 0 && index > 0) {
-        piedDePage(pdf, couleurs.principal, sceau, undefined, "Sceau de l’entreprise", "");
         pdf.addPage();
         ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche collective des employés", numero, couleurs.principal);
       }
