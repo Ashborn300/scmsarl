@@ -2164,8 +2164,8 @@ export type DonneesRecuEmploye = {
 export async function creerPdfRecuEmploye(data: DonneesRecuEmploye): Promise<string> {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const couleurs = couleursPdfParOutil.recu_employe;
-  const logo = await imageVersBase64(logoUrl);
-  const drapeau = await drapeauRdcVersPng();
+  const logo = await imageVersBase64(logoUrl).catch(() => "");
+  const drapeau = await drapeauRdcVersPng().catch(() => "");
   const pageW = 210;
   const pageH = 297;
 
