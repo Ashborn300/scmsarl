@@ -967,8 +967,8 @@ function creerPdfLettreLicenciement(pdf: jsPDF, logo: string, drapeauRdc: string
   pdf.roundedRect(14, 14, 184, 269, 2, 2, "S");
 
   // En-tête : logo + drapeau + identité
-  pdf.addImage(logo, "JPEG", 20, 20, 36, 22, undefined, "FAST");
-  pdf.addImage(drapeauRdc, "PNG", 170, 20, 22, 16, undefined, "FAST");
+  if (logo) { try { pdf.addImage(logo, "JPEG", 20, 20, 36, 22, undefined, "FAST"); } catch { /* ignore */ } }
+  if (drapeauRdc) { try { pdf.addImage(drapeauRdc, "PNG", 170, 20, 22, 16, undefined, "FAST"); } catch { /* ignore */ } }
 
   pdf.setTextColor(...couleurs.principal);
   pdf.setFont("helvetica", "bold");
@@ -1173,8 +1173,8 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     pdf.rect(0, 0, 210, 297, "F");
     pdf.setFillColor(255, 255, 255);
     pdf.roundedRect(12, 12, 186, 273, 3, 3, "F");
-    pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST");
-    pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST");
+    if (logo) { try { pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST"); } catch { /* ignore */ } }
+    if (drapeauRdc) { try { pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST"); } catch { /* ignore */ } }
     pdf.setTextColor(...couleurs.principal);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(19);
@@ -1806,8 +1806,8 @@ export async function creerPdfFactureEmploye(data: DonneesFactureEmploye): Promi
   pdf.roundedRect(14, 14, 184, 269, 3, 3, "F");
 
   // En-tête : logo + identité + drapeau
-  pdf.addImage(logo, "JPEG", 20, 20, 40, 24, undefined, "FAST");
-  pdf.addImage(drapeau, "PNG", 170, 20, 22, 16, undefined, "FAST");
+  if (logo) { try { pdf.addImage(logo, "JPEG", 20, 20, 40, 24, undefined, "FAST"); } catch { /* ignore */ } }
+  if (drapeau) { try { pdf.addImage(drapeau, "PNG", 170, 20, 22, 16, undefined, "FAST"); } catch { /* ignore */ } }
 
   pdf.setTextColor(...couleurs.principal);
   pdf.setFont("helvetica", "bold");
