@@ -900,3 +900,56 @@ function Details({ detail, projets, employes, chantiers, presences, annonces, ad
 function nomProjet(projets: Projet[], id?: string | null) { return projets.find((p) => p.id === id)?.nom_projet || "Non lié"; }
 function nomChantier(chantiers: Chantier[], id?: string | null) { return chantiers.find((c) => c.id === id)?.nom_chantier || "Non assigné"; }
 function nomEmploye(employes: Employe[], id?: string | null) { return employes.find((e) => e.id === id)?.nom_complet || "Non défini"; }
+
+function PaiementEmploye({ recus, employe, confirmer, ouvrirPdf, saving }: { recus: RecuEmployePaiement[]; employe: Employe | null; confirmer: (id: string) => void; ouvrirPdf: (pdf: string) => void; saving: boolean }) {
+  const enAttente = recus.filter((r) => r.statut === "en_attente");
+  const confirmes = recus.filter((r) => r.statut === "confirme");
+  return (
+    <div className="space-y-6">
+      <section className="grid gap-4 lg:grid-cols-3">
+        <article className="dashboard-card tool-teal rounded-3xl p-5"><p className="text-xs font-black uppercase tracking-wide opacity-85">Salaire total cumulé</p><p className="mt-3 text-3xl font-black">{devise(employe?.salaire_total ?? employe?.salaire ?? 0)}</p><p className="mt-1 text-xs opacity-85">Somme des salaires de tous vos chantiers.</p></article>
+        <article className="dashboard-card tool-green rounded-3xl p-5"><p className="text-xs font-black uppercase tracking-wide opacity-85">Salaire reçu</p><p className="mt-3 text-3xl font-black">{devise(employe?.salaire_recu ?? 0)}</p><p className="mt-1 text-xs opacity-85">Mis à jour à chaque reçu confirmé.</p></article>
+        <article className="dashboard-card tool-orange rounded-3xl p-5"><p className="text-xs font-black uppercase tracking-wide opacity-85">Salaire restant</p><p className="mt-3 text-3xl font-black">{devise(employe?.salaire_restant ?? 0)}</p><p className="mt-1 text-xs opacity-85">À recevoir.</p></article>
+      </section>
+
+      <section className="dashboard-card rounded-3xl p-5">
+        <div className="mb-4 flex items-center gap-3"><span className="tool-employee-receipt flex size-12 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><ClipboardList className="size-6" /></span><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Notifications</p><h3 className="text-xl font-black">Reçus à confirmer ({enAttente.length})</h3></div></div>
+        <div className="space-y-3">
+          {enAttente.length ? enAttente.map((r) => (
+            <article key={r.id} className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs font-black uppercase text-primary">{r.numero} · {dateFr(r.date_envoi)}</p>
+                  <p className="mt-1 text-2xl font-black">{devise(r.montant)}</p>
+                  <p className="mt-1 text-sm font-bold text-foreground">Chantier : {r.chantier_nom || "—"}</p>
+                  {r.motif && <p className="mt-1 text-sm text-muted-foreground">{r.motif}</p>}
+                </div>
+                <div className="flex flex-col gap-2 sm:items-end">
+                  <button type="button" className="mini-button" onClick={() => ouvrirPdf(r.pdf_base64)}>Voir le PDF</button>
+                  <button type="button" className="primary-action" disabled={saving} onClick={() => confirmer(r.id)}><CheckCircle2 className="size-4" /> Confirmer la réception</button>
+                </div>
+              </div>
+            </article>
+          )) : <p className="rounded-2xl bg-muted p-4 text-sm text-muted-foreground">Aucun reçu en attente de confirmation.</p>}
+        </div>
+      </section>
+
+      <section className="dashboard-card rounded-3xl p-5">
+        <h3 className="mb-4 text-xl font-black">Historique des paiements confirmés ({confirmes.length})</h3>
+        <div className="space-y-3">
+          {confirmes.length ? confirmes.map((r) => (
+            <article key={r.id} className="grid gap-2 rounded-xl border border-border bg-background p-4 sm:grid-cols-[1fr_auto]">
+              <div>
+                <p className="text-xs font-black uppercase text-muted-foreground">{r.numero}</p>
+                <p className="mt-1 text-lg font-black">{devise(r.montant)} · {r.chantier_nom || "—"}</p>
+                <p className="text-xs text-muted-foreground">Confirmé le {r.date_confirmation ? dateFr(r.date_confirmation.slice(0, 10)) : dateFr(r.date_envoi)}</p>
+                {r.motif && <p className="mt-1 text-sm">{r.motif}</p>}
+              </div>
+              <button type="button" className="mini-button self-start" onClick={() => ouvrirPdf(r.pdf_base64)}>PDF</button>
+            </article>
+          )) : <p className="rounded-2xl bg-muted p-4 text-sm text-muted-foreground">Aucun paiement confirmé pour le moment.</p>}
+        </div>
+      </section>
+    </div>
+  );
+}
