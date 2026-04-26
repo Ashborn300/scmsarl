@@ -833,21 +833,75 @@ function FormAnnonce({ form, setForm, onSubmit, saving, televerserImage, retirer
 function PresencesSection(props: any) { return <div className="space-y-5">{props.chef && <form onSubmit={props.submit} className="rounded-2xl border border-border bg-card p-5 shadow-document"><h3 className="text-xl font-black">Nouvelle présence quotidienne</h3><div className="mt-4 grid gap-4 md:grid-cols-2"><Champ label="Date"><input type="date" className="form-control" value={props.presenceDate} onChange={(e) => props.setPresenceDate(e.target.value)} /></Champ><Champ label="Chantier"><Select value={props.presenceChantier} onChange={props.setPresenceChantier}>{props.chantiersVisibles.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select></Champ></div><div className="mt-4 space-y-3">{props.employesPresence.map((e: Employe) => <div key={e.id} className="flex flex-col gap-2 rounded-xl border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"><p className="font-bold">{e.nom_complet}</p><Select value={props.presenceStatuts[e.id] || "présent"} onChange={(v: StatutPresence) => props.setPresenceStatuts({ ...props.presenceStatuts, [e.id]: v })}>{statutsPresence.map((s) => <option key={s} value={s}>{s}</option>)}</Select></div>)}</div><Champ label="Notes"><textarea className="form-control mt-4 min-h-24" value={props.presenceNotes} onChange={(e) => props.setPresenceNotes(e.target.value)} /></Champ><button className="primary-action mt-4" disabled={props.saving}><ClipboardCheck className="size-4" /> Enregistrer la présence</button></form>}<div className="grid gap-3 rounded-2xl border border-border bg-card p-4 shadow-document md:grid-cols-4"><input type="date" className="form-control" value={props.filtreDate} onChange={(e) => props.setFiltreDate(e.target.value)} /><Select value={props.filtreChantier} onChange={props.setFiltreChantier}><option value="">Tous les chantiers</option>{props.chantiers.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select><Select value={props.filtreEmploye} onChange={props.setFiltreEmploye}><option value="">Tous les employés</option>{props.employes.map((e: Employe) => <option key={e.id} value={e.id}>{e.nom_complet}</option>)}</Select><Select value={props.filtreChef} onChange={props.setFiltreChef}><option value="">Tous les chefs</option>{props.chefs.map((e: Employe) => <option key={e.id} value={e.id}>{e.nom_complet}</option>)}</Select></div><div className="grid gap-4 xl:grid-cols-2">{props.presences.map((p: Presence) => <article key={p.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex items-start justify-between gap-4"><div><h3 className="text-xl font-black">{dateFr(p.date)}</h3><p className="text-sm text-muted-foreground">{nomChantier(props.chantiers, p.chantier_id)} • {nomEmploye(props.employes, p.chef_chantier_id)}</p></div><button className="mini-button" onClick={() => props.voir(p.id)}>Voir</button></div><p className="mt-3 text-sm font-bold">{p.employes_presence.length} employé(s)</p></article>)}</div></div>; }
 function FormProjet({ form, setForm, onSubmit, saving }: any) { return <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2"><Champ label="Nom du projet"><input className="form-control" value={form.nom_projet} onChange={(e) => setForm({ ...form, nom_projet: e.target.value })} /></Champ><Champ label="Client"><input className="form-control" value={form.client} onChange={(e) => setForm({ ...form, client: e.target.value })} /></Champ><Champ label="Localisation"><input className="form-control" value={form.localisation} onChange={(e) => setForm({ ...form, localisation: e.target.value })} /></Champ><Champ label="Budget estimé"><input type="number" className="form-control" value={form.budget_estime} onChange={(e) => setForm({ ...form, budget_estime: e.target.value })} /></Champ><Champ label="Statut"><Select value={form.statut} onChange={(v: string) => setForm({ ...form, statut: v })}>{statutsProjet.map((s) => <option key={s}>{s}</option>)}</Select></Champ><Champ label="Date début"><input type="date" className="form-control" value={form.date_debut} onChange={(e) => setForm({ ...form, date_debut: e.target.value })} /></Champ><Champ label="Date fin prévue"><input type="date" className="form-control" value={form.date_fin_prevue} onChange={(e) => setForm({ ...form, date_fin_prevue: e.target.value })} /></Champ><Champ label="Description"><textarea className="form-control min-h-24" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Champ><button className="primary-action sm:col-span-2" disabled={saving}>Enregistrer</button></form>; }
 function FormEmploye({ form, setForm, chantiers, onSubmit, saving, televerserPhoto, retirerPhoto }: any) { return <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2"><div className="rounded-2xl border border-border bg-background p-4 sm:col-span-2"><p className="mb-3 text-sm font-black text-foreground">Photo de profil</p><div className="flex flex-col gap-4 sm:flex-row sm:items-center"><div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-muted">{form.photo_profil ? <img src={form.photo_profil} alt="Photo de profil employé" className="h-full w-full object-cover" /> : <UserRound className="size-10 text-muted-foreground" />}</div><div className="flex-1 space-y-2"><input type="file" accept="image/*" className="file-input" onChange={(e) => televerserPhoto(e.target.files)} />{form.photo_profil && <button type="button" className="mini-button" onClick={retirerPhoto}>Retirer la photo</button>}</div></div></div><Champ label="Nom complet"><input className="form-control" maxLength={120} value={form.nom_complet} onChange={(e) => setForm({ ...form, nom_complet: e.target.value })} /></Champ><Champ label="Matricule unique"><input className="form-control" maxLength={40} value={form.matricule} onChange={(e) => setForm({ ...form, matricule: e.target.value })} /></Champ><Champ label="Genre"><Select value={form.genre || ""} onChange={(v: string) => setForm({ ...form, genre: v })}><option value="">Non précisé</option><option value="homme">Homme</option><option value="femme">Femme</option><option value="autre">Autre</option></Select></Champ><Champ label="Date d’admission"><input type="date" className="form-control" value={form.date_admission || ""} onChange={(e) => setForm({ ...form, date_admission: e.target.value })} /></Champ><Champ label="Date de naissance"><input type="date" className="form-control" value={form.date_naissance || ""} onChange={(e) => setForm({ ...form, date_naissance: e.target.value })} /></Champ><Champ label="Email"><input type="email" className="form-control" maxLength={160} value={form.email || ""} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Champ><Champ label="Poste"><input className="form-control" maxLength={100} value={form.poste} onChange={(e) => setForm({ ...form, poste: e.target.value })} /></Champ><Champ label="Téléphone"><input className="form-control" maxLength={40} value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} /></Champ><Champ label="Pièce d’identité"><input className="form-control" maxLength={80} value={form.numero_piece_identite || ""} onChange={(e) => setForm({ ...form, numero_piece_identite: e.target.value })} /></Champ><Champ label="Contact d’urgence"><input className="form-control" maxLength={120} value={form.contact_urgence || ""} onChange={(e) => setForm({ ...form, contact_urgence: e.target.value })} /></Champ><Champ label="Salaire total"><input type="number" className="form-control" value={form.salaire_total} onChange={(e) => setForm({ ...form, salaire_total: e.target.value })} /></Champ><Champ label="Salaire reçu"><input type="number" className="form-control" value={form.salaire_recu} onChange={(e) => setForm({ ...form, salaire_recu: e.target.value })} /></Champ><Champ label="Rôle"><Select value={form.role} onChange={(v: string) => setForm({ ...form, role: v })}><option value="employe">Employé</option><option value="chef_chantier">Chef de chantier</option></Select></Champ><Champ label="Statut"><Select value={form.statut} onChange={(v: string) => setForm({ ...form, statut: v })}>{statutsEmploye.map((s) => <option key={s}>{s}</option>)}</Select></Champ><Champ label="Chantier assigné"><Select value={form.chantier_assigne || ""} onChange={(v: string) => setForm({ ...form, chantier_assigne: v })}><option value="">Aucun</option>{chantiers.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select></Champ><Champ label="Adresse"><input className="form-control" maxLength={180} value={form.adresse} onChange={(e) => setForm({ ...form, adresse: e.target.value })} /></Champ><label className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 text-sm font-bold sm:col-span-2"><input type="checkbox" checked={!!form.peut_voir_budget} onChange={(e) => setForm({ ...form, peut_voir_budget: e.target.checked })} /> Autoriser cet employé à voir les budgets si nécessaire</label><button className="primary-action sm:col-span-2" disabled={saving}>Enregistrer</button></form>; }
-function FormChantier({ form, setForm, projets, employes, onSubmit, saving, televerserImages, retirerImage }: any) {
+function FormChantier({ form, setForm, projets, employes, onSubmit, saving, televerserImages, retirerImage, chantierId, rechargerDonnees, setMessage }: any) {
   const chefs = employes.filter((e: Employe) => e.role === "chef_chantier");
   const employesAssignes: string[] = form.employes_assignes || [];
   const salairesMap: Record<string, string> = form.salaires_employes || {};
   const totalSalaires = employesAssignes.reduce((sum, id) => sum + (Number(salairesMap[id]) || 0), 0);
+  const instantane = !!chantierId;
+  const [enCours, setEnCours] = useState<Record<string, boolean>>({});
+  const [statutSauvegarde, setStatutSauvegarde] = useState<Record<string, "ok" | "err" | null>>({});
 
-  function basculerEmploye(employeId: string, ajoute: boolean) {
+  async function recalculerSalaireEmploye(employeId: string) {
+    const { data: lignes } = await db.from("salaires_chantier").select("montant").eq("employe_id", employeId);
+    const totalCumule = (lignes || []).reduce((sum: number, l: { montant: number }) => sum + Number(l.montant || 0), 0);
+    const emp = employes.find((e: Employe) => e.id === employeId);
+    const recu = Number(emp?.salaire_recu || 0);
+    await db.from("employes").update({ salaire: totalCumule, salaire_total: totalCumule, salaire_restant: Math.max(totalCumule - recu, 0) }).eq("id", employeId);
+  }
+
+  function flashStatut(employeId: string, statut: "ok" | "err") {
+    setStatutSauvegarde((prev) => ({ ...prev, [employeId]: statut }));
+    setTimeout(() => setStatutSauvegarde((prev) => ({ ...prev, [employeId]: null })), 1800);
+  }
+
+  async function basculerEmploye(employeId: string, ajoute: boolean) {
     const nouveauxAssignes = ajoute ? [...employesAssignes, employeId] : employesAssignes.filter((id) => id !== employeId);
     const nouveauxSalaires = { ...salairesMap };
     if (!ajoute) delete nouveauxSalaires[employeId];
     setForm({ ...form, employes_assignes: nouveauxAssignes, salaires_employes: nouveauxSalaires });
+
+    if (!instantane) return;
+    setEnCours((prev) => ({ ...prev, [employeId]: true }));
+    try {
+      const { error: errChantier } = await db.from("chantiers").update({ employes_assignes: nouveauxAssignes }).eq("id", chantierId);
+      if (errChantier) throw errChantier;
+      if (ajoute) {
+        const montant = Number(nouveauxSalaires[employeId] || 0);
+        await db.from("salaires_chantier").upsert({ chantier_id: chantierId, employe_id: employeId, montant }, { onConflict: "chantier_id,employe_id" });
+      } else {
+        await db.from("salaires_chantier").delete().eq("chantier_id", chantierId).eq("employe_id", employeId);
+      }
+      await recalculerSalaireEmploye(employeId);
+      flashStatut(employeId, "ok");
+      await rechargerDonnees?.();
+    } catch (err: any) {
+      flashStatut(employeId, "err");
+      setMessage?.(err?.message || "Erreur lors de l'affectation.");
+    } finally {
+      setEnCours((prev) => ({ ...prev, [employeId]: false }));
+    }
   }
 
   function changerSalaire(employeId: string, valeur: string) {
     setForm({ ...form, salaires_employes: { ...salairesMap, [employeId]: valeur } });
+  }
+
+  async function sauvegarderSalaire(employeId: string, valeur: string) {
+    if (!instantane || !employesAssignes.includes(employeId)) return;
+    const montant = Number(valeur || 0);
+    setEnCours((prev) => ({ ...prev, [employeId]: true }));
+    try {
+      await db.from("salaires_chantier").upsert({ chantier_id: chantierId, employe_id: employeId, montant }, { onConflict: "chantier_id,employe_id" });
+      await recalculerSalaireEmploye(employeId);
+      flashStatut(employeId, "ok");
+      await rechargerDonnees?.();
+    } catch (err: any) {
+      flashStatut(employeId, "err");
+      setMessage?.(err?.message || "Erreur d'enregistrement du salaire.");
+    } finally {
+      setEnCours((prev) => ({ ...prev, [employeId]: false }));
+    }
   }
 
   return (
@@ -866,21 +920,28 @@ function FormChantier({ form, setForm, projets, employes, onSubmit, saving, tele
           <p className="text-sm font-black">Employés assignés &amp; salaire pour ce chantier</p>
           <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">Total: {devise(totalSalaires)}</span>
         </div>
-        <p className="mb-3 text-xs text-muted-foreground">Sélectionnez les employés et indiquez le salaire fixe versé pour ce chantier. Les salaires de tous les chantiers sont automatiquement cumulés sur la fiche de chaque employé.</p>
+        <p className="mb-3 text-xs text-muted-foreground">{instantane ? "Cochez un employé pour l'affecter immédiatement à ce chantier. Les modifications de salaire sont enregistrées dès que vous quittez le champ." : "Sélectionnez les employés et indiquez le salaire fixe versé pour ce chantier. Les salaires seront enregistrés à la création du chantier."}</p>
         <div className="space-y-2">
           {employes.map((e: Employe) => {
             const coche = employesAssignes.includes(e.id);
+            const busy = enCours[e.id];
+            const stat = statutSauvegarde[e.id];
             return (
-              <div key={e.id} className="grid gap-2 rounded-xl border border-border bg-background p-3 sm:grid-cols-[1fr_180px]">
+              <div key={e.id} className="grid gap-2 rounded-xl border border-border bg-background p-3 sm:grid-cols-[1fr_180px_24px]">
                 <label className="flex items-center gap-2 text-sm font-bold">
-                  <input type="checkbox" checked={coche} onChange={(ev) => basculerEmploye(e.id, ev.target.checked)} />
+                  <input type="checkbox" checked={coche} disabled={busy} onChange={(ev) => basculerEmploye(e.id, ev.target.checked)} />
                   <span>{e.nom_complet} <span className="text-xs font-normal text-muted-foreground">· {e.poste || "—"}</span></span>
                 </label>
-                {coche && (
+                {coche ? (
                   <div className="flex items-center gap-2">
-                    <input type="number" min="0" step="0.01" className="form-control" placeholder="Salaire ($)" value={salairesMap[e.id] || ""} onChange={(ev) => changerSalaire(e.id, ev.target.value)} />
+                    <input type="number" min="0" step="0.01" className="form-control" placeholder="Salaire ($)" value={salairesMap[e.id] || ""} disabled={busy} onChange={(ev) => changerSalaire(e.id, ev.target.value)} onBlur={(ev) => sauvegarderSalaire(e.id, ev.target.value)} />
                   </div>
-                )}
+                ) : <div />}
+                <div className="flex items-center justify-center text-xs">
+                  {busy && <span className="animate-pulse text-muted-foreground">…</span>}
+                  {!busy && stat === "ok" && <span className="font-black text-emerald-600" title="Enregistré">✓</span>}
+                  {!busy && stat === "err" && <span className="font-black text-destructive" title="Erreur">!</span>}
+                </div>
               </div>
             );
           })}
@@ -892,7 +953,7 @@ function FormChantier({ form, setForm, projets, employes, onSubmit, saving, tele
       <Champ label="Images chantier"><input type="file" multiple accept="image/*" className="file-input" onChange={(e) => televerserImages(e.target.files)} /></Champ>
       <div className="grid gap-2 sm:grid-cols-2">{(form.images_chantier || []).map((url: string) => <div key={url} className="relative"><img src={url} alt="Image chantier" className="h-28 w-full rounded-xl object-cover" /><button type="button" className="tool-action danger absolute right-2 top-2" onClick={() => retirerImage(url)}><Trash2 className="size-4" /></button></div>)}</div>
       <Champ label="Description"><textarea className="form-control min-h-24" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Champ>
-      <button className="primary-action sm:col-span-2" disabled={saving}><Upload className="size-4" /> Enregistrer</button>
+      <button className="primary-action sm:col-span-2" disabled={saving}><Upload className="size-4" /> Enregistrer{instantane ? " les autres modifications" : ""}</button>
     </form>
   );
 }
