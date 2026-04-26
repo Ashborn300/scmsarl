@@ -1153,85 +1153,203 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     return pdf.output("datauristring");
   }
 
-  pdf.setFillColor(247, 249, 252);
-  pdf.rect(0, 0, 210, 297, "F");
-  pdf.setFillColor(255, 255, 255);
-  pdf.roundedRect(12, 12, 186, 273, 3, 3, "F");
-  pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST");
-  pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST");
-  pdf.setTextColor(...couleurs.principal);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(19);
-  pdf.text(titre.toUpperCase(), 18, 58);
-  pdf.setFontSize(10);
-  pdf.text(`N° ${numero}`, 18, 65);
-  pdf.setFont("helvetica", "normal");
-  pdf.text(`Date : ${new Date().toLocaleDateString("fr-FR")}`, 158, 65);
-  pdf.setDrawColor(...couleurs.secondaire);
-  pdf.setLineWidth(0.7);
-  pdf.line(18, 70, 192, 70);
+  // En-tête réutilisable (pour la 1ère page et les suivantes)
+  const dessinerEnTete = (numeroPage: number) => {
+    pdf.setFillColor(247, 249, 252);
+    pdf.rect(0, 0, 210, 297, "F");
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(12, 12, 186, 273, 3, 3, "F");
+    pdf.addImage(logo, "JPEG", 18, 16, 54, 29, undefined, "FAST");
+    pdf.addImage(drapeauRdc, "PNG", 166, 17, 24, 18, undefined, "FAST");
+    pdf.setTextColor(...couleurs.principal);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(19);
+    pdf.text(titre.toUpperCase(), 18, 58);
+    pdf.setFontSize(10);
+    pdf.text(`N° ${numero}${numeroPage > 1 ? ` — Page ${numeroPage}` : ""}`, 18, 65);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`Date : ${new Date().toLocaleDateString("fr-FR")}`, 158, 65);
+    pdf.setDrawColor(...couleurs.secondaire);
+    pdf.setLineWidth(0.7);
+    pdf.line(18, 70, 192, 70);
+  };
+
+  dessinerEnTete(1);
 
   if (type === "description_projet") {
     creerPdfDescriptionProjet(pdf, champs, couleurs.principal, couleurs.doux, options);
     return pdf.output("datauristring");
   }
 
-  let y = 82;
-  champs.forEach(([label, valeur]) => {
-    y = texteMultiligne(pdf, label, valeur, 20, y, 165, couleurs.principal);
-    if (y > 218) {
-      pdf.addPage();
-      y = 24;
+  // Limites verticales de la zone de contenu (réserve d'espace en bas pour le pied de page)
+  const Y_DEBUT = 82;
+  const Y_LIMITE = 235; // au-delà → nouvelle page
+  let pageCourante = 1;
+
+  // Helper : crée une nouvelle page avec en-tête et retourne le y de départ
+  const passerPageSuivante = () => {
+    pdf.addPage();
+    pageCourante += 1;
+    dessinerEnTete(pageCourante);
+    return Y_DEBUT;
+  };
+
+  // Helper : rendu d'un champ label/valeur dans une colonne donnée, avec pagination
+  const rendreChampColonne = (label: string, valeur: string, x: number, y: number, largeur: number) => {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...couleurs.principal);
+    const labelLignes = pdf.splitTextToSize(label, largeur);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
+    const valeurLignes = pdf.splitTextToSize(valeur || "—", largeur);
+    const hauteurTotale = labelLignes.length * 4.5 + 2 + valeurLignes.length * 4.8 + 4;
+    // Si pas la place pour ce bloc → nouvelle page
+    if (y + hauteurTotale > Y_LIMITE) {
+      y = passerPageSuivante();
+    }
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text(labelLignes, x, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
+    pdf.setTextColor(36, 45, 64);
+    pdf.text(valeurLignes, x, y + labelLignes.length * 4.5 + 2);
+    return y + hauteurTotale;
+  };
+
+  // Disposition en 2 colonnes des champs label/valeur
+  const COL_GAUCHE_X = 20;
+  const COL_DROITE_X = 110;
+  const COL_LARGEUR = 78;
+  let yGauche = Y_DEBUT;
+  let yDroite = Y_DEBUT;
+  let pageGauche = 1;
+  let pageDroite = 1;
+
+  champs.forEach(([label, valeur], index) => {
+    const enGauche = index % 2 === 0;
+    if (enGauche) {
+      // S'assurer que la colonne gauche est sur la page courante
+      if (pageGauche < pageCourante) {
+        yGauche = Y_DEBUT;
+        pageGauche = pageCourante;
+      }
+      const yAvant = yGauche;
+      yGauche = rendreChampColonne(label, valeur, COL_GAUCHE_X, yGauche, COL_LARGEUR);
+      // Si une nouvelle page a été créée pendant le rendu
+      if (pageCourante > pageGauche) {
+        pageGauche = pageCourante;
+        pageDroite = pageCourante;
+        yDroite = yGauche; // la droite reprend au même niveau sur la nouvelle page
+      }
+      // Sinon, conserver l'écart
+      void yAvant;
+    } else {
+      if (pageDroite < pageCourante) {
+        yDroite = Y_DEBUT;
+        pageDroite = pageCourante;
+      }
+      yDroite = rendreChampColonne(label, valeur, COL_DROITE_X, yDroite, COL_LARGEUR);
+      if (pageCourante > pageDroite) {
+        pageDroite = pageCourante;
+        pageGauche = pageCourante;
+        yGauche = yDroite;
+      }
     }
   });
 
+  // y de départ pour la suite (sous la plus basse des deux colonnes, sur la page courante)
+  let y = Math.max(
+    pageGauche === pageCourante ? yGauche : Y_DEBUT,
+    pageDroite === pageCourante ? yDroite : Y_DEBUT,
+  ) + 4;
+
+  // Tableau des prestations / achats (devis, facture, recu)
   if (options.lignes?.length) {
     const titreLignes = type === "devis" ? "Achats à faire" : "Prestations";
     const libellePrix = type === "devis" ? "Coût" : "Prix";
-    y += 2;
+    // S'assurer qu'il reste assez de place pour l'en-tête + au moins 2 lignes
+    if (y + 24 > Y_LIMITE) y = passerPageSuivante();
     pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
     pdf.setTextColor(...couleurs.principal);
     pdf.text(titreLignes, 20, y);
     y += 8;
     pdf.setFillColor(...couleurs.doux);
     pdf.rect(20, y - 5, 168, 8, "F");
+    pdf.setFontSize(9);
     pdf.text("Description", 23, y);
     pdf.text("Qté", 125, y);
     pdf.text(libellePrix, 145, y);
     pdf.text("Total", 168, y);
     pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
     options.lignes.forEach((ligne) => {
-      y += 8;
-      pdf.text(pdf.splitTextToSize(ligne.description || "—", 92), 23, y);
+      const desc = pdf.splitTextToSize(ligne.description || "—", 92);
+      const hauteurLigne = Math.max(8, desc.length * 4.5 + 3);
+      if (y + hauteurLigne > Y_LIMITE) {
+        y = passerPageSuivante();
+        // Réafficher l'en-tête du tableau sur la nouvelle page
+        pdf.setFont("helvetica", "bold");
+        pdf.setFillColor(...couleurs.doux);
+        pdf.rect(20, y - 5, 168, 8, "F");
+        pdf.setTextColor(...couleurs.principal);
+        pdf.text("Description", 23, y);
+        pdf.text("Qté", 125, y);
+        pdf.text(libellePrix, 145, y);
+        pdf.text("Total", 168, y);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(36, 45, 64);
+        y += 8;
+      }
+      y += hauteurLigne - 3;
+      pdf.text(desc, 23, y);
       pdf.text(String(ligne.quantite), 126, y);
       pdf.text(`${ligne.prix.toLocaleString("fr-FR")} $`, 144, y);
       pdf.text(`${(ligne.quantite * ligne.prix).toLocaleString("fr-FR")} $`, 166, y);
+      y += 3;
     });
+    y += 4;
   }
 
+  // Frais à déduire
   if (options.deductions?.length && typeof options.totalAvantDeduction === "number") {
-    y = Math.min(y + 12, 198);
+    const hauteurNecessaire = 8 + options.deductions.length * 7;
+    if (y + hauteurNecessaire > Y_LIMITE) y = passerPageSuivante();
     pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
     pdf.setTextColor(...couleurs.principal);
     pdf.text("Frais à déduire", 20, y);
     pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.setTextColor(36, 45, 64);
     options.deductions.forEach((deduction) => {
       y += 7;
       const montant = options.totalAvantDeduction! * Number(deduction.pourcentage || 0) / 100;
       pdf.text(`${deduction.libelle || "Frais"} (${Number(deduction.pourcentage || 0).toLocaleString("fr-FR")} %)`, 23, y);
       pdf.text(`- ${montant.toLocaleString("fr-FR")} $`, 146, y);
     });
+    y += 6;
   }
 
+  // Bloc TOTAL — toujours sur la dernière page, en bas
   if (type !== "communiquer" && typeof options.total === "number") {
+    // Si pas la place avec le pied de page → nouvelle page
+    if (y + 18 > Y_LIMITE) y = passerPageSuivante();
     pdf.setFillColor(...couleurs.principal);
     pdf.roundedRect(124, 220, 64, 14, 2, 2, "F");
     pdf.setTextColor(255, 255, 255);
     pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
     pdf.text(`TOTAL : ${options.total.toLocaleString("fr-FR")} $`, 130, 229);
   }
 
-  type === "communiquer" ? piedDePageCommunication(pdf, couleurs.principal, options.sceau, options.libelleSceau) : piedDePage(pdf, couleurs.principal, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
+  // Pied de page (sceau + signature) : uniquement sur la dernière page
+  type === "communiquer"
+    ? piedDePageCommunication(pdf, couleurs.principal, options.sceau, options.libelleSceau)
+    : piedDePage(pdf, couleurs.principal, options.sceau, options.signature, options.libelleSceau, options.libelleSignature);
   return pdf.output("datauristring");
 }
 
