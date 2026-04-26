@@ -193,9 +193,35 @@ export async function genererNumero(type: OutilType) {
   return data as string;
 }
 
+const colonnesLourdesParOutil: Partial<Record<OutilType, string[]>> = {
+  facture: ["pdf_base64", "donnees_formulaire"],
+  devis: ["pdf_base64", "donnees_formulaire"],
+  recu: ["pdf_base64", "donnees_formulaire"],
+  contrat_construction: ["pdf_base64", "donnees_formulaire"],
+  contrat_employe: ["pdf_base64", "donnees_formulaire"],
+  description_projet: ["pdf_base64", "donnees_formulaire"],
+  communiquer: ["pdf_base64", "donnees_formulaire"],
+  certificat: ["pdf_base64", "donnees_formulaire"],
+  carte_service: ["pdf_base64", "image_base64", "donnees_formulaire"],
+  rendu_3d: ["image_base64", "donnees_formulaire"],
+  realistic_sketchup: ["image_base64", "donnees_formulaire"],
+  plan_architectural: ["image_base64", "donnees_formulaire"],
+  fiche_employe: ["pdf_base64", "donnees_formulaire"],
+  code_qr: ["qr_base64", "donnees_formulaire"],
+  lettre_licenciement: ["pdf_base64", "donnees_formulaire"],
+  facture_employe: ["pdf_base64", "donnees_formulaire"],
+  version_nuit: ["image_base64", "donnees_formulaire"],
+};
+
+function colonnesLegeresPourOutil(type: OutilType) {
+  const lourdes = colonnesLourdesParOutil[type];
+  if (!lourdes || lourdes.length === 0) return "*";
+  return lourdes.map((colonne) => `-${colonne}`).join(",");
+}
+
 export async function listerDocuments(type: OutilType, recherche = "") {
   const table = tablesParOutil[type];
-  let requete = db.from(table).select("*").order("created_at", { ascending: false });
+  let requete = db.from(table).select(colonnesLegeresPourOutil(type)).order("created_at", { ascending: false }).limit(200);
   if (recherche.trim()) {
     const terme = `%${recherche.trim()}%`;
     requete = requete.or(colonnesRechercheParOutil[type].map((colonne) => `${colonne}.ilike.${terme}`).join(","));
@@ -205,10 +231,17 @@ export async function listerDocuments(type: OutilType, recherche = "") {
   return (data ?? []) as DocumentRecord[];
 }
 
+export async function chargerDocumentComplet(type: OutilType, id: string) {
+  const table = tablesParOutil[type];
+  const { data, error } = await db.from(table).select("*").eq("id", id).single();
+  if (error) throw new Error(error.message);
+  return data as DocumentRecord;
+}
+
 export async function listerDocumentsRecents() {
   const resultats = await Promise.all(
     (Object.keys(tablesParOutil) as OutilType[]).map(async (type) => {
-      const { data } = await db.from(tablesParOutil[type]).select("*").order("created_at", { ascending: false }).limit(4);
+      const { data } = await db.from(tablesParOutil[type]).select(colonnesLegeresPourOutil(type)).order("created_at", { ascending: false }).limit(4);
       return (data ?? []).map((document: DocumentRecord) => ({ ...document, type }));
     }),
   );
