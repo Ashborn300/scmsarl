@@ -152,7 +152,7 @@ type IncidentChantier = { id: string; chef_chantier_id: string; chef_chantier_no
 
 type ProjetForm = Omit<Projet, "id" | "created_at" | "budget_estime"> & { budget_estime: string };
 type EmployeForm = Omit<Employe, "id" | "created_at" | "salaire" | "salaire_total" | "salaire_recu" | "salaire_restant"> & { salaire_total: string; salaire_recu: string };
-type ChantierForm = Omit<Chantier, "id" | "created_at" | "budget_global" | "images_chantier"> & { budget_global: string; images_chantier: string[]; salaires_employes: Record<string, string> };
+type ChantierForm = Omit<Chantier, "id" | "created_at" | "budget_global" | "images_chantier"> & { budget_global: string; images_chantier: string[]; salaires_employes?: Record<string, string> };
 type RecuEmployePaiement = { id: string; numero: string; employe_id: string; employe_nom: string; matricule: string; chantier_id: string | null; chantier_nom: string; montant: number; motif: string; statut: "en_attente" | "confirme" | "refuse"; date_envoi: string; date_confirmation: string | null; pdf_base64: string; created_at: string };
 type AnnonceForm = Pick<Annonce, "titre" | "contenu" | "image_url" | "publiee">;
 
