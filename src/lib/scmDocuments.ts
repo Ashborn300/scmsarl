@@ -751,19 +751,51 @@ export async function creerPdfFicheEmploye(typeFiche: string, employes: EmployeR
   ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, typeFiche === "collective" ? "Fiche collective des employés" : "Fiche individuelle de l’employé", numero, couleurs.principal);
 
   if (typeFiche === "collective") {
-    let x = 20;
-    let y = 84;
+    // Mise en page : 6 employés par page (3 lignes × 2 colonnes)
+    const carteLargeur = 84;
+    const carteHauteur = 58;
+    const margeX = 18;
+    const espaceX = 6;
+    const debutY = 80;
+    const espaceY = 6;
     employes.forEach((employe, index) => {
-      if (y > 226) { piedDePage(pdf, couleurs.principal, sceau, undefined, "Sceau de l’entreprise", ""); pdf.addPage(); ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche collective des employés", numero, couleurs.principal); x = 20; y = 84; }
+      const indexPage = index % 6;
+      if (indexPage === 0 && index > 0) {
+        piedDePage(pdf, couleurs.principal, sceau, undefined, "Sceau de l’entreprise", "");
+        pdf.addPage();
+        ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche collective des employés", numero, couleurs.principal);
+      }
+      const colonne = indexPage % 2;
+      const ligne = Math.floor(indexPage / 2);
+      const x = margeX + colonne * (carteLargeur + espaceX);
+      const y = debutY + ligne * (carteHauteur + espaceY);
+      // Carte de l'employé
       pdf.setFillColor(...couleurs.doux);
-      pdf.roundedRect(x, y - 6, 81, 42, 2, 2, "F");
-      ajouterImageSiValide(pdf, employe.photo_profil, x + 4, y - 1, 24, 24);
+      pdf.roundedRect(x, y, carteLargeur, carteHauteur, 3, 3, "F");
+      pdf.setDrawColor(...couleurs.principal);
+      pdf.setLineWidth(0.3);
+      pdf.roundedRect(x, y, carteLargeur, carteHauteur, 3, 3, "S");
+      // Bandeau numéro
+      pdf.setFillColor(...couleurs.principal);
+      pdf.roundedRect(x, y, carteLargeur, 7, 3, 3, "F");
+      pdf.rect(x, y + 4, carteLargeur, 3, "F");
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(255, 255, 255);
+      pdf.text(`Employé n° ${index + 1}`, x + 3, y + 5);
+      // Photo
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(x + 4, y + 11, 22, 22, 2, 2, "F");
+      ajouterImageSiValide(pdf, employe.photo_profil, x + 4, y + 11, 22, 22);
+      // Nom
       pdf.setFont("helvetica", "bold"); pdf.setFontSize(9.5); pdf.setTextColor(...couleurs.principal);
-      pdf.text(pdf.splitTextToSize(`${index + 1}. ${employe.nom_complet || "—"}`, 47), x + 32, y + 2);
-      pdf.setFont("helvetica", "normal"); pdf.setFontSize(8.2); pdf.setTextColor(45, 55, 72);
-      pdf.text(`Matricule : ${employe.matricule || "—"}`, x + 32, y + 17);
-      pdf.text(`Genre : ${employe.genre || "—"}`, x + 32, y + 25);
-      if (x < 90) x = 107; else { x = 20; y += 49; }
+      const nomLignes = pdf.splitTextToSize(employe.nom_complet || "—", 52);
+      pdf.text(nomLignes.slice(0, 2), x + 30, y + 16);
+      // Infos
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(8); pdf.setTextColor(45, 55, 72);
+      pdf.text(`Matricule : ${employe.matricule || "—"}`, x + 30, y + 27);
+      pdf.text(`Genre : ${employe.genre || "—"}`, x + 30, y + 32);
+      pdf.text(`Tél : ${employe.telephone || "—"}`, x + 4, y + 41);
+      pdf.text(`Poste : ${employe.poste || "—"}`, x + 4, y + 47);
+      pdf.text(pdf.splitTextToSize(`Email : ${employe.email || "—"}`, carteLargeur - 8), x + 4, y + 53);
     });
     piedDePage(pdf, couleurs.principal, sceau, undefined, "Sceau de l’entreprise", "");
     return pdf.output("datauristring");
