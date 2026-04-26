@@ -711,9 +711,26 @@ function EmployePage() {
 
   function changerOnglet(tab: Onglet) { setOnglet(tab); setRecherche(""); setMenuOuvert(false); }
 
+  async function confirmerRecuPaiement(recuId: string) {
+    if (!session?.employeId) return;
+    if (!confirm("Confirmer la réception de ce paiement ? Le montant sera déduit de votre salaire restant.")) return;
+    setSauvegarde(true);
+    const { data, error } = await db.rpc("confirmer_recu_employe", { _recu_id: recuId, _employe_id: session.employeId });
+    setSauvegarde(false);
+    if (error || !data?.success) { setMessage(data?.message || error?.message || "Confirmation impossible."); return; }
+    setMessage("Reçu confirmé. Salaire restant mis à jour.");
+    await chargerDonnees();
+  }
+
+  function ouvrirPdfRecu(pdfBase64: string) {
+    if (!pdfBase64) return alert("PDF indisponible.");
+    const w = window.open();
+    if (w) w.document.write(`<iframe src="${pdfBase64}" style="width:100%;height:100vh;border:0;"></iframe>`);
+  }
+
   if (!session) return <LoginScreen identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
 
-  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "arrivage_materiel" ? "Rapport arrivage de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : "Présences";
+  const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "arrivage_materiel" ? "Rapport arrivage de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : onglet === "paiement" ? "Paiement" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
   const chantierPresence = chantiersVisibles.find((c) => c.id === presenceChantier) || chantiersVisibles[0];
   const employesPresence = chantierPresence ? employes.filter((e) => (chantierPresence.employes_assignes || []).includes(e.id)) : [];
