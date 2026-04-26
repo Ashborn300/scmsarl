@@ -1340,6 +1340,66 @@ export type Database = {
         }
         Relationships: []
       }
+      recus_employes: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          created_at: string
+          date_confirmation: string | null
+          date_envoi: string
+          donnees_formulaire: Json
+          employe_id: string
+          employe_nom: string
+          id: string
+          matricule: string
+          montant: number
+          motif: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date_confirmation?: string | null
+          date_envoi?: string
+          donnees_formulaire?: Json
+          employe_id: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          montant?: number
+          motif?: string
+          nom_fichier?: string
+          numero: string
+          pdf_base64?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date_confirmation?: string | null
+          date_envoi?: string
+          donnees_formulaire?: Json
+          employe_id?: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          montant?: number
+          motif?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rendus_3d: {
         Row: {
           created_at: string
@@ -1407,6 +1467,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      salaires_chantier: {
+        Row: {
+          chantier_id: string
+          created_at: string
+          employe_id: string
+          id: string
+          montant: number
+          updated_at: string
+        }
+        Insert: {
+          chantier_id: string
+          created_at?: string
+          employe_id: string
+          id?: string
+          montant?: number
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string
+          created_at?: string
+          employe_id?: string
+          id?: string
+          montant?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       scm_sessions: {
         Row: {
@@ -1483,6 +1570,10 @@ export type Database = {
     }
     Functions: {
       acces_application_scm: { Args: never; Returns: boolean }
+      confirmer_recu_employe: {
+        Args: { _employe_id: string; _recu_id: string }
+        Returns: Json
+      }
       generer_numero_document: {
         Args: { _prefixe: string; _type_document: string }
         Returns: string
