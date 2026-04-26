@@ -517,6 +517,20 @@ function EmployePage() {
       await db.from("employes").update({ salaire: totalCumule, salaire_total: totalCumule, salaire_restant: Math.max(totalCumule - recu, 0) }).eq("id", employeId);
     }
 
+    // Synchroniser chantier_assigne sur la fiche employé pour cohérence
+    const nouveauxIds = formChantier.employes_assignes || [];
+    if (nouveauxIds.length) {
+      await db.from("employes").update({ chantier_assigne: chantierId }).in("id", nouveauxIds);
+    }
+    const retires = (ancienChantier?.employes_assignes || []).filter((id) => !nouveauxIds.includes(id));
+    if (retires.length) {
+      // Ne nettoyer que ceux qui pointaient vers ce chantier
+      const aNettoyer = retires.filter((id) => employes.find((e) => e.id === id)?.chantier_assigne === chantierId);
+      if (aNettoyer.length) {
+        await db.from("employes").update({ chantier_assigne: null }).in("id", aNettoyer);
+      }
+    }
+
     await finaliserSauvegarde(null, "Chantier enregistré.");
   }
 
