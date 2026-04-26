@@ -958,6 +958,64 @@ function FormChantier({ form, setForm, projets, employes, onSubmit, saving, tele
   );
 }
 function Details({ detail, projets, employes, chantiers, presences, annonces, admin, role, viewerId, saving, televerserPhotoProfil, retirerPhotoProfil, modifier, supprimer }: any) { const item = detail.type === "projets" ? projets.find((x: Projet) => x.id === detail.id) : detail.type === "employes" ? employes.find((x: Employe) => x.id === detail.id) : detail.type === "chantiers" ? chantiers.find((x: Chantier) => x.id === detail.id) : detail.type === "annonces" ? annonces.find((x: Annonce) => x.id === detail.id) : presences.find((x: Presence) => x.id === detail.id); if (!item) return <p>Donnée introuvable.</p>; const canEdit = admin && detail.type !== "presences"; if (detail.type === "annonces") { const a = item as Annonce; return <div className="space-y-4">{a.image_url && <img src={a.image_url} alt={`Image annonce ${a.titre}`} className="max-h-80 w-full rounded-2xl object-cover" loading="lazy" />}<div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">{dateFr(a.created_at)}</p><h3 className="mt-1 text-2xl font-black">{a.titre}</h3></div><p className="whitespace-pre-wrap rounded-xl bg-muted p-4 text-sm leading-6">{a.contenu}</p>{admin && <button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button>}</div>; } if (detail.type === "presences") { const p = item as Presence; return <div className="space-y-4"><Info icone={CalendarDays} label="Date" valeur={dateFr(p.date)} /><Info icone={HardHat} label="Chantier" valeur={nomChantier(chantiers, p.chantier_id)} /><Info icone={UserRound} label="Chef" valeur={nomEmploye(employes, p.chef_chantier_id)} /><div className="space-y-2">{p.employes_presence.map((e) => <div key={e.employe_id} className="rounded-xl border border-border bg-background p-3 font-bold">{e.nom_complet} — {e.statut}</div>)}</div><p className="rounded-xl bg-muted p-4 text-sm">{p.notes || "Aucune note."}</p></div>; } if (detail.type === "chantiers") { const c = item as Chantier; const canSeeBudget = admin || (role === "chef_chantier" && c.chef_chantier === viewerId && c.autoriser_budget_chef); return <div className="space-y-4"><h3 className="text-2xl font-black">{c.nom_chantier}</h3><div className="grid gap-3 sm:grid-cols-2"><Info icone={MapPin} label="Localisation" valeur={c.localisation || "Non définie"} /><Info icone={HardHat} label="Chef" valeur={nomEmploye(employes, c.chef_chantier)} /><Info icone={BriefcaseBusiness} label="Projet" valeur={nomProjet(projets, c.projet_lie)} /><Info icone={canSeeBudget ? Eye : EyeOff} label="Budget global" valeur={canSeeBudget ? devise(c.budget_global || 0) : "Masqué"} /></div><p className="rounded-xl bg-muted p-4 text-sm">{c.description || "Aucune description."}</p><div className="grid gap-3 sm:grid-cols-2">{(c.images_chantier || []).map((url) => <img key={url} src={url} alt={`Image du chantier ${c.nom_chantier}`} className="h-48 w-full rounded-2xl object-cover" loading="lazy" />)}</div><EmployesAffectesChantier chantierId={c.id} employes={employes} />{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; } if (detail.type === "employes") { const e = item as Employe; const canUpdateOwnPhoto = !admin && e.id === viewerId; return <div className="space-y-4">{e.photo_profil ? <img src={e.photo_profil} alt={`Photo de ${e.nom_complet}`} className="h-28 w-28 rounded-2xl object-cover" loading="lazy" /> : <span className="flex h-28 w-28 items-center justify-center rounded-2xl bg-muted"><UserRound className="size-10 text-muted-foreground" /></span>}{canUpdateOwnPhoto && <div className="rounded-2xl border border-border bg-background p-4"><p className="mb-3 text-sm font-black">Photo de profil</p><input type="file" accept="image/*" className="file-input" disabled={saving} onChange={(event) => televerserPhotoProfil(event.target.files)} />{e.photo_profil && <button type="button" className="mini-button mt-3" disabled={saving} onClick={retirerPhotoProfil}>Retirer la photo</button>}</div>}<h3 className="text-2xl font-black">{e.nom_complet}</h3><div className="grid gap-3 sm:grid-cols-2"><Info icone={UserRound} label="Matricule" valeur={e.matricule || "Non défini"} /><Info icone={BriefcaseBusiness} label="Poste" valeur={e.poste || "Non défini"} /><Info icone={UsersRound} label="Genre" valeur={e.genre || "Non précisé"} /><Info icone={CalendarDays} label="Admission" valeur={dateFr(e.date_admission)} /><Info icone={CalendarDays} label="Naissance" valeur={dateFr(e.date_naissance)} /><Info icone={UserRound} label="Email" valeur={e.email || "Non défini"} /><Info icone={UserRound} label="Téléphone" valeur={e.telephone || "Non défini"} /><Info icone={ClipboardList} label="Pièce d’identité" valeur={e.numero_piece_identite || "Non définie"} /><Info icone={ShieldCheck} label="Contact d’urgence" valeur={e.contact_urgence || "Non défini"} /><Info icone={HardHat} label="Chantier" valeur={nomChantier(chantiers, e.chantier_assigne)} /></div><p className="rounded-xl bg-muted p-4 text-sm">{e.adresse || "Adresse non définie."}</p>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; } return <div className="space-y-4"><h3 className="text-2xl font-black">{(item as any).nom_projet || (item as any).nom_complet}</h3><pre className="overflow-auto rounded-xl bg-muted p-4 text-xs">{JSON.stringify(item, null, 2)}</pre>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; }
+function EmployesAffectesChantier({ chantierId, employes }: { chantierId: string; employes: Employe[] }) {
+  const [salaires, setSalaires] = useState<Record<string, number>>({});
+  const [chargement, setChargement] = useState(true);
+
+  useEffect(() => {
+    let actif = true;
+    setChargement(true);
+    db.from("salaires_chantier").select("employe_id, montant").eq("chantier_id", chantierId).then(({ data }: { data: { employe_id: string; montant: number }[] | null }) => {
+      if (!actif) return;
+      const map: Record<string, number> = {};
+      (data || []).forEach((s) => { map[s.employe_id] = Number(s.montant || 0); });
+      setSalaires(map);
+      setChargement(false);
+    });
+    return () => { actif = false; };
+  }, [chantierId]);
+
+  const ids = Object.keys(salaires);
+  const lignes = ids.map((id) => ({ id, employe: employes.find((e) => e.id === id), montant: salaires[id] })).filter((l) => l.employe);
+  const total = lignes.reduce((sum, l) => sum + (l.montant || 0), 0);
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-document">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <UsersRound className="size-5 text-primary" />
+          <h4 className="text-base font-black">Employés affectés ({lignes.length})</h4>
+        </div>
+        {!!lignes.length && <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">Masse salariale : {devise(total)}</span>}
+      </div>
+      {chargement ? (
+        <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">Chargement…</p>
+      ) : lignes.length ? (
+        <ul className="space-y-2">
+          {lignes.map((l) => (
+            <li key={l.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3">
+              <div className="flex items-center gap-3 min-w-0">
+                {l.employe?.photo_profil ? (
+                  <img src={l.employe.photo_profil} alt={`Photo ${l.employe.nom_complet}`} className="size-10 rounded-full object-cover" loading="lazy" />
+                ) : (
+                  <span className="flex size-10 items-center justify-center rounded-full bg-muted"><UserRound className="size-5 text-muted-foreground" /></span>
+                )}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black">{l.employe?.nom_complet}</p>
+                  <p className="truncate text-xs text-muted-foreground">{l.employe?.poste || "—"} · {l.employe?.matricule || "Sans matricule"}</p>
+                </div>
+              </div>
+              <span className="shrink-0 rounded-lg bg-primary/10 px-3 py-1 text-sm font-black text-primary">{devise(l.montant)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">Aucun employé affecté à ce chantier.</p>
+      )}
+    </section>
+  );
+}
+
 function nomProjet(projets: Projet[], id?: string | null) { return projets.find((p) => p.id === id)?.nom_projet || "Non lié"; }
 function nomChantier(chantiers: Chantier[], id?: string | null) { return chantiers.find((c) => c.id === id)?.nom_chantier || "Non assigné"; }
 function nomEmploye(employes: Employe[], id?: string | null) { return employes.find((e) => e.id === id)?.nom_complet || "Non défini"; }
