@@ -1578,6 +1578,22 @@ export type Database = {
         Args: { _prefixe: string; _type_document: string }
         Returns: string
       }
+      scm_get_employe_public: {
+        Args: { _employe_id: string }
+        Returns: {
+          adresse: string
+          date_admission: string
+          email: string
+          genre: string
+          id: string
+          matricule: string
+          nom_complet: string
+          photo_profil: string
+          poste: string
+          statut: string
+          telephone: string
+        }[]
+      }
       scm_get_session: { Args: { _token_hash: string }; Returns: Json }
       scm_login_admin: {
         Args: { _token_hash: string; _username: string }
