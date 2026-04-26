@@ -783,7 +783,7 @@ function EmployePage() {
       </div>
       <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-border bg-card/95 p-2 shadow-document backdrop-blur lg:hidden"><BoutonMobile actif={onglet === "dashboard"} icone={LayoutDashboard} label="Accueil" onClick={() => changerOnglet("dashboard")} /><BoutonMobile actif={onglet === "annonces"} icone={Megaphone} label="Annonces" onClick={() => changerOnglet("annonces")} /><BoutonMobile actif={onglet === "employes"} icone={UsersRound} label="Profil" onClick={() => changerOnglet("employes")} /><BoutonMobile actif={onglet === "calendrier"} icone={CalendarDays} label="Fériés" onClick={() => changerOnglet("calendrier")} /><BoutonMobile actif={onglet === "bilan_sante"} icone={HeartPulse} label="Santé" onClick={() => changerOnglet("bilan_sante")} /></nav>
       {annonceModal && <Modal titre="Nouvelle annonce" fermer={() => setAnnonceModal(null)}><FormAnnonce form={formAnnonce} setForm={setFormAnnonce} onSubmit={enregistrerAnnonce} saving={sauvegarde} televerserImage={televerserImageAnnonce} retirerImage={retirerImageAnnonce} /></Modal>}
-      {edition && <Modal titre={edition.id ? "Modifier" : "Créer"} fermer={() => setEdition(null)}>{edition.type === "projets" && <FormProjet form={formProjet} setForm={setFormProjet} onSubmit={enregistrerProjet} saving={sauvegarde} />}{edition.type === "employes" && <FormEmploye form={formEmploye} setForm={setFormEmploye} chantiers={chantiers} onSubmit={enregistrerEmploye} saving={sauvegarde} televerserPhoto={televerserPhotoEmploye} retirerPhoto={retirerPhotoEmploye} />}{edition.type === "chantiers" && <FormChantier form={formChantier} setForm={setFormChantier} projets={projets} employes={employes} onSubmit={enregistrerChantier} saving={sauvegarde} televerserImages={televerserImages} retirerImage={retirerImage} />}</Modal>}
+      {edition && <Modal titre={edition.id ? "Modifier" : "Créer"} fermer={() => setEdition(null)}>{edition.type === "projets" && <FormProjet form={formProjet} setForm={setFormProjet} onSubmit={enregistrerProjet} saving={sauvegarde} />}{edition.type === "employes" && <FormEmploye form={formEmploye} setForm={setFormEmploye} chantiers={chantiers} onSubmit={enregistrerEmploye} saving={sauvegarde} televerserPhoto={televerserPhotoEmploye} retirerPhoto={retirerPhotoEmploye} />}{edition.type === "chantiers" && <FormChantier form={formChantier} setForm={setFormChantier} projets={projets} employes={employes} onSubmit={enregistrerChantier} saving={sauvegarde} televerserImages={televerserImages} retirerImage={retirerImage} chantierId={edition.id} rechargerDonnees={chargerDonnees} setMessage={setMessage} />}</Modal>}
       {detail && <Modal titre="Détails" fermer={() => setDetail(null)}><Details detail={detail} projets={projetsVisibles} employes={employesVisibles} chantiers={chantiersVisibles} presences={presencesVisibles} annonces={annoncesVisibles} admin={isAdmin} role={session.role} viewerId={session.employeId} saving={sauvegarde} televerserPhotoProfil={televerserMaPhotoProfil} retirerPhotoProfil={retirerMaPhotoProfil} modifier={() => detail.type !== "presences" && detail.type !== "annonces" && ouvrirEdition(detail.type, detail.id)} supprimer={() => detail.type === "annonces" ? supprimerAnnonce(detail.id) : detail.type !== "presences" && supprimer(detail.type, detail.id)} /></Modal>}
       {jourPopup && <Modal titre="Jour férié / non travaillé" fermer={() => { localStorage.setItem(`scm-jour-popup-${jourPopup.id}`, new Date().toISOString().slice(0, 10)); setJourPopup(null); }}><div className="tool-holiday-calendar rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool"><CalendarDays className="mb-4 size-10" /><p className="text-sm font-black uppercase opacity-85">{dateFr(jourPopup.date_jour)}</p><h2 className="mt-2 text-3xl font-black">{jourPopup.titre}</h2><p className="mt-3 leading-7 opacity-90">{jourPopup.description || "Cette date a été déclarée jour férié ou jour non travaillé par l’administration."}</p></div></Modal>}
     </main>
@@ -833,21 +833,75 @@ function FormAnnonce({ form, setForm, onSubmit, saving, televerserImage, retirer
 function PresencesSection(props: any) { return <div className="space-y-5">{props.chef && <form onSubmit={props.submit} className="rounded-2xl border border-border bg-card p-5 shadow-document"><h3 className="text-xl font-black">Nouvelle présence quotidienne</h3><div className="mt-4 grid gap-4 md:grid-cols-2"><Champ label="Date"><input type="date" className="form-control" value={props.presenceDate} onChange={(e) => props.setPresenceDate(e.target.value)} /></Champ><Champ label="Chantier"><Select value={props.presenceChantier} onChange={props.setPresenceChantier}>{props.chantiersVisibles.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select></Champ></div><div className="mt-4 space-y-3">{props.employesPresence.map((e: Employe) => <div key={e.id} className="flex flex-col gap-2 rounded-xl border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"><p className="font-bold">{e.nom_complet}</p><Select value={props.presenceStatuts[e.id] || "présent"} onChange={(v: StatutPresence) => props.setPresenceStatuts({ ...props.presenceStatuts, [e.id]: v })}>{statutsPresence.map((s) => <option key={s} value={s}>{s}</option>)}</Select></div>)}</div><Champ label="Notes"><textarea className="form-control mt-4 min-h-24" value={props.presenceNotes} onChange={(e) => props.setPresenceNotes(e.target.value)} /></Champ><button className="primary-action mt-4" disabled={props.saving}><ClipboardCheck className="size-4" /> Enregistrer la présence</button></form>}<div className="grid gap-3 rounded-2xl border border-border bg-card p-4 shadow-document md:grid-cols-4"><input type="date" className="form-control" value={props.filtreDate} onChange={(e) => props.setFiltreDate(e.target.value)} /><Select value={props.filtreChantier} onChange={props.setFiltreChantier}><option value="">Tous les chantiers</option>{props.chantiers.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select><Select value={props.filtreEmploye} onChange={props.setFiltreEmploye}><option value="">Tous les employés</option>{props.employes.map((e: Employe) => <option key={e.id} value={e.id}>{e.nom_complet}</option>)}</Select><Select value={props.filtreChef} onChange={props.setFiltreChef}><option value="">Tous les chefs</option>{props.chefs.map((e: Employe) => <option key={e.id} value={e.id}>{e.nom_complet}</option>)}</Select></div><div className="grid gap-4 xl:grid-cols-2">{props.presences.map((p: Presence) => <article key={p.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex items-start justify-between gap-4"><div><h3 className="text-xl font-black">{dateFr(p.date)}</h3><p className="text-sm text-muted-foreground">{nomChantier(props.chantiers, p.chantier_id)} • {nomEmploye(props.employes, p.chef_chantier_id)}</p></div><button className="mini-button" onClick={() => props.voir(p.id)}>Voir</button></div><p className="mt-3 text-sm font-bold">{p.employes_presence.length} employé(s)</p></article>)}</div></div>; }
 function FormProjet({ form, setForm, onSubmit, saving }: any) { return <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2"><Champ label="Nom du projet"><input className="form-control" value={form.nom_projet} onChange={(e) => setForm({ ...form, nom_projet: e.target.value })} /></Champ><Champ label="Client"><input className="form-control" value={form.client} onChange={(e) => setForm({ ...form, client: e.target.value })} /></Champ><Champ label="Localisation"><input className="form-control" value={form.localisation} onChange={(e) => setForm({ ...form, localisation: e.target.value })} /></Champ><Champ label="Budget estimé"><input type="number" className="form-control" value={form.budget_estime} onChange={(e) => setForm({ ...form, budget_estime: e.target.value })} /></Champ><Champ label="Statut"><Select value={form.statut} onChange={(v: string) => setForm({ ...form, statut: v })}>{statutsProjet.map((s) => <option key={s}>{s}</option>)}</Select></Champ><Champ label="Date début"><input type="date" className="form-control" value={form.date_debut} onChange={(e) => setForm({ ...form, date_debut: e.target.value })} /></Champ><Champ label="Date fin prévue"><input type="date" className="form-control" value={form.date_fin_prevue} onChange={(e) => setForm({ ...form, date_fin_prevue: e.target.value })} /></Champ><Champ label="Description"><textarea className="form-control min-h-24" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Champ><button className="primary-action sm:col-span-2" disabled={saving}>Enregistrer</button></form>; }
 function FormEmploye({ form, setForm, chantiers, onSubmit, saving, televerserPhoto, retirerPhoto }: any) { return <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2"><div className="rounded-2xl border border-border bg-background p-4 sm:col-span-2"><p className="mb-3 text-sm font-black text-foreground">Photo de profil</p><div className="flex flex-col gap-4 sm:flex-row sm:items-center"><div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-muted">{form.photo_profil ? <img src={form.photo_profil} alt="Photo de profil employé" className="h-full w-full object-cover" /> : <UserRound className="size-10 text-muted-foreground" />}</div><div className="flex-1 space-y-2"><input type="file" accept="image/*" className="file-input" onChange={(e) => televerserPhoto(e.target.files)} />{form.photo_profil && <button type="button" className="mini-button" onClick={retirerPhoto}>Retirer la photo</button>}</div></div></div><Champ label="Nom complet"><input className="form-control" maxLength={120} value={form.nom_complet} onChange={(e) => setForm({ ...form, nom_complet: e.target.value })} /></Champ><Champ label="Matricule unique"><input className="form-control" maxLength={40} value={form.matricule} onChange={(e) => setForm({ ...form, matricule: e.target.value })} /></Champ><Champ label="Genre"><Select value={form.genre || ""} onChange={(v: string) => setForm({ ...form, genre: v })}><option value="">Non précisé</option><option value="homme">Homme</option><option value="femme">Femme</option><option value="autre">Autre</option></Select></Champ><Champ label="Date d’admission"><input type="date" className="form-control" value={form.date_admission || ""} onChange={(e) => setForm({ ...form, date_admission: e.target.value })} /></Champ><Champ label="Date de naissance"><input type="date" className="form-control" value={form.date_naissance || ""} onChange={(e) => setForm({ ...form, date_naissance: e.target.value })} /></Champ><Champ label="Email"><input type="email" className="form-control" maxLength={160} value={form.email || ""} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Champ><Champ label="Poste"><input className="form-control" maxLength={100} value={form.poste} onChange={(e) => setForm({ ...form, poste: e.target.value })} /></Champ><Champ label="Téléphone"><input className="form-control" maxLength={40} value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} /></Champ><Champ label="Pièce d’identité"><input className="form-control" maxLength={80} value={form.numero_piece_identite || ""} onChange={(e) => setForm({ ...form, numero_piece_identite: e.target.value })} /></Champ><Champ label="Contact d’urgence"><input className="form-control" maxLength={120} value={form.contact_urgence || ""} onChange={(e) => setForm({ ...form, contact_urgence: e.target.value })} /></Champ><Champ label="Salaire total"><input type="number" className="form-control" value={form.salaire_total} onChange={(e) => setForm({ ...form, salaire_total: e.target.value })} /></Champ><Champ label="Salaire reçu"><input type="number" className="form-control" value={form.salaire_recu} onChange={(e) => setForm({ ...form, salaire_recu: e.target.value })} /></Champ><Champ label="Rôle"><Select value={form.role} onChange={(v: string) => setForm({ ...form, role: v })}><option value="employe">Employé</option><option value="chef_chantier">Chef de chantier</option></Select></Champ><Champ label="Statut"><Select value={form.statut} onChange={(v: string) => setForm({ ...form, statut: v })}>{statutsEmploye.map((s) => <option key={s}>{s}</option>)}</Select></Champ><Champ label="Chantier assigné"><Select value={form.chantier_assigne || ""} onChange={(v: string) => setForm({ ...form, chantier_assigne: v })}><option value="">Aucun</option>{chantiers.map((c: Chantier) => <option key={c.id} value={c.id}>{c.nom_chantier}</option>)}</Select></Champ><Champ label="Adresse"><input className="form-control" maxLength={180} value={form.adresse} onChange={(e) => setForm({ ...form, adresse: e.target.value })} /></Champ><label className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 text-sm font-bold sm:col-span-2"><input type="checkbox" checked={!!form.peut_voir_budget} onChange={(e) => setForm({ ...form, peut_voir_budget: e.target.checked })} /> Autoriser cet employé à voir les budgets si nécessaire</label><button className="primary-action sm:col-span-2" disabled={saving}>Enregistrer</button></form>; }
-function FormChantier({ form, setForm, projets, employes, onSubmit, saving, televerserImages, retirerImage }: any) {
+function FormChantier({ form, setForm, projets, employes, onSubmit, saving, televerserImages, retirerImage, chantierId, rechargerDonnees, setMessage }: any) {
   const chefs = employes.filter((e: Employe) => e.role === "chef_chantier");
   const employesAssignes: string[] = form.employes_assignes || [];
   const salairesMap: Record<string, string> = form.salaires_employes || {};
   const totalSalaires = employesAssignes.reduce((sum, id) => sum + (Number(salairesMap[id]) || 0), 0);
+  const instantane = !!chantierId;
+  const [enCours, setEnCours] = useState<Record<string, boolean>>({});
+  const [statutSauvegarde, setStatutSauvegarde] = useState<Record<string, "ok" | "err" | null>>({});
 
-  function basculerEmploye(employeId: string, ajoute: boolean) {
+  async function recalculerSalaireEmploye(employeId: string) {
+    const { data: lignes } = await db.from("salaires_chantier").select("montant").eq("employe_id", employeId);
+    const totalCumule = (lignes || []).reduce((sum: number, l: { montant: number }) => sum + Number(l.montant || 0), 0);
+    const emp = employes.find((e: Employe) => e.id === employeId);
+    const recu = Number(emp?.salaire_recu || 0);
+    await db.from("employes").update({ salaire: totalCumule, salaire_total: totalCumule, salaire_restant: Math.max(totalCumule - recu, 0) }).eq("id", employeId);
+  }
+
+  function flashStatut(employeId: string, statut: "ok" | "err") {
+    setStatutSauvegarde((prev) => ({ ...prev, [employeId]: statut }));
+    setTimeout(() => setStatutSauvegarde((prev) => ({ ...prev, [employeId]: null })), 1800);
+  }
+
+  async function basculerEmploye(employeId: string, ajoute: boolean) {
     const nouveauxAssignes = ajoute ? [...employesAssignes, employeId] : employesAssignes.filter((id) => id !== employeId);
     const nouveauxSalaires = { ...salairesMap };
     if (!ajoute) delete nouveauxSalaires[employeId];
     setForm({ ...form, employes_assignes: nouveauxAssignes, salaires_employes: nouveauxSalaires });
+
+    if (!instantane) return;
+    setEnCours((prev) => ({ ...prev, [employeId]: true }));
+    try {
+      const { error: errChantier } = await db.from("chantiers").update({ employes_assignes: nouveauxAssignes }).eq("id", chantierId);
+      if (errChantier) throw errChantier;
+      if (ajoute) {
+        const montant = Number(nouveauxSalaires[employeId] || 0);
+        await db.from("salaires_chantier").upsert({ chantier_id: chantierId, employe_id: employeId, montant }, { onConflict: "chantier_id,employe_id" });
+      } else {
+        await db.from("salaires_chantier").delete().eq("chantier_id", chantierId).eq("employe_id", employeId);
+      }
+      await recalculerSalaireEmploye(employeId);
+      flashStatut(employeId, "ok");
+      await rechargerDonnees?.();
+    } catch (err: any) {
+      flashStatut(employeId, "err");
+      setMessage?.(err?.message || "Erreur lors de l'affectation.");
+    } finally {
+      setEnCours((prev) => ({ ...prev, [employeId]: false }));
+    }
   }
 
   function changerSalaire(employeId: string, valeur: string) {
     setForm({ ...form, salaires_employes: { ...salairesMap, [employeId]: valeur } });
+  }
+
+  async function sauvegarderSalaire(employeId: string, valeur: string) {
+    if (!instantane || !employesAssignes.includes(employeId)) return;
+    const montant = Number(valeur || 0);
+    setEnCours((prev) => ({ ...prev, [employeId]: true }));
+    try {
+      await db.from("salaires_chantier").upsert({ chantier_id: chantierId, employe_id: employeId, montant }, { onConflict: "chantier_id,employe_id" });
+      await recalculerSalaireEmploye(employeId);
+      flashStatut(employeId, "ok");
+      await rechargerDonnees?.();
+    } catch (err: any) {
+      flashStatut(employeId, "err");
+      setMessage?.(err?.message || "Erreur d'enregistrement du salaire.");
+    } finally {
+      setEnCours((prev) => ({ ...prev, [employeId]: false }));
+    }
   }
 
   return (
@@ -866,21 +920,28 @@ function FormChantier({ form, setForm, projets, employes, onSubmit, saving, tele
           <p className="text-sm font-black">Employés assignés &amp; salaire pour ce chantier</p>
           <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">Total: {devise(totalSalaires)}</span>
         </div>
-        <p className="mb-3 text-xs text-muted-foreground">Sélectionnez les employés et indiquez le salaire fixe versé pour ce chantier. Les salaires de tous les chantiers sont automatiquement cumulés sur la fiche de chaque employé.</p>
+        <p className="mb-3 text-xs text-muted-foreground">{instantane ? "Cochez un employé pour l'affecter immédiatement à ce chantier. Les modifications de salaire sont enregistrées dès que vous quittez le champ." : "Sélectionnez les employés et indiquez le salaire fixe versé pour ce chantier. Les salaires seront enregistrés à la création du chantier."}</p>
         <div className="space-y-2">
           {employes.map((e: Employe) => {
             const coche = employesAssignes.includes(e.id);
+            const busy = enCours[e.id];
+            const stat = statutSauvegarde[e.id];
             return (
-              <div key={e.id} className="grid gap-2 rounded-xl border border-border bg-background p-3 sm:grid-cols-[1fr_180px]">
+              <div key={e.id} className="grid gap-2 rounded-xl border border-border bg-background p-3 sm:grid-cols-[1fr_180px_24px]">
                 <label className="flex items-center gap-2 text-sm font-bold">
-                  <input type="checkbox" checked={coche} onChange={(ev) => basculerEmploye(e.id, ev.target.checked)} />
+                  <input type="checkbox" checked={coche} disabled={busy} onChange={(ev) => basculerEmploye(e.id, ev.target.checked)} />
                   <span>{e.nom_complet} <span className="text-xs font-normal text-muted-foreground">· {e.poste || "—"}</span></span>
                 </label>
-                {coche && (
+                {coche ? (
                   <div className="flex items-center gap-2">
-                    <input type="number" min="0" step="0.01" className="form-control" placeholder="Salaire ($)" value={salairesMap[e.id] || ""} onChange={(ev) => changerSalaire(e.id, ev.target.value)} />
+                    <input type="number" min="0" step="0.01" className="form-control" placeholder="Salaire ($)" value={salairesMap[e.id] || ""} disabled={busy} onChange={(ev) => changerSalaire(e.id, ev.target.value)} onBlur={(ev) => sauvegarderSalaire(e.id, ev.target.value)} />
                   </div>
-                )}
+                ) : <div />}
+                <div className="flex items-center justify-center text-xs">
+                  {busy && <span className="animate-pulse text-muted-foreground">…</span>}
+                  {!busy && stat === "ok" && <span className="font-black text-primary" title="Enregistré">✓</span>}
+                  {!busy && stat === "err" && <span className="font-black text-destructive" title="Erreur">!</span>}
+                </div>
               </div>
             );
           })}
@@ -892,11 +953,69 @@ function FormChantier({ form, setForm, projets, employes, onSubmit, saving, tele
       <Champ label="Images chantier"><input type="file" multiple accept="image/*" className="file-input" onChange={(e) => televerserImages(e.target.files)} /></Champ>
       <div className="grid gap-2 sm:grid-cols-2">{(form.images_chantier || []).map((url: string) => <div key={url} className="relative"><img src={url} alt="Image chantier" className="h-28 w-full rounded-xl object-cover" /><button type="button" className="tool-action danger absolute right-2 top-2" onClick={() => retirerImage(url)}><Trash2 className="size-4" /></button></div>)}</div>
       <Champ label="Description"><textarea className="form-control min-h-24" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Champ>
-      <button className="primary-action sm:col-span-2" disabled={saving}><Upload className="size-4" /> Enregistrer</button>
+      <button className="primary-action sm:col-span-2" disabled={saving}><Upload className="size-4" /> Enregistrer{instantane ? " les autres modifications" : ""}</button>
     </form>
   );
 }
-function Details({ detail, projets, employes, chantiers, presences, annonces, admin, role, viewerId, saving, televerserPhotoProfil, retirerPhotoProfil, modifier, supprimer }: any) { const item = detail.type === "projets" ? projets.find((x: Projet) => x.id === detail.id) : detail.type === "employes" ? employes.find((x: Employe) => x.id === detail.id) : detail.type === "chantiers" ? chantiers.find((x: Chantier) => x.id === detail.id) : detail.type === "annonces" ? annonces.find((x: Annonce) => x.id === detail.id) : presences.find((x: Presence) => x.id === detail.id); if (!item) return <p>Donnée introuvable.</p>; const canEdit = admin && detail.type !== "presences"; if (detail.type === "annonces") { const a = item as Annonce; return <div className="space-y-4">{a.image_url && <img src={a.image_url} alt={`Image annonce ${a.titre}`} className="max-h-80 w-full rounded-2xl object-cover" loading="lazy" />}<div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">{dateFr(a.created_at)}</p><h3 className="mt-1 text-2xl font-black">{a.titre}</h3></div><p className="whitespace-pre-wrap rounded-xl bg-muted p-4 text-sm leading-6">{a.contenu}</p>{admin && <button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button>}</div>; } if (detail.type === "presences") { const p = item as Presence; return <div className="space-y-4"><Info icone={CalendarDays} label="Date" valeur={dateFr(p.date)} /><Info icone={HardHat} label="Chantier" valeur={nomChantier(chantiers, p.chantier_id)} /><Info icone={UserRound} label="Chef" valeur={nomEmploye(employes, p.chef_chantier_id)} /><div className="space-y-2">{p.employes_presence.map((e) => <div key={e.employe_id} className="rounded-xl border border-border bg-background p-3 font-bold">{e.nom_complet} — {e.statut}</div>)}</div><p className="rounded-xl bg-muted p-4 text-sm">{p.notes || "Aucune note."}</p></div>; } if (detail.type === "chantiers") { const c = item as Chantier; const canSeeBudget = admin || (role === "chef_chantier" && c.chef_chantier === viewerId && c.autoriser_budget_chef); return <div className="space-y-4"><h3 className="text-2xl font-black">{c.nom_chantier}</h3><div className="grid gap-3 sm:grid-cols-2"><Info icone={MapPin} label="Localisation" valeur={c.localisation || "Non définie"} /><Info icone={HardHat} label="Chef" valeur={nomEmploye(employes, c.chef_chantier)} /><Info icone={BriefcaseBusiness} label="Projet" valeur={nomProjet(projets, c.projet_lie)} /><Info icone={canSeeBudget ? Eye : EyeOff} label="Budget global" valeur={canSeeBudget ? devise(c.budget_global || 0) : "Masqué"} /></div><p className="rounded-xl bg-muted p-4 text-sm">{c.description || "Aucune description."}</p><div className="grid gap-3 sm:grid-cols-2">{(c.images_chantier || []).map((url) => <img key={url} src={url} alt={`Image du chantier ${c.nom_chantier}`} className="h-48 w-full rounded-2xl object-cover" loading="lazy" />)}</div>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; } if (detail.type === "employes") { const e = item as Employe; const canUpdateOwnPhoto = !admin && e.id === viewerId; return <div className="space-y-4">{e.photo_profil ? <img src={e.photo_profil} alt={`Photo de ${e.nom_complet}`} className="h-28 w-28 rounded-2xl object-cover" loading="lazy" /> : <span className="flex h-28 w-28 items-center justify-center rounded-2xl bg-muted"><UserRound className="size-10 text-muted-foreground" /></span>}{canUpdateOwnPhoto && <div className="rounded-2xl border border-border bg-background p-4"><p className="mb-3 text-sm font-black">Photo de profil</p><input type="file" accept="image/*" className="file-input" disabled={saving} onChange={(event) => televerserPhotoProfil(event.target.files)} />{e.photo_profil && <button type="button" className="mini-button mt-3" disabled={saving} onClick={retirerPhotoProfil}>Retirer la photo</button>}</div>}<h3 className="text-2xl font-black">{e.nom_complet}</h3><div className="grid gap-3 sm:grid-cols-2"><Info icone={UserRound} label="Matricule" valeur={e.matricule || "Non défini"} /><Info icone={BriefcaseBusiness} label="Poste" valeur={e.poste || "Non défini"} /><Info icone={UsersRound} label="Genre" valeur={e.genre || "Non précisé"} /><Info icone={CalendarDays} label="Admission" valeur={dateFr(e.date_admission)} /><Info icone={CalendarDays} label="Naissance" valeur={dateFr(e.date_naissance)} /><Info icone={UserRound} label="Email" valeur={e.email || "Non défini"} /><Info icone={UserRound} label="Téléphone" valeur={e.telephone || "Non défini"} /><Info icone={ClipboardList} label="Pièce d’identité" valeur={e.numero_piece_identite || "Non définie"} /><Info icone={ShieldCheck} label="Contact d’urgence" valeur={e.contact_urgence || "Non défini"} /><Info icone={HardHat} label="Chantier" valeur={nomChantier(chantiers, e.chantier_assigne)} /></div><p className="rounded-xl bg-muted p-4 text-sm">{e.adresse || "Adresse non définie."}</p>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; } return <div className="space-y-4"><h3 className="text-2xl font-black">{(item as any).nom_projet || (item as any).nom_complet}</h3><pre className="overflow-auto rounded-xl bg-muted p-4 text-xs">{JSON.stringify(item, null, 2)}</pre>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; }
+function Details({ detail, projets, employes, chantiers, presences, annonces, admin, role, viewerId, saving, televerserPhotoProfil, retirerPhotoProfil, modifier, supprimer }: any) { const item = detail.type === "projets" ? projets.find((x: Projet) => x.id === detail.id) : detail.type === "employes" ? employes.find((x: Employe) => x.id === detail.id) : detail.type === "chantiers" ? chantiers.find((x: Chantier) => x.id === detail.id) : detail.type === "annonces" ? annonces.find((x: Annonce) => x.id === detail.id) : presences.find((x: Presence) => x.id === detail.id); if (!item) return <p>Donnée introuvable.</p>; const canEdit = admin && detail.type !== "presences"; if (detail.type === "annonces") { const a = item as Annonce; return <div className="space-y-4">{a.image_url && <img src={a.image_url} alt={`Image annonce ${a.titre}`} className="max-h-80 w-full rounded-2xl object-cover" loading="lazy" />}<div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">{dateFr(a.created_at)}</p><h3 className="mt-1 text-2xl font-black">{a.titre}</h3></div><p className="whitespace-pre-wrap rounded-xl bg-muted p-4 text-sm leading-6">{a.contenu}</p>{admin && <button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button>}</div>; } if (detail.type === "presences") { const p = item as Presence; return <div className="space-y-4"><Info icone={CalendarDays} label="Date" valeur={dateFr(p.date)} /><Info icone={HardHat} label="Chantier" valeur={nomChantier(chantiers, p.chantier_id)} /><Info icone={UserRound} label="Chef" valeur={nomEmploye(employes, p.chef_chantier_id)} /><div className="space-y-2">{p.employes_presence.map((e) => <div key={e.employe_id} className="rounded-xl border border-border bg-background p-3 font-bold">{e.nom_complet} — {e.statut}</div>)}</div><p className="rounded-xl bg-muted p-4 text-sm">{p.notes || "Aucune note."}</p></div>; } if (detail.type === "chantiers") { const c = item as Chantier; const canSeeBudget = admin || (role === "chef_chantier" && c.chef_chantier === viewerId && c.autoriser_budget_chef); return <div className="space-y-4"><h3 className="text-2xl font-black">{c.nom_chantier}</h3><div className="grid gap-3 sm:grid-cols-2"><Info icone={MapPin} label="Localisation" valeur={c.localisation || "Non définie"} /><Info icone={HardHat} label="Chef" valeur={nomEmploye(employes, c.chef_chantier)} /><Info icone={BriefcaseBusiness} label="Projet" valeur={nomProjet(projets, c.projet_lie)} /><Info icone={canSeeBudget ? Eye : EyeOff} label="Budget global" valeur={canSeeBudget ? devise(c.budget_global || 0) : "Masqué"} /></div><p className="rounded-xl bg-muted p-4 text-sm">{c.description || "Aucune description."}</p><div className="grid gap-3 sm:grid-cols-2">{(c.images_chantier || []).map((url) => <img key={url} src={url} alt={`Image du chantier ${c.nom_chantier}`} className="h-48 w-full rounded-2xl object-cover" loading="lazy" />)}</div><EmployesAffectesChantier chantierId={c.id} employes={employes} />{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; } if (detail.type === "employes") { const e = item as Employe; const canUpdateOwnPhoto = !admin && e.id === viewerId; return <div className="space-y-4">{e.photo_profil ? <img src={e.photo_profil} alt={`Photo de ${e.nom_complet}`} className="h-28 w-28 rounded-2xl object-cover" loading="lazy" /> : <span className="flex h-28 w-28 items-center justify-center rounded-2xl bg-muted"><UserRound className="size-10 text-muted-foreground" /></span>}{canUpdateOwnPhoto && <div className="rounded-2xl border border-border bg-background p-4"><p className="mb-3 text-sm font-black">Photo de profil</p><input type="file" accept="image/*" className="file-input" disabled={saving} onChange={(event) => televerserPhotoProfil(event.target.files)} />{e.photo_profil && <button type="button" className="mini-button mt-3" disabled={saving} onClick={retirerPhotoProfil}>Retirer la photo</button>}</div>}<h3 className="text-2xl font-black">{e.nom_complet}</h3><div className="grid gap-3 sm:grid-cols-2"><Info icone={UserRound} label="Matricule" valeur={e.matricule || "Non défini"} /><Info icone={BriefcaseBusiness} label="Poste" valeur={e.poste || "Non défini"} /><Info icone={UsersRound} label="Genre" valeur={e.genre || "Non précisé"} /><Info icone={CalendarDays} label="Admission" valeur={dateFr(e.date_admission)} /><Info icone={CalendarDays} label="Naissance" valeur={dateFr(e.date_naissance)} /><Info icone={UserRound} label="Email" valeur={e.email || "Non défini"} /><Info icone={UserRound} label="Téléphone" valeur={e.telephone || "Non défini"} /><Info icone={ClipboardList} label="Pièce d’identité" valeur={e.numero_piece_identite || "Non définie"} /><Info icone={ShieldCheck} label="Contact d’urgence" valeur={e.contact_urgence || "Non défini"} /><Info icone={HardHat} label="Chantier" valeur={nomChantier(chantiers, e.chantier_assigne)} /></div><p className="rounded-xl bg-muted p-4 text-sm">{e.adresse || "Adresse non définie."}</p>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; } return <div className="space-y-4"><h3 className="text-2xl font-black">{(item as any).nom_projet || (item as any).nom_complet}</h3><pre className="overflow-auto rounded-xl bg-muted p-4 text-xs">{JSON.stringify(item, null, 2)}</pre>{canEdit && <div className="flex gap-2"><button className="mini-button" onClick={modifier}>Modifier</button><button className="tool-action danger" onClick={supprimer}><Trash2 className="size-4" /></button></div>}</div>; }
+function EmployesAffectesChantier({ chantierId, employes }: { chantierId: string; employes: Employe[] }) {
+  const [salaires, setSalaires] = useState<Record<string, number>>({});
+  const [chargement, setChargement] = useState(true);
+
+  useEffect(() => {
+    let actif = true;
+    setChargement(true);
+    db.from("salaires_chantier").select("employe_id, montant").eq("chantier_id", chantierId).then(({ data }: { data: { employe_id: string; montant: number }[] | null }) => {
+      if (!actif) return;
+      const map: Record<string, number> = {};
+      (data || []).forEach((s) => { map[s.employe_id] = Number(s.montant || 0); });
+      setSalaires(map);
+      setChargement(false);
+    });
+    return () => { actif = false; };
+  }, [chantierId]);
+
+  const ids = Object.keys(salaires);
+  const lignes = ids.map((id) => ({ id, employe: employes.find((e) => e.id === id), montant: salaires[id] })).filter((l) => l.employe);
+  const total = lignes.reduce((sum, l) => sum + (l.montant || 0), 0);
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-document">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <UsersRound className="size-5 text-primary" />
+          <h4 className="text-base font-black">Employés affectés ({lignes.length})</h4>
+        </div>
+        {!!lignes.length && <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">Masse salariale : {devise(total)}</span>}
+      </div>
+      {chargement ? (
+        <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">Chargement…</p>
+      ) : lignes.length ? (
+        <ul className="space-y-2">
+          {lignes.map((l) => (
+            <li key={l.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3">
+              <div className="flex items-center gap-3 min-w-0">
+                {l.employe?.photo_profil ? (
+                  <img src={l.employe.photo_profil} alt={`Photo ${l.employe.nom_complet}`} className="size-10 rounded-full object-cover" loading="lazy" />
+                ) : (
+                  <span className="flex size-10 items-center justify-center rounded-full bg-muted"><UserRound className="size-5 text-muted-foreground" /></span>
+                )}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black">{l.employe?.nom_complet}</p>
+                  <p className="truncate text-xs text-muted-foreground">{l.employe?.poste || "—"} · {l.employe?.matricule || "Sans matricule"}</p>
+                </div>
+              </div>
+              <span className="shrink-0 rounded-lg bg-primary/10 px-3 py-1 text-sm font-black text-primary">{devise(l.montant)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">Aucun employé affecté à ce chantier.</p>
+      )}
+    </section>
+  );
+}
+
 function nomProjet(projets: Projet[], id?: string | null) { return projets.find((p) => p.id === id)?.nom_projet || "Non lié"; }
 function nomChantier(chantiers: Chantier[], id?: string | null) { return chantiers.find((c) => c.id === id)?.nom_chantier || "Non assigné"; }
 function nomEmploye(employes: Employe[], id?: string | null) { return employes.find((e) => e.id === id)?.nom_complet || "Non défini"; }
