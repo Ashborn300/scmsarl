@@ -856,8 +856,9 @@ function FormChantier({ form, setForm, projets, employes, onSubmit, saving, tele
   }
 
   async function basculerEmploye(employeId: string, ajoute: boolean) {
-    const nouveauxAssignes = ajoute ? [...employesAssignes, employeId] : employesAssignes.filter((id) => id !== employeId);
+    const nouveauxAssignes = ajoute ? Array.from(new Set([...employesAssignes, employeId])) : employesAssignes.filter((id) => id !== employeId);
     const nouveauxSalaires = { ...salairesMap };
+    if (ajoute && !nouveauxSalaires[employeId]) nouveauxSalaires[employeId] = "0";
     if (!ajoute) delete nouveauxSalaires[employeId];
     setForm({ ...form, employes_assignes: nouveauxAssignes, salaires_employes: nouveauxSalaires });
 
@@ -868,9 +869,17 @@ function FormChantier({ form, setForm, projets, employes, onSubmit, saving, tele
       if (errChantier) throw errChantier;
       if (ajoute) {
         const montant = Number(nouveauxSalaires[employeId] || 0);
-        await db.from("salaires_chantier").upsert({ chantier_id: chantierId, employe_id: employeId, montant }, { onConflict: "chantier_id,employe_id" });
+        const { error: errSal } = await db.from("salaires_chantier").upsert({ chantier_id: chantierId, employe_id: employeId, montant }, { onConflict: "chantier_id,employe_id" });
+        if (errSal) throw errSal;
+        // Synchroniser chantier_assigne sur la fiche employé pour cohérence d'affichage
+        await db.from("employes").update({ chantier_assigne: chantierId }).eq("id", employeId);
       } else {
         await db.from("salaires_chantier").delete().eq("chantier_id", chantierId).eq("employe_id", employeId);
+        // Si la fiche employé pointe vers ce chantier, la nettoyer
+        const emp = employes.find((e: Employe) => e.id === employeId);
+        if (emp?.chantier_assigne === chantierId) {
+          await db.from("employes").update({ chantier_assigne: null }).eq("id", employeId);
+        }
       }
       await recalculerSalaireEmploye(employeId);
       flashStatut(employeId, "ok");
