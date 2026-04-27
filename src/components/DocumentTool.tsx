@@ -772,11 +772,11 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
       const champs: Array<[string, string]> = config.fields.map((field) => [field.label, field.type === "image" ? imagesChamps[field.name] || "—" : formulaire[field.name] || "—"]);
       if (config.type === "facture") {
         champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
-        const chantierNom = chantiers.find((c) => c.id === chantierId)?.nom_chantier || formulaire.chantierNom || "";
-        if (chantierNom) champs.push(["Chantier concerné", chantierNom]);
+        if (nomChantierEffectif) champs.push(["Chantier concerné", estNouveauChantier ? `${nomChantierEffectif} (nouveau chantier)` : nomChantierEffectif]);
         if (budgetTotalNum > 0) {
           champs.push(["Budget total du chantier", `${budgetTotalNum.toLocaleString("fr-FR")} $`]);
-          champs.push(["Budget payé (cette facture)", `${budgetPaye.toLocaleString("fr-FR")} $`]);
+          champs.push(["Budget payé (cette facture, frais inclus)", `${budgetPaye.toLocaleString("fr-FR")} $`]);
+          if (totalDeductions > 0) champs.push(["dont frais déduits", `${totalDeductions.toLocaleString("fr-FR")} $`]);
           champs.push(["Budget restant", `${budgetRestant.toLocaleString("fr-FR")} $`]);
         }
       }
