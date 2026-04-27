@@ -987,7 +987,7 @@ export async function creerPdfArchiveChantier(archive: Omit<ArchiveChantier, "id
   const drapeauRdc = await drapeauRdcVersPng();
   ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche archive chantier", `ARC-${Date.now().toString().slice(-6)}`, couleurs.principal);
   let y = 84;
-  [["Nom du chantier", archive.nom_chantier], ["Nom du client", archive.nom_client], ["Adresse du projet", archive.adresse_projet], ["Début construction", archive.date_debut_construction || "—"], ["Finalisation construction", archive.date_finalisation_construction || "—"], ["Budget estimé au début", `${Number(archive.budget_estime_debut || 0).toLocaleString("fr-FR")} $`], ["Budget final", `${Number(archive.budget_final || 0).toLocaleString("fr-FR")} $`]].forEach(([label, valeur]) => { y = texteValeur(pdf, label, String(valeur), 20, y, 168, 4.2, couleurs.principal); });
+  [["Nom du chantier", archive.nom_chantier], ["Nom du client", archive.nom_client], ["Adresse du projet", archive.adresse_projet], ["Début construction", archive.date_debut_construction || "—"], ["Finalisation construction", archive.date_finalisation_construction || "—"], ["Budget estimé au début", `${formaterMontant(Number(archive.budget_estime_debut || 0))} $`], ["Budget final", `${formaterMontant(Number(archive.budget_final || 0))} $`]].forEach(([label, valeur]) => { y = texteValeur(pdf, label, String(valeur), 20, y, 168, 4.2, couleurs.principal); });
   y += 4; pdf.setFillColor(...couleurs.doux); pdf.rect(20, y - 5, 168, 8, "F"); pdf.setFont("helvetica", "bold"); pdf.setTextColor(...couleurs.principal); pdf.text("EMPLOYÉS AYANT PARTICIPÉ", 23, y); y += 10;
   pdf.setFont("helvetica", "normal"); pdf.setTextColor(36, 45, 64);
   archive.employes_participants.forEach((employe, index) => { if (y > 234) { pdf.addPage(); ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, "Fiche archive chantier", "ARCHIVE", couleurs.principal); y = 84; } pdf.text(`${index + 1}. ${employe.nom_complet || "—"} — ${employe.poste || employe.matricule || "—"}`, 24, y); y += 6; });
@@ -1386,8 +1386,8 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
       y += hauteurLigne - 3;
       pdf.text(desc, 23, y);
       pdf.text(String(ligne.quantite), 126, y);
-      pdf.text(`${ligne.prix.toLocaleString("fr-FR")} $`, 144, y);
-      pdf.text(`${(ligne.quantite * ligne.prix).toLocaleString("fr-FR")} $`, 166, y);
+      pdf.text(`${formaterMontant(ligne.prix)} $`, 144, y);
+      pdf.text(`${formaterMontant((ligne.quantite * ligne.prix))} $`, 166, y);
       y += 3;
     });
     y += 2;
@@ -1412,9 +1412,9 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
       const libelle = deduction.libelle || "Frais";
       const detail = typeof deduction.montant === "number"
         ? libelle
-        : `${libelle} (${Number(deduction.pourcentage || 0).toLocaleString("fr-FR")} %)`;
+        : `${libelle} (${formaterMontant(Number(deduction.pourcentage || 0))} %)`;
       pdf.text(detail, 23, y);
-      pdf.text(`+ ${montant.toLocaleString("fr-FR")} $`, 146, y);
+      pdf.text(`+ ${formaterMontant(montant)} $`, 146, y);
     });
     y += 4;
   }
@@ -1427,7 +1427,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     pdf.setTextColor(255, 255, 255);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(11);
-    pdf.text(`TOTAL : ${options.total.toLocaleString("fr-FR")} $`, 130, y + 9);
+    pdf.text(`TOTAL : ${formaterMontant(options.total)} $`, 130, y + 9);
     y += 18;
   }
 
@@ -2001,7 +2001,7 @@ export async function creerPdfFactureEmploye(data: DonneesFactureEmploye): Promi
   pdf.text("Salaire brut mensuel", 24, y);
   pdf.text("Mensuel", 122, y);
   pdf.setFont("helvetica", "bold");
-  pdf.text(`${data.salaireBrut.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $`, 188, y, { align: "right" });
+  pdf.text(`${formaterMontant(data.salaireBrut, { decimales: 2 })} $`, 188, y, { align: "right" });
   y += 10;
 
   // Sous-total
@@ -2036,10 +2036,10 @@ export async function creerPdfFactureEmploye(data: DonneesFactureEmploye): Promi
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(40, 50, 70);
       pdf.text(deduction.libelle || "Frais", 24, y);
-      pdf.text(`${pct.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %`, 122, y);
+      pdf.text(`${formaterMontant(pct, { decimales: 2 })} %`, 122, y);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(180, 83, 9);
-      pdf.text(`- ${montant.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $`, 188, y, { align: "right" });
+      pdf.text(`- ${formaterMontant(montant, { decimales: 2 })} $`, 188, y, { align: "right" });
       y += 8;
     });
   }
@@ -2054,7 +2054,7 @@ export async function creerPdfFactureEmploye(data: DonneesFactureEmploye): Promi
   pdf.setTextColor(...couleurs.principal);
   pdf.text("Total des déductions", 122, y);
   pdf.setTextColor(180, 83, 9);
-  pdf.text(`- ${totalDeductions.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $`, 188, y, { align: "right" });
+  pdf.text(`- ${formaterMontant(totalDeductions, { decimales: 2 })} $`, 188, y, { align: "right" });
   y += 8;
 
   // SALAIRE NET
@@ -2066,7 +2066,7 @@ export async function creerPdfFactureEmploye(data: DonneesFactureEmploye): Promi
   pdf.setTextColor(255, 255, 255);
   pdf.text("SALAIRE NET À PAYER", 24, y + 10);
   pdf.setFontSize(15);
-  pdf.text(`${salaireNet.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $`, 188, y + 10, { align: "right" });
+  pdf.text(`${formaterMontant(salaireNet, { decimales: 2 })} $`, 188, y + 10, { align: "right" });
   y += 22;
 
   // Mode de paiement
@@ -2338,7 +2338,7 @@ export async function creerPdfRecuEmploye(data: DonneesRecuEmploye): Promise<str
   pdf.setFontSize(10);
   pdf.text("MONTANT VERSÉ", 28, y + 2);
   pdf.setFontSize(26);
-  pdf.text(`${Number(data.montant || 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $`, 28, y + 16);
+  pdf.text(`${formaterMontant(Number(data.montant || 0), { decimales: 2 })} $`, 28, y + 16);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9);
   pdf.text(`Mode de paiement : ${data.modePaiement || "—"}`, 132, y + 16);
