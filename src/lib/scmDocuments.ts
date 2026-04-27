@@ -625,6 +625,39 @@ async function imageVersBase64(url: string) {
   }
 }
 
+async function compresserPhotoEmploye(source: string | undefined | null, taille = 96, qualite = 0.7): Promise<string> {
+  if (!source) return "";
+  try {
+    let dataUrl = String(source);
+    if (!dataUrl.startsWith("data:")) {
+      dataUrl = await imageVersBase64(dataUrl);
+      if (!dataUrl) return "";
+    }
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = reject;
+      image.src = dataUrl;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = taille;
+    canvas.height = taille;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, taille, taille);
+    // cover crop
+    const ratio = Math.max(taille / image.width, taille / image.height);
+    const w = image.width * ratio;
+    const h = image.height * ratio;
+    ctx.drawImage(image, (taille - w) / 2, (taille - h) / 2, w, h);
+    return canvas.toDataURL("image/jpeg", qualite);
+  } catch {
+    return "";
+  }
+}
+
 async function drapeauRdcVersPng() {
   try {
     const svg = await fetch(drapeauRdcUrl).then((reponse) => reponse.text());
@@ -864,13 +897,19 @@ export async function creerPdfFicheEmploye(typeFiche: string, employes: EmployeR
   ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, typeFiche === "collective" ? "Fiche collective des employés" : "Fiche individuelle de l’employé", numero, couleurs.principal);
 
   if (typeFiche === "collective") {
-    // Mise en page : 6 employés par page (3 lignes × 2 colonnes)
+    // Mise en page : 6 employés par page (3 lignes × 2 colonnes), nombre de pages illimité
     const carteLargeur = 84;
     const carteHauteur = 58;
     const margeX = 18;
     const espaceX = 6;
     const debutY = 80;
     const espaceY = 6;
+    // Précharger toutes les photos compressées en parallèle (≈96px JPEG, qualité 0.7)
+    // pour permettre la génération de PDF avec un nombre illimité d'employés (dizaines de pages)
+    // sans saturer la mémoire ni dépasser les limites de payload de la base de données.
+    const photosCompressees = await Promise.all(
+      employes.map((employe) => compresserPhotoEmploye(employe.photo_profil, 96, 0.7).catch(() => ""))
+    );
     employes.forEach((employe, index) => {
       const indexPage = index % 6;
       if (indexPage === 0 && index > 0) {
@@ -893,10 +932,10 @@ export async function creerPdfFicheEmploye(typeFiche: string, employes: EmployeR
       pdf.rect(x, y + 4, carteLargeur, 3, "F");
       pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(255, 255, 255);
       pdf.text(`Employé n° ${index + 1}`, x + 3, y + 5);
-      // Photo
+      // Photo (compressée)
       pdf.setFillColor(255, 255, 255);
       pdf.roundedRect(x + 4, y + 11, 22, 22, 2, 2, "F");
-      ajouterImageSiValide(pdf, employe.photo_profil, x + 4, y + 11, 22, 22);
+      ajouterImageSiValide(pdf, photosCompressees[index], x + 4, y + 11, 22, 22);
       // Nom
       pdf.setFont("helvetica", "bold"); pdf.setFontSize(9.5); pdf.setTextColor(...couleurs.principal);
       const nomLignes = pdf.splitTextToSize(employe.nom_complet || "—", 52);
