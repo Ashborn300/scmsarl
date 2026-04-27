@@ -778,8 +778,9 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
           champs.push(["Budget total du chantier", `${budgetTotalNum.toLocaleString("fr-FR")} $`]);
           champs.push(["Budget payé (cette facture, frais supplémentaires inclus)", `${budgetPaye.toLocaleString("fr-FR")} $`]);
           if (totalDeductions > 0) champs.push(["dont frais supplémentaires", `${totalDeductions.toLocaleString("fr-FR")} $`]);
-          champs.push(["Budget restant", `${budgetRestant.toLocaleString("fr-FR")} $`]);
         }
+        // Budget restant : toujours affiché sur le PDF, identique au champ "Restant" du formulaire
+        champs.push(["Budget restant", `${budgetRestant.toLocaleString("fr-FR")} $`]);
       }
       const deductionsActives = avecDeductions ? deductions.filter((deduction) => deduction.libelle.trim() && (Number(deduction.montant || 0) > 0 || Number(deduction.pourcentage || 0) > 0)) : [];
       const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, deductions: deductionsActives, total, totalAvantDeduction });
