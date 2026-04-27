@@ -763,11 +763,21 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
       const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
       const signatureBase64 = estCommunication ? undefined : await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
       const champs: Array<[string, string]> = config.fields.map((field) => [field.label, field.type === "image" ? imagesChamps[field.name] || "—" : formulaire[field.name] || "—"]);
-      if (config.type === "facture") champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
+      if (config.type === "facture") {
+        champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
+        const chantierNom = chantiers.find((c) => c.id === chantierId)?.nom_chantier || formulaire.chantierNom || "";
+        if (chantierNom) champs.push(["Chantier concerné", chantierNom]);
+        if (budgetTotalNum > 0) {
+          champs.push(["Budget total du chantier", `${budgetTotalNum.toLocaleString("fr-FR")} $`]);
+          champs.push(["Budget payé (cette facture)", `${budgetPaye.toLocaleString("fr-FR")} $`]);
+          champs.push(["Budget restant", `${budgetRestant.toLocaleString("fr-FR")} $`]);
+        }
+      }
       const deductionsActives = avecDeductions ? deductions.filter((deduction) => deduction.libelle.trim() && (Number(deduction.montant || 0) > 0 || Number(deduction.pourcentage || 0) > 0)) : [];
       const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, deductions: deductionsActives, total, totalAvantDeduction });
       // Payload léger : on n'enregistre PAS sceauBase64/signatureBase64 dans donnees_formulaire (déjà rendus dans le PDF) — évite les timeouts DB sur gros fichiers.
-      await enregistrerDocument(config.type, { ...formulaire, ...imagesChamps, lignes, deductions: deductionsActives, totalAvantDeduction, totalDeductions, totalFinal: total, total, titreCourt: config.titre, libelleSceau, libelleSignature }, pdf, numero, documentEdite?.id);
+      const payloadFacture = estFacturePro ? { chantierId, chantierNom: chantiers.find((c) => c.id === chantierId)?.nom_chantier || "", budgetTotalChantier: budgetTotalNum, budgetPaye, budgetRestant } : {};
+      await enregistrerDocument(config.type, { ...formulaire, ...imagesChamps, lignes, deductions: deductionsActives, totalAvantDeduction, totalDeductions, totalFinal: total, total, titreCourt: config.titre, libelleSceau, libelleSignature, ...payloadFacture }, pdf, numero, documentEdite?.id);
       setDocumentEdite(null);
       setActualisation((valeur) => valeur + 1);
       alert(documentEdite ? "Document PDF modifié et réenregistré avec succès." : "Document PDF généré et enregistré avec succès.");
