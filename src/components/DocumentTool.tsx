@@ -639,9 +639,16 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
   const total = Math.max(0, totalAvantDeduction - totalDeductions);
 
   // Calculs auto budget chantier (facture pro uniquement)
+  // Le budget payé inclut le montant final ET les frais déduits (qui sortent aussi du budget chantier)
   const budgetTotalNum = Number(budgetTotalChantier || 0);
-  const budgetPaye = estFacturePro ? total : 0;
+  const budgetPaye = estFacturePro ? totalAvantDeduction : 0;
   const budgetRestant = estFacturePro ? Math.max(0, budgetTotalNum - budgetPaye) : 0;
+  // Si aucun chantier existant n'est sélectionné, on traite comme un nouveau chantier basé sur les infos client
+  const estNouveauChantier = estFacturePro && !chantierId;
+  const nomChantierEffectif = estFacturePro
+    ? (chantiers.find((c) => c.id === chantierId)?.nom_chantier
+        || (estNouveauChantier ? `Nouveau chantier — ${(formulaire.client || "").split("\n")[0].trim() || "Client non précisé"}` : ""))
+    : "";
 
   useEffect(() => { if (config.type === "fiche_employe" || config.type === "code_qr") listerEmployes().then(setEmployes).catch((erreur) => alert(erreur instanceof Error ? erreur.message : "Impossible de charger les employés.")); }, [config.type]);
 
