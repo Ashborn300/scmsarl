@@ -897,6 +897,13 @@ export async function creerPdfFicheEmploye(typeFiche: string, employes: EmployeR
   ajouterEnteteFicheEmploye(pdf, logo, drapeauRdc, typeFiche === "collective" ? "Fiche collective des employés" : "Fiche individuelle de l’employé", numero, couleurs.principal);
 
   if (typeFiche === "collective") {
+    // Mise en page : 6 employés par page (3 lignes × 2 colonnes), nombre de pages illimité
+    const carteLargeur = 84;
+    const carteHauteur = 58;
+    const margeX = 18;
+    const espaceX = 6;
+    const debutY = 80;
+    const espaceY = 6;
     // Précharger toutes les photos compressées en parallèle (≈96px JPEG, qualité 0.7)
     // pour permettre la génération de PDF avec un nombre illimité d'employés (dizaines de pages)
     // sans saturer la mémoire ni dépasser les limites de payload de la base de données.
