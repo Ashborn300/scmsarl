@@ -5,6 +5,19 @@ import logoCarteServiceUrl from "@/assets/logo-scm-carte.jpeg";
 import drapeauRdcUrl from "@/assets/drapeau-rdc.svg";
 import carteServiceMockupUrl from "@/assets/carte-service-mockup-optimized.jpg";
 
+// Formate les nombres avec un espace ASCII standard comme séparateur de milliers.
+// Évite l'espace insécable (U+00A0/U+202F) produit par toLocaleString("fr-FR")
+// qui s'affiche incorrectement (ex : "30/000") avec les polices standard de jsPDF.
+function formaterMontant(valeur: number, options: { decimales?: number } = {}): string {
+  const nombre = Number.isFinite(valeur) ? valeur : 0;
+  const fixe = options.decimales !== undefined ? nombre.toFixed(options.decimales) : String(nombre);
+  const [partieEntiere, partieDecimale] = fixe.split(".");
+  const signe = partieEntiere.startsWith("-") ? "-" : "";
+  const entierAbs = signe ? partieEntiere.slice(1) : partieEntiere;
+  const avecSeparateurs = entierAbs.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return signe + avecSeparateurs + (partieDecimale ? "," + partieDecimale : "");
+}
+
 export type OutilType = "facture" | "devis" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "plan_architectural" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement" | "facture_employe" | "recu_employe" | "version_nuit";
 export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
