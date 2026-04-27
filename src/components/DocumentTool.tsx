@@ -774,13 +774,19 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
       if (config.type === "facture") {
         champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
         if (nomChantierEffectif) champs.push(["Chantier concerné", estNouveauChantier ? `${nomChantierEffectif} (nouveau chantier)` : nomChantierEffectif]);
+        const formaterMontantPdf = (n: number) => {
+          const [ent, dec] = String(n).split(".");
+          const signe = ent.startsWith("-") ? "-" : "";
+          const abs = signe ? ent.slice(1) : ent;
+          return signe + abs.replace(/\B(?=(\d{3})+(?!\d))/g, " ") + (dec ? "," + dec : "");
+        };
         if (budgetTotalNum > 0) {
-          champs.push(["Budget total du chantier", `${budgetTotalNum.toLocaleString("fr-FR")} $`]);
-          champs.push(["Budget payé (cette facture, frais supplémentaires inclus)", `${budgetPaye.toLocaleString("fr-FR")} $`]);
-          if (totalDeductions > 0) champs.push(["dont frais supplémentaires", `${totalDeductions.toLocaleString("fr-FR")} $`]);
+          champs.push(["Budget total du chantier", `${formaterMontantPdf(budgetTotalNum)} $`]);
+          champs.push(["Budget payé (cette facture, frais supplémentaires inclus)", `${formaterMontantPdf(budgetPaye)} $`]);
+          if (totalDeductions > 0) champs.push(["dont frais supplémentaires", `${formaterMontantPdf(totalDeductions)} $`]);
         }
         // Budget restant : toujours affiché sur le PDF, identique au champ "Restant" du formulaire
-        champs.push(["Budget restant", `${budgetRestant.toLocaleString("fr-FR")} $`]);
+        champs.push(["Budget restant", `${formaterMontantPdf(budgetRestant)} $`]);
       }
       const deductionsActives = avecDeductions ? deductions.filter((deduction) => deduction.libelle.trim() && (Number(deduction.montant || 0) > 0 || Number(deduction.pourcentage || 0) > 0)) : [];
       const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, deductions: deductionsActives, total, totalAvantDeduction });
