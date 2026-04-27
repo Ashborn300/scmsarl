@@ -1208,9 +1208,9 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     return pdf.output("datauristring");
   }
 
-  // Limites verticales de la zone de contenu (réserve d'espace en bas pour le bloc TOTAL fixe à y=220 + pied de page)
+  // Limites verticales de la zone de contenu (le pied sceau/signature commence à y=244)
   const Y_DEBUT = 82;
-  const Y_LIMITE = 218; // au-delà → nouvelle page (laisse la place au TOTAL fixe à y=220)
+  const Y_LIMITE = 238; // au-delà → nouvelle page (laisse la place au pied de page)
   let pageCourante = 1;
 
   // Helper : crée une nouvelle page avec en-tête et retourne le y de départ
@@ -1367,16 +1367,16 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     y += 6;
   }
 
-  // Bloc TOTAL — toujours sur la dernière page, en bas
+  // Bloc TOTAL — placé dynamiquement juste après le contenu (pas de position fixe)
   if (type !== "communiquer" && typeof options.total === "number") {
-    // Si pas la place avec le pied de page → nouvelle page
-    if (y + 18 > Y_LIMITE) y = passerPageSuivante();
+    if (y + 16 > Y_LIMITE) y = passerPageSuivante();
     pdf.setFillColor(...couleurs.principal);
-    pdf.roundedRect(124, 220, 64, 14, 2, 2, "F");
+    pdf.roundedRect(124, y, 64, 14, 2, 2, "F");
     pdf.setTextColor(255, 255, 255);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(11);
-    pdf.text(`TOTAL : ${options.total.toLocaleString("fr-FR")} $`, 130, 229);
+    pdf.text(`TOTAL : ${options.total.toLocaleString("fr-FR")} $`, 130, y + 9);
+    y += 18;
   }
 
   // Pied de page (sceau + signature) : uniquement sur la dernière page
