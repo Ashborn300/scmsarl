@@ -1348,7 +1348,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(10);
     pdf.setTextColor(...couleurs.principal);
-    pdf.text("Frais à déduire", 20, y);
+    pdf.text("Frais supplémentaires", 20, y);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(9);
     pdf.setTextColor(36, 45, 64);
