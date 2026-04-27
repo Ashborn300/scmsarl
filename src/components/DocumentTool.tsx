@@ -775,8 +775,8 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
         if (nomChantierEffectif) champs.push(["Chantier concerné", estNouveauChantier ? `${nomChantierEffectif} (nouveau chantier)` : nomChantierEffectif]);
         if (budgetTotalNum > 0) {
           champs.push(["Budget total du chantier", `${budgetTotalNum.toLocaleString("fr-FR")} $`]);
-          champs.push(["Budget payé (cette facture, frais inclus)", `${budgetPaye.toLocaleString("fr-FR")} $`]);
-          if (totalDeductions > 0) champs.push(["dont frais déduits", `${totalDeductions.toLocaleString("fr-FR")} $`]);
+          champs.push(["Budget payé (cette facture, frais supplémentaires inclus)", `${budgetPaye.toLocaleString("fr-FR")} $`]);
+          if (totalDeductions > 0) champs.push(["dont frais supplémentaires", `${totalDeductions.toLocaleString("fr-FR")} $`]);
           champs.push(["Budget restant", `${budgetRestant.toLocaleString("fr-FR")} $`]);
         }
       }
