@@ -849,6 +849,28 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
               })}</div>
               <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3"><span>Total avant déduction : {totalAvantDeduction.toLocaleString("fr-FR")} $</span><span>Déductions : {totalDeductions.toLocaleString("fr-FR")} $</span><span>Montant final : {total.toLocaleString("fr-FR")} $</span></div>
             </div>}
+            {estFacturePro && <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <h3 className="mb-3 font-bold text-foreground">Suivi du budget chantier</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label>
+                  <span className="mb-1 block text-sm font-semibold text-foreground">Chantier concerné</span>
+                  <select value={chantierId} onChange={(e) => selectionnerChantier(e.target.value)} className="form-control">
+                    <option value="">— Aucun (saisie libre du budget) —</option>
+                    {chantiers.map((c) => <option key={c.id} value={c.id}>{c.nom_chantier || "Chantier sans nom"}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span className="mb-1 block text-sm font-semibold text-foreground">Budget total du chantier ($)</span>
+                  <input type="number" min="0" step="0.01" value={budgetTotalChantier} onChange={(e) => setBudgetTotalChantier(e.target.value)} placeholder="Ex : 50000" className="form-control" />
+                </label>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">Le budget est pré-rempli depuis le chantier sélectionné mais reste modifiable. Le budget payé correspond au montant final de cette facture.</p>
+              <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3">
+                <span>Budget total : {budgetTotalNum.toLocaleString("fr-FR")} $</span>
+                <span>Budget payé (cette facture) : {budgetPaye.toLocaleString("fr-FR")} $</span>
+                <span className={budgetRestant === 0 && budgetTotalNum > 0 ? "text-green-600" : ""}>Budget restant : {budgetRestant.toLocaleString("fr-FR")} $</span>
+              </div>
+            </div>}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {config.type !== "carte_service" && config.type !== "rendu_3d" && config.type !== "realistic_sketchup" && config.type !== "plan_architectural" && config.type !== "code_qr" && config.type !== "version_nuit" && <><label><span className="mb-1 block text-sm font-semibold text-foreground">{estCommunication ? "Dénominateur de celui qui impose le sceau" : "Texte au-dessus du sceau"}</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
               {!estCommunication && config.type !== "fiche_employe" && <label><span className="mb-1 block text-sm font-semibold text-foreground">Texte au-dessus de la signature</span><input value={libelleSignature} onChange={(e) => setLibelleSignature(e.target.value)} className="form-control" /></label>}
