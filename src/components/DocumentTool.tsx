@@ -862,7 +862,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
                 <label>
                   <span className="mb-1 block text-sm font-semibold text-foreground">Chantier concerné</span>
                   <select value={chantierId} onChange={(e) => selectionnerChantier(e.target.value)} className="form-control">
-                    <option value="">— Aucun (saisie libre du budget) —</option>
+                    <option value="">— Nouveau chantier (utilise les infos client) —</option>
                     {chantiers.map((c) => <option key={c.id} value={c.id}>{c.nom_chantier || "Chantier sans nom"}</option>)}
                   </select>
                 </label>
@@ -871,11 +871,13 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
                   <input type="number" min="0" step="0.01" value={budgetTotalChantier} onChange={(e) => setBudgetTotalChantier(e.target.value)} placeholder="Ex : 50000" className="form-control" />
                 </label>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">Le budget est pré-rempli depuis le chantier sélectionné mais reste modifiable. Le budget payé correspond au montant final de cette facture.</p>
-              <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3">
+              {estNouveauChantier && <p className="mt-2 rounded-lg bg-amber-500/10 p-2 text-xs font-semibold text-amber-700 dark:text-amber-400">Nouveau chantier détecté · Identifié par : {nomChantierEffectif}</p>}
+              <p className="mt-2 text-xs text-muted-foreground">Le budget payé inclut le montant final de la facture <strong>et les frais à déduire</strong> (les deux sortent du budget chantier).</p>
+              <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-2 lg:grid-cols-4">
                 <span>Budget total : {budgetTotalNum.toLocaleString("fr-FR")} $</span>
-                <span>Budget payé (cette facture) : {budgetPaye.toLocaleString("fr-FR")} $</span>
-                <span className={budgetRestant === 0 && budgetTotalNum > 0 ? "text-green-600" : ""}>Budget restant : {budgetRestant.toLocaleString("fr-FR")} $</span>
+                <span>Budget payé : {budgetPaye.toLocaleString("fr-FR")} $</span>
+                <span className="text-muted-foreground">dont frais : {totalDeductions.toLocaleString("fr-FR")} $</span>
+                <span className={budgetRestant === 0 && budgetTotalNum > 0 ? "text-green-600" : ""}>Restant : {budgetRestant.toLocaleString("fr-FR")} $</span>
               </div>
             </div>}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
