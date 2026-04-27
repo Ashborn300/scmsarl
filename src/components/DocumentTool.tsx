@@ -636,12 +636,13 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
     if (Number.isFinite(montantFixe)) return somme + montantFixe;
     return somme + totalAvantDeduction * Number(deduction.pourcentage || 0) / 100;
   }, 0) : 0, [avecDeductions, deductions, totalAvantDeduction]);
-  const total = Math.max(0, totalAvantDeduction - totalDeductions);
+  // Les frais supplémentaires sont AJOUTÉS au total avant frais pour obtenir le montant final
+  const total = totalAvantDeduction + totalDeductions;
 
   // Calculs auto budget chantier (facture pro uniquement)
-  // Le budget payé inclut le montant final ET les frais déduits (qui sortent aussi du budget chantier)
+  // Le budget payé correspond au montant final (qui inclut déjà les frais supplémentaires)
   const budgetTotalNum = Number(budgetTotalChantier || 0);
-  const budgetPaye = estFacturePro ? totalAvantDeduction : 0;
+  const budgetPaye = estFacturePro ? total : 0;
   const budgetRestant = estFacturePro ? Math.max(0, budgetTotalNum - budgetPaye) : 0;
   // Si aucun chantier existant n'est sélectionné, on traite comme un nouveau chantier basé sur les infos client
   const estNouveauChantier = estFacturePro && !chantierId;
