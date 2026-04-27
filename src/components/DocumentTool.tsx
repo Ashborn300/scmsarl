@@ -841,7 +841,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
           </div>
         </div>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,1fr)] xl:gap-8">
-          <form onSubmit={soumettre} className="rounded-2xl border border-border bg-card/95 p-4 shadow-document lg:p-6 xl:p-8">
+          <form onSubmit={soumettre} className="rounded-2xl border border-border bg-card/95 p-4 pb-4 shadow-document lg:p-6 lg:pb-6 xl:p-8 xl:pb-8">
             <div className="mb-5 flex items-center justify-between border-b border-border/60 pb-3">
               <h2 className="text-lg font-black text-foreground xl:text-xl">Informations du document</h2>
               <span className="hidden text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:inline">{documentEdite ? `Modification · ${documentEdite.numero}` : "Nouveau document"}</span>
