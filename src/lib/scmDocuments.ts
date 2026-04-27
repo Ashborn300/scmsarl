@@ -1208,9 +1208,9 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     return pdf.output("datauristring");
   }
 
-  // Limites verticales de la zone de contenu (réserve d'espace en bas pour le bloc TOTAL fixe à y=220 + pied de page)
+  // Limites verticales de la zone de contenu (le pied sceau/signature commence à y=244)
   const Y_DEBUT = 82;
-  const Y_LIMITE = 218; // au-delà → nouvelle page (laisse la place au TOTAL fixe à y=220)
+  const Y_LIMITE = 238; // au-delà → nouvelle page (laisse la place au pied de page)
   let pageCourante = 1;
 
   // Helper : crée une nouvelle page avec en-tête et retourne le y de départ
