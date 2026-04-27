@@ -783,7 +783,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
       const deductionsActives = avecDeductions ? deductions.filter((deduction) => deduction.libelle.trim() && (Number(deduction.montant || 0) > 0 || Number(deduction.pourcentage || 0) > 0)) : [];
       const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, deductions: deductionsActives, total, totalAvantDeduction });
       // Payload léger : on n'enregistre PAS sceauBase64/signatureBase64 dans donnees_formulaire (déjà rendus dans le PDF) — évite les timeouts DB sur gros fichiers.
-      const payloadFacture = estFacturePro ? { chantierId, chantierNom: chantiers.find((c) => c.id === chantierId)?.nom_chantier || "", budgetTotalChantier: budgetTotalNum, budgetPaye, budgetRestant } : {};
+      const payloadFacture = estFacturePro ? { chantierId, chantierNom: nomChantierEffectif, estNouveauChantier, budgetTotalChantier: budgetTotalNum, budgetPaye, budgetRestant, fraisDeduits: totalDeductions } : {};
       await enregistrerDocument(config.type, { ...formulaire, ...imagesChamps, lignes, deductions: deductionsActives, totalAvantDeduction, totalDeductions, totalFinal: total, total, titreCourt: config.titre, libelleSceau, libelleSignature, ...payloadFacture }, pdf, numero, documentEdite?.id);
       setDocumentEdite(null);
       setActualisation((valeur) => valeur + 1);
