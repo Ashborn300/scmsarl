@@ -798,6 +798,10 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
     setSceau(undefined);
     setSignature(undefined);
     setEmployesSelectionnes(Array.isArray(donnees.employeIds) ? donnees.employeIds as string[] : []);
+    if (estFacturePro) {
+      setChantierId(String(donnees.chantierId || ""));
+      setBudgetTotalChantier(donnees.budgetTotalChantier !== undefined ? String(donnees.budgetTotalChantier) : "");
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
