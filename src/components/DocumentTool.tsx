@@ -625,6 +625,10 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
   const [documentEdite, setDocumentEdite] = useState<DocumentRecord | null>(null);
   const [employes, setEmployes] = useState<EmployeRecord[]>([]);
   const [employesSelectionnes, setEmployesSelectionnes] = useState<string[]>([]);
+  const estFacturePro = config.type === "facture";
+  const [chantiers, setChantiers] = useState<Array<{ id: string; nom_chantier: string; budget_global: number }>>([]);
+  const [chantierId, setChantierId] = useState<string>("");
+  const [budgetTotalChantier, setBudgetTotalChantier] = useState<string>("");
 
   const totalAvantDeduction = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
   const totalDeductions = useMemo(() => avecDeductions ? deductions.reduce((somme, deduction) => {
@@ -634,7 +638,30 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
   }, 0) : 0, [avecDeductions, deductions, totalAvantDeduction]);
   const total = Math.max(0, totalAvantDeduction - totalDeductions);
 
+  // Calculs auto budget chantier (facture pro uniquement)
+  const budgetTotalNum = Number(budgetTotalChantier || 0);
+  const budgetPaye = estFacturePro ? total : 0;
+  const budgetRestant = estFacturePro ? Math.max(0, budgetTotalNum - budgetPaye) : 0;
+
   useEffect(() => { if (config.type === "fiche_employe" || config.type === "code_qr") listerEmployes().then(setEmployes).catch((erreur) => alert(erreur instanceof Error ? erreur.message : "Impossible de charger les employés.")); }, [config.type]);
+
+  useEffect(() => {
+    if (!estFacturePro) return;
+    (async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data, error } = await supabase.from("chantiers").select("id, nom_chantier, budget_global").order("nom_chantier", { ascending: true });
+        if (error) throw error;
+        setChantiers((data || []).map((c) => ({ id: c.id, nom_chantier: c.nom_chantier, budget_global: Number(c.budget_global || 0) })));
+      } catch { /* silencieux : la saisie libre du budget reste possible */ }
+    })();
+  }, [estFacturePro]);
+
+  function selectionnerChantier(id: string) {
+    setChantierId(id);
+    const chantier = chantiers.find((c) => c.id === id);
+    if (chantier) setBudgetTotalChantier(String(chantier.budget_global || ""));
+  }
 
   function changer(name: string, value: string) { setFormulaire((actuel) => ({ ...actuel, [name]: value })); }
   function changerImage(name: string, file?: File) { setImagesFormulaire((actuel) => ({ ...actuel, [name]: file })); }
