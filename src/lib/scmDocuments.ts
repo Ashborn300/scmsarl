@@ -693,7 +693,7 @@ function texteMultiligne(pdf: jsPDF, label: string, valeur: string, x: number, y
 }
 
 function piedDePage(pdf: jsPDF, couleur: [number, number, number], sceau?: string, signature?: string, libelleSceau = "Sceau de l’entreprise", libelleSignature = "Signature du client") {
-  const y = 244;
+  const y = 252;
   pdf.setDrawColor(...couleur);
   pdf.line(18, y - 8, 192, y - 8);
   pdf.setFontSize(9);
@@ -705,7 +705,7 @@ function piedDePage(pdf: jsPDF, couleur: [number, number, number], sceau?: strin
 }
 
 function piedDePageCommunication(pdf: jsPDF, couleur: [number, number, number], sceau?: string, libelleSceau = "Nom / fonction de celui qui impose le sceau") {
-  const y = 238;
+  const y = 246;
   pdf.setDrawColor(...couleur);
   pdf.line(18, y - 8, 192, y - 8);
   pdf.setFontSize(9);
@@ -1247,9 +1247,9 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     return pdf.output("datauristring");
   }
 
-  // Limites verticales de la zone de contenu (le pied sceau/signature commence à y=244)
+  // Limites verticales de la zone de contenu (le pied de page est repoussé pour exploiter au mieux l'espace)
   const Y_DEBUT = 82;
-  const Y_LIMITE = 238; // au-delà → nouvelle page (laisse la place au pied de page)
+  const Y_LIMITE = type === "communiquer" ? 234 : 240;
   let pageCourante = 1;
 
   // Helper : crée une nouvelle page avec en-tête et retourne le y de départ
@@ -1377,7 +1377,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
       pdf.text(`${(ligne.quantite * ligne.prix).toLocaleString("fr-FR")} $`, 166, y);
       y += 3;
     });
-    y += 4;
+    y += 2;
   }
 
   // Frais à déduire
@@ -1403,7 +1403,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
       pdf.text(detail, 23, y);
       pdf.text(`+ ${montant.toLocaleString("fr-FR")} $`, 146, y);
     });
-    y += 6;
+    y += 4;
   }
 
   // Bloc TOTAL — placé dynamiquement juste après le contenu (pas de position fixe)
