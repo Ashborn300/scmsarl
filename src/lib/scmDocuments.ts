@@ -1362,7 +1362,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
         ? libelle
         : `${libelle} (${Number(deduction.pourcentage || 0).toLocaleString("fr-FR")} %)`;
       pdf.text(detail, 23, y);
-      pdf.text(`- ${montant.toLocaleString("fr-FR")} $`, 146, y);
+      pdf.text(`+ ${montant.toLocaleString("fr-FR")} $`, 146, y);
     });
     y += 6;
   }
