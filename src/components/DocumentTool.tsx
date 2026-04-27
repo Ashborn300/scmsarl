@@ -872,7 +872,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
                 </label>
               </div>
               {estNouveauChantier && <p className="mt-2 rounded-lg bg-amber-500/10 p-2 text-xs font-semibold text-amber-700 dark:text-amber-400">Nouveau chantier détecté · Identifié par : {nomChantierEffectif}</p>}
-              <p className="mt-2 text-xs text-muted-foreground">Le budget payé inclut le montant final de la facture <strong>et les frais à déduire</strong> (les deux sortent du budget chantier).</p>
+              <p className="mt-2 text-xs text-muted-foreground">Le budget payé inclut le montant final de la facture <strong>et les frais supplémentaires</strong> (les deux sortent du budget chantier).</p>
               <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-2 lg:grid-cols-4">
                 <span>Budget total : {budgetTotalNum.toLocaleString("fr-FR")} $</span>
                 <span>Budget payé : {budgetPaye.toLocaleString("fr-FR")} $</span>
