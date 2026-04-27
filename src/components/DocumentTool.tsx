@@ -854,7 +854,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
                   </div>
                 );
               })}</div>
-              <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3"><span>Total avant déduction : {totalAvantDeduction.toLocaleString("fr-FR")} $</span><span>Déductions : {totalDeductions.toLocaleString("fr-FR")} $</span><span>Montant final : {total.toLocaleString("fr-FR")} $</span></div>
+              <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3"><span>Total avant frais : {totalAvantDeduction.toLocaleString("fr-FR")} $</span><span>Frais supplémentaires : {totalDeductions.toLocaleString("fr-FR")} $</span><span>Montant final : {total.toLocaleString("fr-FR")} $</span></div>
             </div>}
             {estFacturePro && <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
               <h3 className="mb-3 font-bold text-foreground">Suivi du budget chantier</h3>
