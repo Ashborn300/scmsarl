@@ -821,52 +821,83 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
   }
 
   return (
-    <main className={`min-h-screen bg-background px-4 py-5 sm:px-6 lg:px-8 tool-${config.theme}`}>
-      <div className="mx-auto max-w-7xl">
+    <main className={`min-h-screen bg-background px-4 py-5 sm:px-6 lg:px-10 xl:px-12 tool-${config.theme}`}>
+      <div className="mx-auto w-full max-w-[1600px]">
         <button type="button" onClick={retour} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Retour au tableau de bord</button>
-        <div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-8">
-          <span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span>
-          <h1 className="max-w-3xl text-3xl font-black lg:text-5xl">{config.titre}</h1>
-          <p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">{config.description}</p>
+        <div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span>
+              <h1 className="max-w-3xl text-3xl font-black lg:text-5xl xl:text-6xl">{config.titre}</h1>
+              <p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">{config.description}</p>
+            </div>
+            {estFacturePro && (
+              <div className="hidden shrink-0 rounded-2xl bg-tool-foreground/10 p-4 backdrop-blur-sm lg:block lg:min-w-[260px]">
+                <p className="text-xs font-bold uppercase tracking-wide opacity-80">Aperçu du total</p>
+                <p className="mt-1 text-3xl font-black tabular-nums">{total.toLocaleString("fr-FR")} $</p>
+                {budgetTotalNum > 0 && <p className="mt-2 text-xs opacity-90">Budget restant · <span className="font-bold tabular-nums">{budgetRestant.toLocaleString("fr-FR")} $</span></p>}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="grid gap-6 lg:grid-cols-[1.05fr_.95fr]">
-          <form onSubmit={soumettre} className="rounded-2xl border border-border bg-card/95 p-4 shadow-document lg:p-6">
-            <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,1fr)] xl:gap-8">
+          <form onSubmit={soumettre} className="rounded-2xl border border-border bg-card/95 p-4 shadow-document lg:p-6 xl:p-8">
+            <div className="mb-5 flex items-center justify-between border-b border-border/60 pb-3">
+              <h2 className="text-lg font-black text-foreground xl:text-xl">Informations du document</h2>
+              <span className="hidden text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:inline">{documentEdite ? `Modification · ${documentEdite.numero}` : "Nouveau document"}</span>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5">
               {(config.type === "fiche_employe" || config.type === "code_qr") && <>
                 {config.type === "fiche_employe" && <label><span className="mb-1 block text-sm font-semibold text-foreground">Type de fiche</span><select value={formulaire.typeFiche || "individuelle"} onChange={(e) => { changer("typeFiche", e.target.value); setEmployesSelectionnes([]); }} className="form-control"><option value="individuelle">Fiche individuelle</option><option value="collective">Fiche collective</option></select></label>}
-                <div className="sm:col-span-2 rounded-xl border border-border bg-muted/60 p-3"><span className="mb-3 block text-sm font-semibold text-foreground">Sélectionner les employés</span><div className="grid max-h-72 gap-2 overflow-auto sm:grid-cols-2">{employes.map((employe) => <label key={employe.id} className="flex items-center gap-3 rounded-lg bg-card p-3 text-sm font-semibold text-foreground"><input type={formulaire.typeFiche === "collective" ? "checkbox" : "radio"} checked={employesSelectionnes.includes(employe.id)} onChange={(e) => setEmployesSelectionnes(formulaire.typeFiche === "collective" ? (e.target.checked ? [...employesSelectionnes, employe.id] : employesSelectionnes.filter((id) => id !== employe.id)) : [employe.id])} /> <span className="min-w-0"><span className="block truncate">{employe.nom_complet || "Employé sans nom"}</span><span className="block text-xs text-muted-foreground">{employe.matricule || "—"} · {employe.genre || "—"}</span></span></label>)}</div></div>
+                <div className="sm:col-span-2 xl:col-span-3 rounded-xl border border-border bg-muted/60 p-3"><span className="mb-3 block text-sm font-semibold text-foreground">Sélectionner les employés</span><div className="grid max-h-72 gap-2 overflow-auto sm:grid-cols-2 xl:grid-cols-3">{employes.map((employe) => <label key={employe.id} className="flex items-center gap-3 rounded-lg bg-card p-3 text-sm font-semibold text-foreground"><input type={formulaire.typeFiche === "collective" ? "checkbox" : "radio"} checked={employesSelectionnes.includes(employe.id)} onChange={(e) => setEmployesSelectionnes(formulaire.typeFiche === "collective" ? (e.target.checked ? [...employesSelectionnes, employe.id] : employesSelectionnes.filter((id) => id !== employe.id)) : [employe.id])} /> <span className="min-w-0"><span className="block truncate">{employe.nom_complet || "Employé sans nom"}</span><span className="block text-xs text-muted-foreground">{employe.matricule || "—"} · {employe.genre || "—"}</span></span></label>)}</div></div>
               </>}
               {config.fields.map((field) => (
-                <label key={field.name} className={field.type === "textarea" ? "sm:col-span-2" : ""}>
+                <label key={field.name} className={field.type === "textarea" ? "sm:col-span-2 xl:col-span-3" : ""}>
                   <span className="mb-1 block text-sm font-semibold text-foreground">{field.label}{field.required ? " *" : ""}</span>
                   {field.type === "textarea" ? <textarea value={formulaire[field.name] || ""} onChange={(e) => changer(field.name, e.target.value)} rows={4} className="form-control min-h-28" /> : field.type === "image" ? <input type="file" accept="image/*" onChange={(e) => changerImage(field.name, e.target.files?.[0])} className="file-input" /> : <input value={formulaire[field.name] || ""} onChange={(e) => changer(field.name, e.target.value)} type={field.type || "text"} className="form-control" />}
                 </label>
               ))}
             </div>
-            {config.hasLines && <div className="mt-6 rounded-xl bg-muted p-3">
-              <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">{config.type === "devis" ? "Achats à faire" : "Prestations"}</h3><button type="button" onClick={() => setLignes([...lignes, { description: "", quantite: 1, prix: 0 }])} className="mini-button"><Plus className="size-4" /> Ajouter</button></div>
-              <div className="space-y-3">{lignes.map((ligne, index) => <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_90px_120px_40px]"><input placeholder={config.type === "devis" ? "Achat à faire" : "Description"} value={ligne.description} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, description: e.target.value } : l))} className="form-control" /><input type="number" min="1" value={ligne.quantite} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, quantite: Number(e.target.value) } : l))} className="form-control" /><input type="number" min="0" value={ligne.prix} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, prix: Number(e.target.value) } : l))} placeholder={config.type === "devis" ? "Coût" : "Prix"} className="form-control" /><button type="button" onClick={() => setLignes(lignes.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button></div>)}</div>
+            {config.hasLines && <div className="mt-6 rounded-xl border border-border bg-muted/60 p-4 xl:p-5">
+              <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground xl:text-lg">{config.type === "devis" ? "Achats à faire" : "Prestations"}</h3><button type="button" onClick={() => setLignes([...lignes, { description: "", quantite: 1, prix: 0 }])} className="mini-button"><Plus className="size-4" /> Ajouter une ligne</button></div>
+              <div className="mb-2 hidden text-xs font-bold uppercase tracking-wide text-muted-foreground sm:grid sm:grid-cols-[1fr_90px_140px_140px_40px] sm:gap-2 sm:px-3"><span>Description</span><span>Qté</span><span>{config.type === "devis" ? "Coût unitaire" : "Prix unitaire"}</span><span className="text-right">Total ligne</span><span></span></div>
+              <div className="space-y-2">{lignes.map((ligne, index) => {
+                const totalLigne = Number(ligne.quantite || 0) * Number(ligne.prix || 0);
+                return (
+                  <div key={index} className="grid gap-2 rounded-lg border border-border/60 bg-card p-3 sm:grid-cols-[1fr_90px_140px_140px_40px] sm:items-center">
+                    <input placeholder={config.type === "devis" ? "Achat à faire" : "Description"} value={ligne.description} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, description: e.target.value } : l))} className="form-control" />
+                    <input type="number" min="1" value={ligne.quantite} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, quantite: Number(e.target.value) } : l))} className="form-control" />
+                    <input type="number" min="0" value={ligne.prix} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, prix: Number(e.target.value) } : l))} placeholder={config.type === "devis" ? "Coût" : "Prix"} className="form-control" />
+                    <span className="hidden text-right text-sm font-bold tabular-nums text-foreground sm:block">{totalLigne.toLocaleString("fr-FR")} $</span>
+                    <button type="button" onClick={() => setLignes(lignes.filter((_, i) => i !== index))} className="tool-action danger justify-self-end"><Trash2 className="size-4" /></button>
+                  </div>
+                );
+              })}</div>
             </div>}
-            {avecDeductions && <div className="mt-6 rounded-xl bg-muted p-3">
-              <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">Frais supplémentaires</h3><button type="button" onClick={() => setDeductions([...deductions, { libelle: "Frais d’entreprise", montant: 0 }])} className="mini-button"><Plus className="size-4" /> Ajouter</button></div>
-              <p className="mb-3 text-xs text-muted-foreground">Personnalisez le nom et le montant en $ des frais supplémentaires (ex : Transport, Taxes, Commission…). Ces frais sont déduits du montant final <strong>et sortent aussi du budget total du chantier</strong>.</p>
-              <div className="space-y-3">{deductions.map((deduction, index) => {
+            {avecDeductions && <div className="mt-6 rounded-xl border border-border bg-muted/60 p-4 xl:p-5">
+              <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground xl:text-lg">Frais supplémentaires</h3><button type="button" onClick={() => setDeductions([...deductions, { libelle: "Frais d’entreprise", montant: 0 }])} className="mini-button"><Plus className="size-4" /> Ajouter</button></div>
+              <p className="mb-3 text-xs text-muted-foreground">Personnalisez le nom et le montant en $ des frais supplémentaires (ex : Transport, Taxes, Commission…). Ces frais sont ajoutés au montant final <strong>et sortent aussi du budget total du chantier</strong>.</p>
+              <div className="space-y-2">{deductions.map((deduction, index) => {
                 const montantAffiche = typeof deduction.montant === "number"
                   ? deduction.montant
                   : Math.round(totalAvantDeduction * Number(deduction.pourcentage || 0) / 100 * 100) / 100;
                 return (
-                  <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_140px_40px]">
+                  <div key={index} className="grid gap-2 rounded-lg border border-border/60 bg-card p-3 sm:grid-cols-[1fr_160px_40px] sm:items-center">
                     <input placeholder="Nom des frais (ex : Transport)" value={deduction.libelle} onChange={(e) => setDeductions(deductions.map((d, i) => i === index ? { ...d, libelle: e.target.value } : d))} className="form-control" />
                     <input type="number" min="0" step="0.01" value={montantAffiche} onChange={(e) => setDeductions(deductions.map((d, i) => i === index ? { libelle: d.libelle, montant: Number(e.target.value) } : d))} placeholder="Montant ($)" className="form-control" />
-                    <button type="button" onClick={() => setDeductions(deductions.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button>
+                    <button type="button" onClick={() => setDeductions(deductions.filter((_, i) => i !== index))} className="tool-action danger justify-self-end"><Trash2 className="size-4" /></button>
                   </div>
                 );
               })}</div>
-              <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3"><span>Total avant frais : {totalAvantDeduction.toLocaleString("fr-FR")} $</span><span>Frais supplémentaires : {totalDeductions.toLocaleString("fr-FR")} $</span><span>Montant final : {total.toLocaleString("fr-FR")} $</span></div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border border-border/60 bg-card p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Total avant frais</p><p className="mt-1 text-base font-black tabular-nums text-foreground">{totalAvantDeduction.toLocaleString("fr-FR")} $</p></div>
+                <div className="rounded-lg border border-border/60 bg-card p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Frais supplémentaires</p><p className="mt-1 text-base font-black tabular-nums text-foreground">{totalDeductions.toLocaleString("fr-FR")} $</p></div>
+                <div className="rounded-lg border border-primary/30 bg-primary/10 p-3"><p className="text-xs font-bold uppercase tracking-wide text-primary">Montant final</p><p className="mt-1 text-base font-black tabular-nums text-primary">{total.toLocaleString("fr-FR")} $</p></div>
+              </div>
             </div>}
-            {estFacturePro && <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
-              <h3 className="mb-3 font-bold text-foreground">Suivi du budget chantier</h3>
-              <div className="grid gap-3 sm:grid-cols-2">
+            {estFacturePro && <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4 xl:p-5">
+              <div className="mb-3 flex items-center gap-2"><Wallet className="size-5 text-primary" /><h3 className="font-bold text-foreground xl:text-lg">Suivi du budget chantier</h3></div>
+              <div className="grid gap-3 sm:grid-cols-2 xl:gap-4">
                 <label>
                   <span className="mb-1 block text-sm font-semibold text-foreground">Chantier concerné</span>
                   <select value={chantierId} onChange={(e) => selectionnerChantier(e.target.value)} className="form-control">
@@ -880,23 +911,23 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
                 </label>
               </div>
               {estNouveauChantier && <p className="mt-2 rounded-lg bg-amber-500/10 p-2 text-xs font-semibold text-amber-700 dark:text-amber-400">Nouveau chantier détecté · Identifié par : {nomChantierEffectif}</p>}
-              <p className="mt-2 text-xs text-muted-foreground">Le montant final (prestations + frais supplémentaires) est soustrait du budget total du chantier pour calculer le budget restant.</p>
-              <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-2 lg:grid-cols-4">
-                <span>Budget total : {budgetTotalNum.toLocaleString("fr-FR")} $</span>
-                <span>Budget payé : {budgetPaye.toLocaleString("fr-FR")} $</span>
-                <span className="text-muted-foreground">dont frais : {totalDeductions.toLocaleString("fr-FR")} $</span>
-                <span className={budgetRestant === 0 && budgetTotalNum > 0 ? "text-green-600" : ""}>Restant : {budgetRestant.toLocaleString("fr-FR")} $</span>
+              <p className="mt-3 text-xs text-muted-foreground">Le montant final (prestations + frais supplémentaires) est soustrait du budget total du chantier pour calculer le budget restant.</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-lg border border-border/60 bg-card p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Budget total</p><p className="mt-1 text-base font-black tabular-nums text-foreground">{budgetTotalNum.toLocaleString("fr-FR")} $</p></div>
+                <div className="rounded-lg border border-border/60 bg-card p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Budget payé</p><p className="mt-1 text-base font-black tabular-nums text-foreground">{budgetPaye.toLocaleString("fr-FR")} $</p></div>
+                <div className="rounded-lg border border-border/60 bg-card p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">dont frais</p><p className="mt-1 text-base font-black tabular-nums text-muted-foreground">{totalDeductions.toLocaleString("fr-FR")} $</p></div>
+                <div className={`rounded-lg border p-3 ${budgetRestant === 0 && budgetTotalNum > 0 ? "border-green-500/40 bg-green-500/10" : "border-primary/30 bg-primary/10"}`}><p className={`text-xs font-bold uppercase tracking-wide ${budgetRestant === 0 && budgetTotalNum > 0 ? "text-green-700 dark:text-green-400" : "text-primary"}`}>Budget restant</p><p className={`mt-1 text-base font-black tabular-nums ${budgetRestant === 0 && budgetTotalNum > 0 ? "text-green-700 dark:text-green-400" : "text-primary"}`}>{budgetRestant.toLocaleString("fr-FR")} $</p></div>
               </div>
             </div>}
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:gap-5">
               {config.type !== "carte_service" && config.type !== "rendu_3d" && config.type !== "realistic_sketchup" && config.type !== "plan_architectural" && config.type !== "code_qr" && config.type !== "version_nuit" && <><label><span className="mb-1 block text-sm font-semibold text-foreground">{estCommunication ? "Dénominateur de celui qui impose le sceau" : "Texte au-dessus du sceau"}</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
               {!estCommunication && config.type !== "fiche_employe" && <label><span className="mb-1 block text-sm font-semibold text-foreground">Texte au-dessus de la signature</span><input value={libelleSignature} onChange={(e) => setLibelleSignature(e.target.value)} className="form-control" /></label>}
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer le sceau de l’entreprise</span><input type="file" accept="image/*" onChange={(e) => setSceau(e.target.files?.[0])} className="file-input" /></label>
               {!estCommunication && config.type !== "fiche_employe" && <label><span className="mb-1 block text-sm font-semibold text-foreground">Importer la signature du client</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label>}</>}
             </div>
-            <div className="mt-6 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">{config.showTotal === false ? <span className="text-sm font-semibold text-foreground">{documentEdite ? `Modification de ${documentEdite.numero}` : "Fiche prête à générer"}</span> : <strong className="text-lg text-foreground">Total : {total.toLocaleString("fr-FR")} $</strong>}<button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : documentEdite ? (config.type === "rendu_3d" || config.type === "realistic_sketchup" || config.type === "plan_architectural" || config.type === "code_qr" || config.type === "version_nuit" ? "Réenregistrer l’image" : "Réenregistrer le PDF") : (config.type === "rendu_3d" || config.type === "realistic_sketchup" || config.type === "plan_architectural" || config.type === "code_qr" || config.type === "version_nuit" ? "Générer et enregistrer l’image" : "Générer et enregistrer le PDF")}</button></div>
+            <div className="mt-6 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between lg:sticky lg:bottom-4 lg:z-10 lg:backdrop-blur lg:supports-[backdrop-filter]:bg-primary/20">{config.showTotal === false ? <span className="text-sm font-semibold text-foreground">{documentEdite ? `Modification de ${documentEdite.numero}` : "Fiche prête à générer"}</span> : <strong className="text-lg text-foreground tabular-nums">Total : {total.toLocaleString("fr-FR")} $</strong>}<button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : documentEdite ? (config.type === "rendu_3d" || config.type === "realistic_sketchup" || config.type === "plan_architectural" || config.type === "code_qr" || config.type === "version_nuit" ? "Réenregistrer l’image" : "Réenregistrer le PDF") : (config.type === "rendu_3d" || config.type === "realistic_sketchup" || config.type === "plan_architectural" || config.type === "code_qr" || config.type === "version_nuit" ? "Générer et enregistrer l’image" : "Générer et enregistrer le PDF")}</button></div>
           </form>
-          <div className="space-y-6"><div className="rounded-2xl border border-border bg-card p-5 shadow-document"><FileCheck2 className="mb-3 size-8 text-primary" /><h2 className="text-xl font-bold text-foreground">Document officiel prêt à l’emploi</h2><p className="mt-2 text-sm text-muted-foreground">Chaque PDF inclut le logo SCM SARL, le drapeau de la RDC, une mise en page structurée, ainsi que les zones sceau et signature.</p></div><DocumentHistory type={config.type} actualisation={actualisation} onEdit={editerDocument} /></div>
+          <div className="space-y-6 lg:sticky lg:top-4 lg:self-start"><div className="rounded-2xl border border-border bg-card p-5 shadow-document xl:p-6"><FileCheck2 className="mb-3 size-8 text-primary" /><h2 className="text-xl font-bold text-foreground">Document officiel prêt à l’emploi</h2><p className="mt-2 text-sm text-muted-foreground">Chaque PDF inclut le logo SCM SARL, le drapeau de la RDC, une mise en page structurée, ainsi que les zones sceau et signature.</p></div><DocumentHistory type={config.type} actualisation={actualisation} onEdit={editerDocument} /></div>
         </div>
       </div>
     </main>
