@@ -625,6 +625,10 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
   const [documentEdite, setDocumentEdite] = useState<DocumentRecord | null>(null);
   const [employes, setEmployes] = useState<EmployeRecord[]>([]);
   const [employesSelectionnes, setEmployesSelectionnes] = useState<string[]>([]);
+  const estFacturePro = config.type === "facture";
+  const [chantiers, setChantiers] = useState<Array<{ id: string; nom_chantier: string; budget_global: number }>>([]);
+  const [chantierId, setChantierId] = useState<string>("");
+  const [budgetTotalChantier, setBudgetTotalChantier] = useState<string>("");
 
   const totalAvantDeduction = useMemo(() => config.hasLines ? lignes.reduce((somme, ligne) => somme + Number(ligne.quantite || 0) * Number(ligne.prix || 0), 0) : Number(formulaire.total || formulaire.montant || formulaire.salaire || formulaire.budget || 0), [config.hasLines, formulaire, lignes]);
   const totalDeductions = useMemo(() => avecDeductions ? deductions.reduce((somme, deduction) => {
@@ -634,7 +638,30 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
   }, 0) : 0, [avecDeductions, deductions, totalAvantDeduction]);
   const total = Math.max(0, totalAvantDeduction - totalDeductions);
 
+  // Calculs auto budget chantier (facture pro uniquement)
+  const budgetTotalNum = Number(budgetTotalChantier || 0);
+  const budgetPaye = estFacturePro ? total : 0;
+  const budgetRestant = estFacturePro ? Math.max(0, budgetTotalNum - budgetPaye) : 0;
+
   useEffect(() => { if (config.type === "fiche_employe" || config.type === "code_qr") listerEmployes().then(setEmployes).catch((erreur) => alert(erreur instanceof Error ? erreur.message : "Impossible de charger les employés.")); }, [config.type]);
+
+  useEffect(() => {
+    if (!estFacturePro) return;
+    (async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data, error } = await supabase.from("chantiers").select("id, nom_chantier, budget_global").order("nom_chantier", { ascending: true });
+        if (error) throw error;
+        setChantiers((data || []).map((c) => ({ id: c.id, nom_chantier: c.nom_chantier, budget_global: Number(c.budget_global || 0) })));
+      } catch { /* silencieux : la saisie libre du budget reste possible */ }
+    })();
+  }, [estFacturePro]);
+
+  function selectionnerChantier(id: string) {
+    setChantierId(id);
+    const chantier = chantiers.find((c) => c.id === id);
+    if (chantier) setBudgetTotalChantier(String(chantier.budget_global || ""));
+  }
 
   function changer(name: string, value: string) { setFormulaire((actuel) => ({ ...actuel, [name]: value })); }
   function changerImage(name: string, file?: File) { setImagesFormulaire((actuel) => ({ ...actuel, [name]: file })); }
@@ -736,11 +763,21 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
       const sceauBase64 = await lireImage(sceau) || String(ancienPayload.sceauBase64 || "") || undefined;
       const signatureBase64 = estCommunication ? undefined : await lireImage(signature) || String(ancienPayload.signatureBase64 || "") || undefined;
       const champs: Array<[string, string]> = config.fields.map((field) => [field.label, field.type === "image" ? imagesChamps[field.name] || "—" : formulaire[field.name] || "—"]);
-      if (config.type === "facture") champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
+      if (config.type === "facture") {
+        champs.unshift(["Informations entreprise", "SCM SARL\nRCCM : CD/KNM/RCCM/24-B-01256\nIDNAT : 01-F4200-N55523N\nN° Impôt : A2442 173S"]);
+        const chantierNom = chantiers.find((c) => c.id === chantierId)?.nom_chantier || formulaire.chantierNom || "";
+        if (chantierNom) champs.push(["Chantier concerné", chantierNom]);
+        if (budgetTotalNum > 0) {
+          champs.push(["Budget total du chantier", `${budgetTotalNum.toLocaleString("fr-FR")} $`]);
+          champs.push(["Budget payé (cette facture)", `${budgetPaye.toLocaleString("fr-FR")} $`]);
+          champs.push(["Budget restant", `${budgetRestant.toLocaleString("fr-FR")} $`]);
+        }
+      }
       const deductionsActives = avecDeductions ? deductions.filter((deduction) => deduction.libelle.trim() && (Number(deduction.montant || 0) > 0 || Number(deduction.pourcentage || 0) > 0)) : [];
       const pdf = await creerPdf(config.type, config.titre.replace("Générateur de ", ""), numero, champs, { sceau: sceauBase64, signature: signatureBase64, libelleSceau, libelleSignature, lignes: config.hasLines ? lignes : undefined, deductions: deductionsActives, total, totalAvantDeduction });
       // Payload léger : on n'enregistre PAS sceauBase64/signatureBase64 dans donnees_formulaire (déjà rendus dans le PDF) — évite les timeouts DB sur gros fichiers.
-      await enregistrerDocument(config.type, { ...formulaire, ...imagesChamps, lignes, deductions: deductionsActives, totalAvantDeduction, totalDeductions, totalFinal: total, total, titreCourt: config.titre, libelleSceau, libelleSignature }, pdf, numero, documentEdite?.id);
+      const payloadFacture = estFacturePro ? { chantierId, chantierNom: chantiers.find((c) => c.id === chantierId)?.nom_chantier || "", budgetTotalChantier: budgetTotalNum, budgetPaye, budgetRestant } : {};
+      await enregistrerDocument(config.type, { ...formulaire, ...imagesChamps, lignes, deductions: deductionsActives, totalAvantDeduction, totalDeductions, totalFinal: total, total, titreCourt: config.titre, libelleSceau, libelleSignature, ...payloadFacture }, pdf, numero, documentEdite?.id);
       setDocumentEdite(null);
       setActualisation((valeur) => valeur + 1);
       alert(documentEdite ? "Document PDF modifié et réenregistré avec succès." : "Document PDF généré et enregistré avec succès.");
@@ -761,6 +798,10 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
     setSceau(undefined);
     setSignature(undefined);
     setEmployesSelectionnes(Array.isArray(donnees.employeIds) ? donnees.employeIds as string[] : []);
+    if (estFacturePro) {
+      setChantierId(String(donnees.chantierId || ""));
+      setBudgetTotalChantier(donnees.budgetTotalChantier !== undefined ? String(donnees.budgetTotalChantier) : "");
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -807,6 +848,28 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
                 );
               })}</div>
               <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3"><span>Total avant déduction : {totalAvantDeduction.toLocaleString("fr-FR")} $</span><span>Déductions : {totalDeductions.toLocaleString("fr-FR")} $</span><span>Montant final : {total.toLocaleString("fr-FR")} $</span></div>
+            </div>}
+            {estFacturePro && <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <h3 className="mb-3 font-bold text-foreground">Suivi du budget chantier</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label>
+                  <span className="mb-1 block text-sm font-semibold text-foreground">Chantier concerné</span>
+                  <select value={chantierId} onChange={(e) => selectionnerChantier(e.target.value)} className="form-control">
+                    <option value="">— Aucun (saisie libre du budget) —</option>
+                    {chantiers.map((c) => <option key={c.id} value={c.id}>{c.nom_chantier || "Chantier sans nom"}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span className="mb-1 block text-sm font-semibold text-foreground">Budget total du chantier ($)</span>
+                  <input type="number" min="0" step="0.01" value={budgetTotalChantier} onChange={(e) => setBudgetTotalChantier(e.target.value)} placeholder="Ex : 50000" className="form-control" />
+                </label>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">Le budget est pré-rempli depuis le chantier sélectionné mais reste modifiable. Le budget payé correspond au montant final de cette facture.</p>
+              <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3">
+                <span>Budget total : {budgetTotalNum.toLocaleString("fr-FR")} $</span>
+                <span>Budget payé (cette facture) : {budgetPaye.toLocaleString("fr-FR")} $</span>
+                <span className={budgetRestant === 0 && budgetTotalNum > 0 ? "text-green-600" : ""}>Budget restant : {budgetRestant.toLocaleString("fr-FR")} $</span>
+              </div>
             </div>}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {config.type !== "carte_service" && config.type !== "rendu_3d" && config.type !== "realistic_sketchup" && config.type !== "plan_architectural" && config.type !== "code_qr" && config.type !== "version_nuit" && <><label><span className="mb-1 block text-sm font-semibold text-foreground">{estCommunication ? "Dénominateur de celui qui impose le sceau" : "Texte au-dessus du sceau"}</span><input value={libelleSceau} onChange={(e) => setLibelleSceau(e.target.value)} className="form-control" /></label>
