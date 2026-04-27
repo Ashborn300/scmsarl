@@ -1208,9 +1208,9 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     return pdf.output("datauristring");
   }
 
-  // Limites verticales de la zone de contenu (réserve d'espace en bas pour le pied de page)
+  // Limites verticales de la zone de contenu (réserve d'espace en bas pour le bloc TOTAL fixe à y=220 + pied de page)
   const Y_DEBUT = 82;
-  const Y_LIMITE = 235; // au-delà → nouvelle page
+  const Y_LIMITE = 218; // au-delà → nouvelle page (laisse la place au TOTAL fixe à y=220)
   let pageCourante = 1;
 
   // Helper : crée une nouvelle page avec en-tête et retourne le y de départ
@@ -1348,7 +1348,7 @@ export async function creerPdf(type: OutilType, titre: string, numero: string, c
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(10);
     pdf.setTextColor(...couleurs.principal);
-    pdf.text("Frais à déduire", 20, y);
+    pdf.text("Frais supplémentaires", 20, y);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(9);
     pdf.setTextColor(36, 45, 64);

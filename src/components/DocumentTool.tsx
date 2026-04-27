@@ -775,8 +775,8 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
         if (nomChantierEffectif) champs.push(["Chantier concerné", estNouveauChantier ? `${nomChantierEffectif} (nouveau chantier)` : nomChantierEffectif]);
         if (budgetTotalNum > 0) {
           champs.push(["Budget total du chantier", `${budgetTotalNum.toLocaleString("fr-FR")} $`]);
-          champs.push(["Budget payé (cette facture, frais inclus)", `${budgetPaye.toLocaleString("fr-FR")} $`]);
-          if (totalDeductions > 0) champs.push(["dont frais déduits", `${totalDeductions.toLocaleString("fr-FR")} $`]);
+          champs.push(["Budget payé (cette facture, frais supplémentaires inclus)", `${budgetPaye.toLocaleString("fr-FR")} $`]);
+          if (totalDeductions > 0) champs.push(["dont frais supplémentaires", `${totalDeductions.toLocaleString("fr-FR")} $`]);
           champs.push(["Budget restant", `${budgetRestant.toLocaleString("fr-FR")} $`]);
         }
       }
@@ -840,8 +840,8 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
               <div className="space-y-3">{lignes.map((ligne, index) => <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_90px_120px_40px]"><input placeholder={config.type === "devis" ? "Achat à faire" : "Description"} value={ligne.description} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, description: e.target.value } : l))} className="form-control" /><input type="number" min="1" value={ligne.quantite} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, quantite: Number(e.target.value) } : l))} className="form-control" /><input type="number" min="0" value={ligne.prix} onChange={(e) => setLignes(lignes.map((l, i) => i === index ? { ...l, prix: Number(e.target.value) } : l))} placeholder={config.type === "devis" ? "Coût" : "Prix"} className="form-control" /><button type="button" onClick={() => setLignes(lignes.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button></div>)}</div>
             </div>}
             {avecDeductions && <div className="mt-6 rounded-xl bg-muted p-3">
-              <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">Frais à déduire</h3><button type="button" onClick={() => setDeductions([...deductions, { libelle: "Frais d’entreprise", montant: 0 }])} className="mini-button"><Plus className="size-4" /> Ajouter</button></div>
-              <p className="mb-3 text-xs text-muted-foreground">Personnalisez le nom et le montant en $ des frais à déduire (ex : Transport, Taxes, Commission…).</p>
+              <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">Frais supplémentaires</h3><button type="button" onClick={() => setDeductions([...deductions, { libelle: "Frais d’entreprise", montant: 0 }])} className="mini-button"><Plus className="size-4" /> Ajouter</button></div>
+              <p className="mb-3 text-xs text-muted-foreground">Personnalisez le nom et le montant en $ des frais supplémentaires (ex : Transport, Taxes, Commission…). Ces frais sont déduits du montant final <strong>et sortent aussi du budget total du chantier</strong>.</p>
               <div className="space-y-3">{deductions.map((deduction, index) => {
                 const montantAffiche = typeof deduction.montant === "number"
                   ? deduction.montant
@@ -854,7 +854,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
                   </div>
                 );
               })}</div>
-              <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3"><span>Total avant déduction : {totalAvantDeduction.toLocaleString("fr-FR")} $</span><span>Déductions : {totalDeductions.toLocaleString("fr-FR")} $</span><span>Montant final : {total.toLocaleString("fr-FR")} $</span></div>
+              <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3"><span>Total avant frais : {totalAvantDeduction.toLocaleString("fr-FR")} $</span><span>Frais supplémentaires : {totalDeductions.toLocaleString("fr-FR")} $</span><span>Montant final : {total.toLocaleString("fr-FR")} $</span></div>
             </div>}
             {estFacturePro && <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
               <h3 className="mb-3 font-bold text-foreground">Suivi du budget chantier</h3>
@@ -872,7 +872,7 @@ function DocumentToolStandard({ config, retour }: { config: Config; retour: () =
                 </label>
               </div>
               {estNouveauChantier && <p className="mt-2 rounded-lg bg-amber-500/10 p-2 text-xs font-semibold text-amber-700 dark:text-amber-400">Nouveau chantier détecté · Identifié par : {nomChantierEffectif}</p>}
-              <p className="mt-2 text-xs text-muted-foreground">Le budget payé inclut le montant final de la facture <strong>et les frais à déduire</strong> (les deux sortent du budget chantier).</p>
+              <p className="mt-2 text-xs text-muted-foreground">Le budget payé inclut le montant final de la facture <strong>et les frais supplémentaires</strong> (les deux sortent du budget chantier).</p>
               <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-2 lg:grid-cols-4">
                 <span>Budget total : {budgetTotalNum.toLocaleString("fr-FR")} $</span>
                 <span>Budget payé : {budgetPaye.toLocaleString("fr-FR")} $</span>
