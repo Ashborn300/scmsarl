@@ -625,6 +625,39 @@ async function imageVersBase64(url: string) {
   }
 }
 
+async function compresserPhotoEmploye(source: string | undefined | null, taille = 96, qualite = 0.7): Promise<string> {
+  if (!source) return "";
+  try {
+    let dataUrl = String(source);
+    if (!dataUrl.startsWith("data:")) {
+      dataUrl = await imageVersBase64(dataUrl);
+      if (!dataUrl) return "";
+    }
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = reject;
+      image.src = dataUrl;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = taille;
+    canvas.height = taille;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, taille, taille);
+    // cover crop
+    const ratio = Math.max(taille / image.width, taille / image.height);
+    const w = image.width * ratio;
+    const h = image.height * ratio;
+    ctx.drawImage(image, (taille - w) / 2, (taille - h) / 2, w, h);
+    return canvas.toDataURL("image/jpeg", qualite);
+  } catch {
+    return "";
+  }
+}
+
 async function drapeauRdcVersPng() {
   try {
     const svg = await fetch(drapeauRdcUrl).then((reponse) => reponse.text());
