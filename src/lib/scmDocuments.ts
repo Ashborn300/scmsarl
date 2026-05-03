@@ -143,6 +143,7 @@ export const tablesParOutil: Record<OutilType, string> = {
 export const prefixesParOutil: Record<OutilType, string> = {
   facture: "FAC",
   devis: "DEV",
+  devis_estimatif: "DES",
   recu: "REC",
   contrat_construction: "CCO",
   contrat_employe: "CEM",
