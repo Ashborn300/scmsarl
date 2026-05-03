@@ -111,6 +111,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
 export const tablesParOutil: Record<OutilType, string> = {
   facture: "factures",
   devis: "devis",
+  devis_estimatif: "devis_estimatifs",
   recu: "recus",
   contrat_construction: "contrats_construction",
   contrat_employe: "contrats_employes",
