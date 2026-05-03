@@ -20,6 +20,7 @@ export const Route = createFileRoute("/")({
 const icones: Record<OutilType, React.ElementType> = {
   facture: FileText,
   devis: Hammer,
+  devis_estimatif: ClipboardList,
   recu: ReceiptText,
   contrat_construction: ShieldCheck,
   contrat_employe: UsersRound,
@@ -73,6 +74,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.18)" },
     action: { background: "rgba(250,204,21,0.18)", border: "1px solid rgba(245,158,11,0.22)" },
     icon: { background: "linear-gradient(135deg, #f59e0b, #facc15)", color: "#172033" },
+  },
+  devis_estimatif: {
+    card: { background: "linear-gradient(180deg, rgba(180,83,9,0.18) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(180,83,9,0.3)" },
+    banner: { background: "linear-gradient(135deg, #b45309, #eab308)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.2)", color: "white" },
+    footer: { background: "rgba(180,83,9,0.08)", border: "1px solid rgba(180,83,9,0.18)" },
+    action: { background: "rgba(234,179,8,0.16)", border: "1px solid rgba(180,83,9,0.22)" },
+    icon: { background: "linear-gradient(135deg, #b45309, #eab308)", color: "white" },
   },
   recu: {
     card: { background: "linear-gradient(180deg, rgba(16,185,129,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(16,185,129,0.28)" },

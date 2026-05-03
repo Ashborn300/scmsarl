@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
 import { RecuEmployeTool } from "./RecuEmployeTool";
+import { DevisEstimatifTool } from "./DevisEstimatifTool";
 import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFactureEmploye, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFactureEmploye, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerPlanArchitectural, enregistrerRealisticSketchup, enregistrerRendu3D, enregistrerVersionNuit, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerEmployes, listerFacturesEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, modifierFormulairePersonnalise, supprimerDocument, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, voirPdf, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FactureEmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
@@ -21,6 +22,7 @@ export const configs: Config[] = [
   { type: "devis", titre: "Générateur de devis professionnel", theme: "yellow", description: "Devis détaillé avec projet, achats à faire, quantités, coûts et total automatique.", hasLines: true, fields: [
     { name: "client", label: "Informations client", type: "textarea", required: true }, { name: "projet", label: "Description du projet", type: "textarea", required: true }, { name: "validite", label: "Date de validité", type: "date" }, { name: "notes", label: "Notes", type: "textarea" },
   ]},
+  { type: "devis_estimatif", titre: "Devis estimatif", theme: "yellow", description: "Devis estimatif multi-étapes (étapes de construction) avec sous-totaux et coût global du projet.", showTotal: false, fields: [] },
   { type: "recu", titre: "Générateur de reçu", theme: "green", description: "Reçu de paiement formel pour règlement client.", totalLabel: "Montant final", fields: [
     { name: "client", label: "Nom du client", required: true }, { name: "montant", label: "Montant payé ($)", type: "number", required: true }, { name: "modePaiement", label: "Mode de paiement", required: true }, { name: "date", label: "Date", type: "date", defaultValue: aujourdhui }, { name: "description", label: "Description", type: "textarea", required: true },
   ]},
@@ -605,6 +607,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   if (config.type === "organigramme_entreprise") return <OrganigrammeTool retour={retour} />;
   if (config.type === "facture_employe") return <FactureEmployeTool retour={retour} />;
   if (config.type === "recu_employe") return <RecuEmployeTool retour={retour} />;
+  if (config.type === "devis_estimatif") return <DevisEstimatifTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
 }
 
