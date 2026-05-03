@@ -79,6 +79,7 @@ export type EmployeRecord = {
 const couleursPdfParOutil: Record<OutilType, { principal: [number, number, number]; secondaire: [number, number, number]; doux: [number, number, number] }> = {
   facture: { principal: [37, 99, 235], secondaire: [8, 145, 178], doux: [230, 240, 255] },
   devis: { principal: [245, 158, 11], secondaire: [250, 204, 21], doux: [255, 247, 214] },
+  devis_estimatif: { principal: [180, 83, 9], secondaire: [234, 179, 8], doux: [255, 243, 215] },
   recu: { principal: [16, 185, 129], secondaire: [34, 197, 94], doux: [225, 250, 240] },
   contrat_construction: { principal: [124, 58, 237], secondaire: [168, 85, 247], doux: [242, 232, 255] },
   contrat_employe: { principal: [20, 184, 166], secondaire: [6, 182, 212], doux: [224, 250, 247] },
