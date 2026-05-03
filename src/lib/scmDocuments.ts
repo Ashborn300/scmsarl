@@ -218,6 +218,7 @@ export async function genererNumero(type: OutilType) {
 const colonnesListeParOutil: Partial<Record<OutilType, string>> = {
   facture: "id,numero,nom_fichier,client,montant_total,date_document,created_at",
   devis: "id,numero,nom_fichier,client,montant_total,date_document,created_at",
+  devis_estimatif: "id,numero,nom_fichier,client,projet,montant_total,date_document,created_at",
   recu: "id,numero,nom_fichier,client,montant_total,date_document,created_at",
   contrat_construction: "id,numero,nom_fichier,client,date_document,created_at",
   contrat_employe: "id,numero,nom_fichier,employe,date_document,created_at",
