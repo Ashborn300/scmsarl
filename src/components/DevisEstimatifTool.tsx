@@ -114,7 +114,8 @@ export function DevisEstimatifTool({ retour }: { retour: () => void }) {
       reinitialiser();
       setActualisation((n) => n + 1);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Une erreur est survenue.");
+      console.error("[DevisEstimatif] Erreur génération:", e);
+      alert(e instanceof Error ? `Erreur : ${e.message}` : "Une erreur est survenue lors de la génération du PDF.");
     } finally { setChargement(false); }
   }
 
