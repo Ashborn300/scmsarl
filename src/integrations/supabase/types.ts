@@ -708,6 +708,48 @@ export type Database = {
         }
         Relationships: []
       }
+      devis_estimatifs: {
+        Row: {
+          client: string
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          montant_total: number
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          projet: string
+          updated_at: string
+        }
+        Insert: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          montant_total?: number
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          projet?: string
+          updated_at?: string
+        }
+        Update: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          montant_total?: number
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          projet?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employes: {
         Row: {
           adresse: string
