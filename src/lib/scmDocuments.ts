@@ -175,6 +175,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   facture: ["nom_fichier", "numero", "client"],
   devis: ["nom_fichier", "numero", "client"],
+  devis_estimatif: ["nom_fichier", "numero", "client", "projet"],
   recu: ["nom_fichier", "numero", "client"],
   contrat_construction: ["nom_fichier", "numero", "client"],
   contrat_employe: ["nom_fichier", "numero", "employe"],
