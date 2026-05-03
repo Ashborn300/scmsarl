@@ -2443,3 +2443,374 @@ export async function supprimerRecuEmploye(id: string) {
   const { error } = await db.from("recus_employes").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }
+
+// ============================================================
+// DEVIS ESTIMATIF — Multi-étapes de construction
+// ============================================================
+
+export type LigneDevisEstimatif = { designation: string; unite: string; quantite: number; prixUnitaire: number };
+export type EtapeDevisEstimatif = { titre: string; lignes: LigneDevisEstimatif[] };
+
+export type DonneesDevisEstimatif = {
+  numero: string;
+  titreDevis: string;
+  projet: string;
+  client: string;
+  localisation: string;
+  duree: string;
+  adresseChantier: string;
+  description: string;
+  telephone: string;
+  dateDocument: string;
+  imprevuPourcentage: number;
+  etapes: EtapeDevisEstimatif[];
+  sceau?: string;
+  nomImportateur?: string;
+  fonctionImportateur?: string;
+  signature?: string;
+};
+
+export type DevisEstimatifRecord = DocumentRecord & { projet?: string };
+
+export async function creerPdfDevisEstimatif(data: DonneesDevisEstimatif): Promise<string> {
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const couleurs = couleursPdfParOutil.devis_estimatif;
+  const logo = await imageVersBase64(logoUrl);
+  const drapeauRdc = await drapeauRdcVersPng();
+
+  const PAGE_W = 210;
+  const PAGE_H = 297;
+  const MARGE_X = 14;
+  const Y_LIMITE = 268;
+
+  const dessinerEntete = (numeroPage: number) => {
+    // Fond
+    pdf.setFillColor(247, 249, 252);
+    pdf.rect(0, 0, PAGE_W, PAGE_H, "F");
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(10, 10, PAGE_W - 20, PAGE_H - 20, 3, 3, "F");
+
+    // Logo + Drapeau
+    if (logo) { try { pdf.addImage(logo, "JPEG", 16, 14, 30, 18, undefined, "FAST"); } catch { /* ignore */ } }
+    if (drapeauRdc) { try { pdf.addImage(drapeauRdc, "PNG", PAGE_W - 38, 15, 22, 14, undefined, "FAST"); } catch { /* ignore */ } }
+
+    // Bandeau infos entreprise
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(13);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text("SCM SARL", 50, 19);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(80, 90, 110);
+    pdf.text("Solution des constructions modernes Sarl", 50, 23.5);
+    pdf.text("RCCM : CD/KNM/RCCM/24-B-01256  ·  N° Impôt : A24217735  ·  IDNAT : 01-F2300-N55523N", 50, 27);
+    pdf.text("Kinshasa / Ngaliema / Av. Kilimani n° 28 A", 50, 30.5);
+
+    pdf.setDrawColor(...couleurs.secondaire);
+    pdf.setLineWidth(0.6);
+    pdf.line(MARGE_X, 35, PAGE_W - MARGE_X, 35);
+
+    // Titre du devis
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11.5);
+    pdf.setTextColor(...couleurs.principal);
+    const titre = (data.titreDevis || "SYNTHÈSE DU DEVIS ESTIMATIF").toUpperCase();
+    const titreLignes = pdf.splitTextToSize(titre, PAGE_W - 2 * MARGE_X);
+    pdf.text(titreLignes, PAGE_W / 2, 42, { align: "center" });
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(90, 100, 120);
+    pdf.text(`N° ${data.numero}${numeroPage > 1 ? `  ·  Page ${numeroPage}` : ""}`, MARGE_X, 50 + (titreLignes.length - 1) * 5);
+    pdf.text(`Date : ${new Date(data.dateDocument || Date.now()).toLocaleDateString("fr-FR")}`, PAGE_W - MARGE_X, 50 + (titreLignes.length - 1) * 5, { align: "right" });
+  };
+
+  let pageCourante = 1;
+  dessinerEntete(1);
+  let y = 58;
+
+  const passerPage = () => {
+    pdf.addPage();
+    pageCourante += 1;
+    dessinerEntete(pageCourante);
+    return 58;
+  };
+
+  const verifierPlace = (hauteur: number) => {
+    if (y + hauteur > Y_LIMITE) y = passerPage();
+  };
+
+  // Bloc INFORMATIONS DU PROJET
+  verifierPlace(8);
+  pdf.setFillColor(...couleurs.doux);
+  pdf.rect(MARGE_X, y, PAGE_W - 2 * MARGE_X, 6, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9.5);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("INFORMATIONS DU PROJET", MARGE_X + 2, y + 4.2);
+  y += 9;
+
+  const infos: Array<[string, string]> = [
+    ["Projet", data.projet || "—"],
+    ["Client", data.client || "—"],
+    ["Localisation", data.localisation || "—"],
+    ["Durée", data.duree || "—"],
+    ["Adresse du chantier", data.adresseChantier || "—"],
+    ["Téléphone", data.telephone || "—"],
+  ];
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  infos.forEach(([label, valeur], idx) => {
+    const xCol = MARGE_X + (idx % 2) * ((PAGE_W - 2 * MARGE_X) / 2);
+    if (idx % 2 === 0 && idx > 0) y += 6;
+    verifierPlace(6);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text(`${label} :`, xCol, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(36, 45, 64);
+    const v = pdf.splitTextToSize(valeur, (PAGE_W - 2 * MARGE_X) / 2 - 35);
+    pdf.text(v, xCol + 35, y);
+  });
+  y += 8;
+
+  if (data.description?.trim()) {
+    verifierPlace(12);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text("Description :", MARGE_X, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(36, 45, 64);
+    const desc = pdf.splitTextToSize(data.description, PAGE_W - 2 * MARGE_X - 25);
+    pdf.text(desc, MARGE_X + 25, y);
+    y += Math.max(5, desc.length * 4.2) + 3;
+  }
+  y += 2;
+
+  // Tableau d'une étape
+  const colX = {
+    no: MARGE_X + 2,
+    designation: MARGE_X + 14,
+    unite: MARGE_X + 92,
+    quantite: MARGE_X + 114,
+    prixU: MARGE_X + 138,
+    prixT: MARGE_X + 165,
+  };
+  const tableW = PAGE_W - 2 * MARGE_X;
+
+  const dessinerEnteteTableau = () => {
+    pdf.setFillColor(...couleurs.principal);
+    pdf.rect(MARGE_X, y, tableW, 7, "F");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(255, 255, 255);
+    pdf.text("N°", colX.no, y + 4.8);
+    pdf.text("DESIGNATION", colX.designation, y + 4.8);
+    pdf.text("UNITE", colX.unite, y + 4.8);
+    pdf.text("QTE", colX.quantite, y + 4.8);
+    pdf.text("PRIX-U ($)", colX.prixU, y + 4.8);
+    pdf.text("PRIX TOTAL ($)", colX.prixT, y + 4.8);
+    y += 7;
+  };
+
+  const lettres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let totalGlobal = 0;
+  const sousTotaux: number[] = [];
+
+  data.etapes.forEach((etape, etapeIdx) => {
+    verifierPlace(20);
+    // Titre étape
+    pdf.setFillColor(...couleurs.doux);
+    pdf.rect(MARGE_X, y, tableW, 6.5, "F");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text(`ÉTAPE ${etapeIdx + 1} : ${(etape.titre || "Étape").toUpperCase()}`, MARGE_X + 2, y + 4.5);
+    y += 8;
+
+    dessinerEnteteTableau();
+
+    let sousTotal = 0;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(36, 45, 64);
+    const lettre = lettres[etapeIdx] || `E${etapeIdx + 1}`;
+
+    etape.lignes.forEach((ligne, ligneIdx) => {
+      const total = Number(ligne.quantite || 0) * Number(ligne.prixUnitaire || 0);
+      sousTotal += total;
+      const designationLignes = pdf.splitTextToSize(ligne.designation || "—", 76);
+      const hLigne = Math.max(6, designationLignes.length * 4.2 + 2);
+      if (y + hLigne > Y_LIMITE) {
+        y = passerPage();
+        dessinerEnteteTableau();
+      }
+      // alternance fond
+      if (ligneIdx % 2 === 0) {
+        pdf.setFillColor(248, 250, 253);
+        pdf.rect(MARGE_X, y, tableW, hLigne, "F");
+      }
+      const yTexte = y + 4;
+      pdf.setTextColor(36, 45, 64);
+      pdf.text(`${lettre}${ligneIdx + 1}`, colX.no, yTexte);
+      pdf.text(designationLignes, colX.designation, yTexte);
+      pdf.text(ligne.unite || "—", colX.unite, yTexte);
+      pdf.text(String(ligne.quantite || 0), colX.quantite, yTexte);
+      pdf.text(formaterMontant(Number(ligne.prixUnitaire || 0)), colX.prixU, yTexte);
+      pdf.text(formaterMontant(total), colX.prixT, yTexte);
+      y += hLigne;
+    });
+
+    // Sous-total étape
+    verifierPlace(8);
+    pdf.setFillColor(...couleurs.secondaire);
+    pdf.rect(MARGE_X, y, tableW, 7, "F");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(255, 255, 255);
+    pdf.text(`SOUS-TOTAL ÉTAPE ${etapeIdx + 1} ($)`, colX.designation, y + 4.7);
+    pdf.text(`${formaterMontant(sousTotal)} $`, colX.prixT, y + 4.7);
+    y += 10;
+    sousTotaux.push(sousTotal);
+    totalGlobal += sousTotal;
+  });
+
+  // RÉCAPITULATIF
+  verifierPlace(40);
+  pdf.setFillColor(...couleurs.principal);
+  pdf.rect(MARGE_X, y, tableW, 7, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text("RÉCAPITULATIF GÉNÉRAL", MARGE_X + 2, y + 4.8);
+  y += 9;
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(36, 45, 64);
+  data.etapes.forEach((etape, idx) => {
+    verifierPlace(6);
+    pdf.text(`Sous-total Étape ${idx + 1} — ${etape.titre}`, MARGE_X + 2, y);
+    pdf.text(`${formaterMontant(sousTotaux[idx])} $`, PAGE_W - MARGE_X - 2, y, { align: "right" });
+    y += 5.5;
+  });
+
+  // Imprévu
+  const imprevuPct = Number(data.imprevuPourcentage || 0);
+  const montantImprevu = Math.round(totalGlobal * imprevuPct) / 100;
+  verifierPlace(7);
+  pdf.setDrawColor(...couleurs.secondaire);
+  pdf.setLineWidth(0.3);
+  pdf.line(MARGE_X, y, PAGE_W - MARGE_X, y);
+  y += 4;
+  pdf.text(`Imprévu (${formaterMontant(imprevuPct)} %)`, MARGE_X + 2, y);
+  pdf.text(`${formaterMontant(montantImprevu)} $`, PAGE_W - MARGE_X - 2, y, { align: "right" });
+  y += 6;
+
+  // Coût global
+  const coutGlobal = totalGlobal + montantImprevu;
+  verifierPlace(14);
+  pdf.setFillColor(...couleurs.principal);
+  pdf.roundedRect(MARGE_X, y, tableW, 11, 1.5, 1.5, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(12);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text("COÛT GLOBAL DU PROJET", MARGE_X + 4, y + 7.2);
+  pdf.text(`${formaterMontant(coutGlobal)} $`, PAGE_W - MARGE_X - 4, y + 7.2, { align: "right" });
+  y += 15;
+
+  if (data.duree?.trim()) {
+    verifierPlace(6);
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(9);
+    pdf.setTextColor(80, 90, 110);
+    pdf.text(`Durée des travaux : ${data.duree}`, MARGE_X + 2, y);
+    y += 6;
+  }
+
+  // Pied : sceau + signature + nom de l'importateur
+  const yPied = Math.max(y + 4, 230);
+  if (yPied + 50 > PAGE_H - 14) {
+    y = passerPage();
+  }
+  const yBlocPied = Math.max(y + 4, 230);
+
+  pdf.setDrawColor(...couleurs.secondaire);
+  pdf.setLineWidth(0.4);
+  pdf.line(MARGE_X, yBlocPied - 2, PAGE_W - MARGE_X, yBlocPied - 2);
+
+  // Bloc gauche : Sceau
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("Sceau de l'entreprise", MARGE_X + 2, yBlocPied + 4);
+  if (data.sceau) {
+    try { pdf.addImage(data.sceau, "JPEG", MARGE_X + 2, yBlocPied + 7, 42, 28, undefined, "FAST"); } catch { /* ignore */ }
+  } else {
+    pdf.setDrawColor(180, 180, 180);
+    pdf.setLineWidth(0.2);
+    pdf.roundedRect(MARGE_X + 2, yBlocPied + 7, 42, 28, 1, 1, "S");
+  }
+
+  // Bloc centre : Signature
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("Signature", PAGE_W / 2 - 21, yBlocPied + 4);
+  if (data.signature) {
+    try { pdf.addImage(data.signature, "JPEG", PAGE_W / 2 - 21, yBlocPied + 7, 42, 22, undefined, "FAST"); } catch { /* ignore */ }
+  } else {
+    pdf.setDrawColor(180, 180, 180);
+    pdf.setLineWidth(0.2);
+    pdf.line(PAGE_W / 2 - 21, yBlocPied + 28, PAGE_W / 2 + 21, yBlocPied + 28);
+  }
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(36, 45, 64);
+  pdf.text(data.nomImportateur || "—", PAGE_W / 2, yBlocPied + 33, { align: "center" });
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(80, 90, 110);
+  pdf.text(data.fonctionImportateur || "Personne ayant établi le devis", PAGE_W / 2, yBlocPied + 37, { align: "center" });
+
+  // Bloc droite : Coordonnées
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("Moyens de paiement", PAGE_W - MARGE_X - 60, yBlocPied + 4);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(60, 70, 90);
+  const moyens = [
+    "EQUITY BCDC : 377100182502428",
+    "M-PESA : +243 814 644 847",
+    "AIRTEL MONEY : +243 996 742 215",
+    "Tél. : (+243) 814 648 847 / 996 742 215",
+  ];
+  moyens.forEach((ligne, i) => pdf.text(ligne, PAGE_W - MARGE_X - 60, yBlocPied + 9 + i * 4));
+
+  return pdf.output("datauristring");
+}
+
+export async function enregistrerDevisEstimatif(payload: Record<string, unknown>, pdfBase64: string, numero?: string, id?: string) {
+  const documentNumero = numero || (await genererNumero("devis_estimatif"));
+  const sourceNom = (payload.client as string) || (payload.projet as string) || "devis-estimatif";
+  const nomFichier = `${documentNumero}-${String(sourceNom).replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
+  const ligne = {
+    numero: documentNumero,
+    nom_fichier: nomFichier,
+    donnees_formulaire: payload,
+    pdf_base64: pdfBase64,
+    montant_total: Number(payload.coutGlobal || payload.totalGlobal || 0),
+    client: String(payload.client || ""),
+    projet: String(payload.projet || ""),
+    date_document: String(payload.dateDocument || new Date().toISOString().slice(0, 10)),
+  };
+  const requete = id
+    ? db.from("devis_estimatifs").update(ligne).eq("id", id).select().single()
+    : db.from("devis_estimatifs").insert(ligne).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as DevisEstimatifRecord;
+}
