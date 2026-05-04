@@ -167,7 +167,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   incidents_chantier: "INC",
   archives_chantiers: "ARC",
   lettre_licenciement: "LIC",
-  facture_employe: "FAE",
+  demandes_paiement: "DPM",
   recu_employe: "REM",
   version_nuit: "VNT",
 };
