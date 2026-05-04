@@ -391,6 +391,11 @@ function EmployePage() {
       : db.from("recus_employes").select("*").eq("employe_id", currentSession.employeId || "").order("created_at", { ascending: false });
     const recusRes = await recusReq;
     setRecusEmploye(recusRes.error ? [] : (recusRes.data || []));
+    // Charger les demandes de paiement : ses propres demandes pour employé/chef
+    if (currentSession.employeId) {
+      const dpRes = await db.from("demandes_paiement").select("*").eq("employe_id", currentSession.employeId).order("created_at", { ascending: false });
+      setDemandesPaiement(dpRes.error ? [] : (dpRes.data || []));
+    }
     if (currentSession.role !== "admin") {
       const today = new Date().toISOString().slice(0, 10);
       const jour = (joursRes.data || []).find((item: JourNonTravaille) => item.actif && item.date_jour === today);
