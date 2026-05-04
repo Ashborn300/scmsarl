@@ -199,7 +199,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   incidents_chantier: ["chef_chantier_nom", "chantier_nom", "type_evenement", "explication", "statut"],
   archives_chantiers: ["nom_chantier", "nom_client", "adresse_projet", "nom_fichier"],
   lettre_licenciement: ["nom_fichier", "numero", "employe"],
-  facture_employe: ["nom_fichier", "numero", "employe_nom", "matricule", "poste"],
+  demandes_paiement: ["employe_nom", "matricule", "chantier_nom", "note", "statut"],
   recu_employe: ["nom_fichier", "numero", "employe_nom", "matricule", "chantier_nom", "motif"],
   version_nuit: ["nom_fichier", "numero", "titre"],
 };
