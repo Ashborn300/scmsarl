@@ -30,6 +30,7 @@ import {
   Upload,
   UserRound,
   UsersRound,
+  Wallet,
   Warehouse,
   X,
 } from "lucide-react";
