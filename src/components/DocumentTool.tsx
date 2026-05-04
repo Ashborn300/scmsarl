@@ -5,7 +5,7 @@ import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
 import { RecuEmployeTool } from "./RecuEmployeTool";
 import { DevisEstimatifTool } from "./DevisEstimatifTool";
-import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFactureEmploye, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFactureEmploye, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerPlanArchitectural, enregistrerRealisticSketchup, enregistrerRendu3D, enregistrerVersionNuit, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerEmployes, listerFacturesEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, modifierFormulairePersonnalise, supprimerDocument, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, voirPdf, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DocumentRecord, type EmployeRecord, type FactureEmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type TypeChampPersonnalise } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerPlanArchitectural, enregistrerRealisticSketchup, enregistrerRendu3D, enregistrerVersionNuit, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerDemandesPaiement, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mettreAJourStatutDemandePaiement, modifierFormulairePersonnalise, supprimerDemandePaiementParId, supprimerDocument, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, voirPdf, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DemandePaiementRecord, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type StatutDemandePaiement, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
@@ -77,7 +77,7 @@ export const configs: Config[] = [
   { type: "lettre_licenciement", titre: "Générateur de lettre de licenciement", theme: "termination-letter", description: "Lettre officielle de licenciement avec logo, drapeau RDC, motifs détaillés, sceau de l’entreprise et signature de l’employé.", showTotal: false, fields: [
     { name: "employe", label: "Nom de l’employé", required: true }, { name: "poste", label: "Poste occupé", required: true }, { name: "matricule", label: "Matricule" }, { name: "lieu", label: "Lieu de signature", defaultValue: "Kinshasa" }, { name: "dateLettre", label: "Date de la lettre", type: "date", defaultValue: aujourdhui }, { name: "dateEffet", label: "Date d’effet du licenciement", type: "date", required: true }, { name: "motif", label: "Motif du licenciement", type: "textarea", required: true }, { name: "detailsFaits", label: "Détails et faits reprochés", type: "textarea" }, { name: "preavis", label: "Préavis et indemnités", type: "textarea", defaultValue: "Conformément à la législation en vigueur, le préavis et les indemnités de fin de contrat seront calculés selon votre ancienneté et votre dernier salaire." }, { name: "obligationsSortie", label: "Obligations de sortie", type: "textarea", defaultValue: "Restitution du matériel, badge, EPI et documents appartenant à l’entreprise. Solde de tout compte remis à la sortie." }, { name: "signataireNom", label: "Nom du signataire" }, { name: "signataireFonction", label: "Fonction du signataire", defaultValue: "Directeur des Ressources Humaines" },
   ]},
-  { type: "facture_employe", titre: "Facture employé", theme: "employee-invoice", description: "Facture de salaire professionnelle générée pour un employé sélectionné, avec déductions paramétrables (frais d’entreprise, etc.) et calcul automatique du salaire net.", showTotal: false, fields: [] },
+  { type: "demandes_paiement", titre: "Demandes de paiement", theme: "employee-invoice", description: "Consultez et traitez les demandes de paiement envoyées par les employés (montant, chantier, note). Approuvez ou refusez avec une réponse motivée.", showTotal: false, fields: [] },
   { type: "recu_employe", titre: "Reçu employés", theme: "employee-receipt", description: "Envoyez un reçu de paiement à un ou plusieurs employés pour un chantier donné. L'employé confirme dans son espace, le montant est déduit du salaire restant.", showTotal: false, fields: [] },
   { type: "version_nuit", titre: "Version Nuit", theme: "night-version", description: "Transformation IA d’une image de maison ou rendu 3D en version nuit ultra-réaliste, avec lampes intérieures et extérieures.", showTotal: false, fields: [
     { name: "imageMaison", label: "Image de la maison ou du rendu 3D", type: "image", required: true },
@@ -366,113 +366,57 @@ function OrganigrammeTool({ retour }: { retour: () => void }) {
   return <main className="min-h-screen bg-background px-4 py-5 sm:px-6 lg:px-8 tool-organization-chart"><div className="mx-auto max-w-7xl"><button type="button" onClick={retour} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Retour au tableau de bord</button><div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-8"><span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span><h1 className="max-w-3xl text-3xl font-black lg:text-5xl">Organigramme de l’entreprise</h1><p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">Importez l’image officielle de l’organigramme visible par tous les employés.</p></div><div className="grid gap-6 xl:grid-cols-[.85fr_1.15fr]"><form onSubmit={enregistrer} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="grid gap-4"><label><span className="mb-1 block text-sm font-semibold">Titre</span><input className="form-control" value={titre} onChange={(e) => setTitre(e.target.value)} /></label><label><span className="mb-1 block text-sm font-semibold">Signature</span><input className="form-control" value={description} onChange={(e) => setDescription(e.target.value)} /></label><label><span className="mb-1 block text-sm font-semibold">Image de l’organigramme *</span><input type="file" accept="image/*" className="file-input" onChange={(e) => setImageFichier(e.target.files?.[0])} /></label></div><button disabled={chargement} className="primary-action mt-5 w-full"><Save className="size-4" /> {chargement ? "Publication…" : editionId ? "Modifier l’image" : "Publier l’image"}</button><div className="mt-5 space-y-3">{organigrammes.map((item) => <article key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3"><strong className="text-sm">{item.titre}</strong><div className="flex gap-2"><button type="button" className="tool-action" onClick={() => modifier(item)}><Pencil className="size-4" /></button><button type="button" className="tool-action danger" onClick={() => retirer(item.id)}><Trash2 className="size-4" /></button></div></article>)}</div></form><section className="rounded-2xl border border-border bg-card p-4 shadow-document"><div className="org-chart org-image-chart"><img src={scmLogo} alt="Logo SCM SARL" className="org-logo" /><h2>ORGANIGRAMME</h2><div className="org-line" />{imagePreview ? <img src={imagePreview} alt="Organigramme SCM SARL" className="org-uploaded-image" /> : <div className="rounded-2xl border border-dashed border-border bg-muted p-8 text-center text-sm font-bold text-muted-foreground">Aucune image sélectionnée.</div>}</div><p className="mt-4 text-center text-sm font-black text-muted-foreground">{description}</p></section></div></div></main>;
 }
 
-function FactureEmployeTool({ retour }: { retour: () => void }) {
-  const [employes, setEmployes] = useState<EmployeRecord[]>([]);
-  const [employeId, setEmployeId] = useState<string>("");
-  const [salaireBrut, setSalaireBrut] = useState<number>(0);
-  const [salaireBrutPersonnalise, setSalaireBrutPersonnalise] = useState<boolean>(false);
-  const [periode, setPeriode] = useState<string>(() => new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" }));
-  const [date, setDate] = useState<string>(aujourdhui);
-  const [modePaiement, setModePaiement] = useState<string>("Virement bancaire");
-  const [notes, setNotes] = useState<string>("");
-  const [signataireNom, setSignataireNom] = useState<string>("");
-  const [signataireFonction, setSignataireFonction] = useState<string>("Directeur des Ressources Humaines");
-  const [deductions, setDeductions] = useState<LigneDeduction[]>([{ libelle: "Frais entreprise", pourcentage: 1.2 }]);
-  const [sceau, setSceau] = useState<File>();
-  const [signature, setSignature] = useState<File>();
-  const [chargement, setChargement] = useState(false);
-  const [factures, setFactures] = useState<FactureEmployeRecord[]>([]);
+function DemandesPaiementTool({ retour }: { retour: () => void }) {
+  const [demandes, setDemandes] = useState<DemandePaiementRecord[]>([]);
   const [recherche, setRecherche] = useState("");
-  const [editionId, setEditionId] = useState<string | null>(null);
+  const [chargement, setChargement] = useState(false);
+  const [filtreStatut, setFiltreStatut] = useState<"toutes" | StatutDemandePaiement>("toutes");
+  const [reponses, setReponses] = useState<Record<string, string>>({});
 
-  useEffect(() => { listerEmployes().then(setEmployes).catch((e) => alert(e instanceof Error ? e.message : "Impossible de charger les employés.")); }, []);
-  useEffect(() => { listerFacturesEmployes(recherche).then(setFactures).catch((e) => alert(e instanceof Error ? e.message : "Chargement impossible.")); }, [recherche]);
-
-  const employeSelectionne = useMemo(() => employes.find((e) => e.id === employeId), [employes, employeId]);
-
-  useEffect(() => {
-    if (employeSelectionne && !salaireBrutPersonnalise) {
-      setSalaireBrut(Number((employeSelectionne as any).salaire || (employeSelectionne as any).salaire_total || 0));
-    }
-  }, [employeSelectionne, salaireBrutPersonnalise]);
-
-  const totalDeductions = useMemo(() => deductions.reduce((s, d) => s + Number(salaireBrut || 0) * Number(d.pourcentage || 0) / 100, 0), [deductions, salaireBrut]);
-  const salaireNet = Math.max(0, Number(salaireBrut || 0) - totalDeductions);
-
-  function lireFichier(file?: File): Promise<string | undefined> {
-    return new Promise((resolve, reject) => {
-      if (!file) return resolve(undefined);
-      const r = new FileReader();
-      r.onload = () => resolve(String(r.result));
-      r.onerror = reject;
-      r.readAsDataURL(file);
-    });
-  }
-
-  async function genererFacture(event: React.FormEvent) {
-    event.preventDefault();
-    if (!employeSelectionne) return alert("Veuillez sélectionner un employé.");
-    if (!salaireBrut || salaireBrut <= 0) return alert("Le salaire brut doit être supérieur à 0.");
-    if (!periode.trim()) return alert("Veuillez renseigner la période de paie.");
+  async function charger() {
     setChargement(true);
+    try { setDemandes(await listerDemandesPaiement(recherche)); }
+    catch (e) { alert(e instanceof Error ? e.message : "Chargement impossible."); }
+    finally { setChargement(false); }
+  }
+  useEffect(() => { void charger(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [recherche]);
+
+  async function traiter(d: DemandePaiementRecord, statut: StatutDemandePaiement) {
+    const reponse = (reponses[d.id] || "").trim();
+    const verbe = statut === "approuvee" ? "Approuver" : "Refuser";
+    if (!confirm(`${verbe} la demande de ${d.employe_nom} (${Number(d.montant).toLocaleString("fr-FR")} $) ?`)) return;
     try {
-      const sceauBase64 = await lireFichier(sceau);
-      const signatureBase64 = await lireFichier(signature);
-      const deductionsActives = deductions.filter((d) => d.libelle.trim() && Number(d.pourcentage || 0) > 0);
-      const numero = factures.find((f) => f.id === editionId)?.numero;
-      const pdf = await creerPdfFactureEmploye({
-        employe: employeSelectionne,
-        numero: numero || `FAE-${Date.now()}`,
-        date,
-        periode: periode.trim(),
-        salaireBrut: Number(salaireBrut),
-        deductions: deductionsActives,
-        notes: notes.trim(),
-        modePaiement: modePaiement.trim(),
-        signataireNom: signataireNom.trim(),
-        signataireFonction: signataireFonction.trim(),
-        sceau: sceauBase64,
-        signature: signatureBase64,
-      });
-      const payload: Record<string, unknown> = {
-        employeId: employeSelectionne.id, date, periode: periode.trim(), salaireBrut: Number(salaireBrut),
-        deductions: deductionsActives, totalDeductions, salaireNet, modePaiement: modePaiement.trim(),
-        notes: notes.trim(), signataireNom: signataireNom.trim(), signataireFonction: signataireFonction.trim(),
-      };
-      await enregistrerFactureEmploye(payload, pdf, {
-        employeId: employeSelectionne.id, employeNom: employeSelectionne.nom_complet || "",
-        matricule: employeSelectionne.matricule || "", poste: employeSelectionne.poste || "",
-        salaireBrut: Number(salaireBrut), totalDeductions, salaireNet,
-      }, numero, editionId || undefined);
-      setEditionId(null);
-      setFactures(await listerFacturesEmployes(recherche));
-      alert(editionId ? "Facture employé modifiée et réenregistrée." : "Facture employé générée et enregistrée avec succès.");
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Génération impossible.");
-    } finally { setChargement(false); }
+      const maj = await mettreAJourStatutDemandePaiement(d.id, statut, reponse);
+      setDemandes((liste) => liste.map((item) => item.id === maj.id ? maj : item));
+      setReponses((r) => ({ ...r, [d.id]: "" }));
+    } catch (e) { alert(e instanceof Error ? e.message : "Mise à jour impossible."); }
+  }
+  async function supprimer(d: DemandePaiementRecord) {
+    if (!confirm(`Supprimer la demande de ${d.employe_nom} ?`)) return;
+    try {
+      await supprimerDemandePaiementParId(d.id);
+      setDemandes((liste) => liste.filter((item) => item.id !== d.id));
+    } catch (e) { alert(e instanceof Error ? e.message : "Suppression impossible."); }
   }
 
-  function editerFacture(facture: FactureEmployeRecord) {
-    const donnees = facture.donnees_formulaire || {};
-    setEditionId(facture.id);
-    setEmployeId(String((donnees as any).employeId || facture.employe_id || ""));
-    setSalaireBrut(Number(facture.salaire_brut || 0));
-    setSalaireBrutPersonnalise(true);
-    setPeriode(String((donnees as any).periode || ""));
-    setDate(facture.date_document || aujourdhui);
-    setModePaiement(String((donnees as any).modePaiement || "Virement bancaire"));
-    setNotes(String((donnees as any).notes || ""));
-    setSignataireNom(String((donnees as any).signataireNom || ""));
-    setSignataireFonction(String((donnees as any).signataireFonction || "Directeur des Ressources Humaines"));
-    setDeductions(Array.isArray((donnees as any).deductions) && (donnees as any).deductions.length ? (donnees as any).deductions as LigneDeduction[] : [{ libelle: "Frais entreprise", pourcentage: 1.2 }]);
-    setSceau(undefined); setSignature(undefined);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  const demandesFiltrees = useMemo(() => filtreStatut === "toutes" ? demandes : demandes.filter((d) => d.statut === filtreStatut), [demandes, filtreStatut]);
+  const stats = useMemo(() => ({
+    total: demandes.length,
+    en_attente: demandes.filter((d) => d.statut === "en_attente").length,
+    approuvees: demandes.filter((d) => d.statut === "approuvee").length,
+    refusees: demandes.filter((d) => d.statut === "refusee").length,
+    montantEnAttente: demandes.filter((d) => d.statut === "en_attente").reduce((s, d) => s + Number(d.montant || 0), 0),
+    montantApprouve: demandes.filter((d) => d.statut === "approuvee").reduce((s, d) => s + Number(d.montant || 0), 0),
+  }), [demandes]);
 
-  async function supprimerFacture(id: string) {
-    if (!confirm("Supprimer définitivement cette facture employé ?")) return;
-    await supprimerDocument("facture_employe", id);
-    setFactures(await listerFacturesEmployes(recherche));
+  function badge(statut: StatutDemandePaiement) {
+    const map: Record<StatutDemandePaiement, { label: string; cls: string }> = {
+      en_attente: { label: "En attente", cls: "bg-orange-500/15 text-orange-700" },
+      approuvee: { label: "Approuvée", cls: "bg-green-500/15 text-green-700" },
+      refusee: { label: "Refusée", cls: "bg-red-500/15 text-red-700" },
+    };
+    const v = map[statut];
+    return <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${v.cls}`}>{v.label}</span>;
   }
 
   return (
@@ -481,118 +425,71 @@ function FactureEmployeTool({ retour }: { retour: () => void }) {
         <button type="button" onClick={retour} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Retour au tableau de bord</button>
         <div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-8">
           <span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span>
-          <h1 className="max-w-3xl text-3xl font-black lg:text-5xl">Facture employé</h1>
-          <p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">Générez une facture de salaire professionnelle, avec déductions paramétrables et calcul automatique du salaire net.</p>
+          <h1 className="max-w-3xl text-3xl font-black lg:text-5xl">Demandes de paiement</h1>
+          <p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">Centralisez les demandes de paiement envoyées par les employés depuis leur espace. Approuvez ou refusez avec une réponse optionnelle.</p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.05fr_.95fr]">
-          <form onSubmit={genererFacture} className="rounded-2xl border border-border bg-card/95 p-4 shadow-document lg:p-6">
-            <div className="grid gap-4">
-              <label>
-                <span className="mb-1 block text-sm font-semibold text-foreground">Employé *</span>
-                <select className="form-control" value={employeId} onChange={(e) => { setEmployeId(e.target.value); setSalaireBrutPersonnalise(false); }}>
-                  <option value="">— Sélectionner un employé —</option>
-                  {employes.map((e) => <option key={e.id} value={e.id}>{e.nom_complet} · {e.matricule || "—"} · {e.poste || "—"}</option>)}
-                </select>
-              </label>
+        <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <article className="dashboard-card tool-blue rounded-2xl p-4"><p className="text-xs font-black uppercase opacity-85">Total demandes</p><p className="mt-2 text-2xl font-black">{stats.total}</p></article>
+          <article className="dashboard-card tool-orange rounded-2xl p-4"><p className="text-xs font-black uppercase opacity-85">En attente</p><p className="mt-2 text-2xl font-black">{stats.en_attente}</p><p className="text-xs opacity-85">{stats.montantEnAttente.toLocaleString("fr-FR")} $</p></article>
+          <article className="dashboard-card tool-green rounded-2xl p-4"><p className="text-xs font-black uppercase opacity-85">Approuvées</p><p className="mt-2 text-2xl font-black">{stats.approuvees}</p><p className="text-xs opacity-85">{stats.montantApprouve.toLocaleString("fr-FR")} $</p></article>
+          <article className="dashboard-card tool-red rounded-2xl p-4"><p className="text-xs font-black uppercase opacity-85">Refusées</p><p className="mt-2 text-2xl font-black">{stats.refusees}</p></article>
+        </section>
 
-              {employeSelectionne && (
-                <div className="rounded-xl border border-border bg-muted/60 p-3 text-sm">
-                  <p className="font-bold text-foreground">{employeSelectionne.nom_complet}</p>
-                  <p className="text-xs text-muted-foreground">Matricule : {employeSelectionne.matricule || "—"} · Poste : {employeSelectionne.poste || "—"}</p>
-                  <p className="text-xs text-muted-foreground">Téléphone : {employeSelectionne.telephone || "—"} · Pièce : {employeSelectionne.numero_piece_identite || "—"}</p>
-                </div>
-              )}
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label><span className="mb-1 block text-sm font-semibold text-foreground">Période de paie *</span><input className="form-control" value={periode} onChange={(e) => setPeriode(e.target.value)} placeholder="Avril 2026" /></label>
-                <label><span className="mb-1 block text-sm font-semibold text-foreground">Date d'émission</span><input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-                <label><span className="mb-1 block text-sm font-semibold text-foreground">Salaire brut ($) *</span><input type="number" min={0} step="0.01" className="form-control" value={salaireBrut} onChange={(e) => { setSalaireBrut(Number(e.target.value)); setSalaireBrutPersonnalise(true); }} /><span className="mt-1 block text-xs text-muted-foreground">Pré-rempli depuis la fiche employé.</span></label>
-                <label><span className="mb-1 block text-sm font-semibold text-foreground">Mode de paiement</span><input className="form-control" value={modePaiement} onChange={(e) => setModePaiement(e.target.value)} /></label>
-              </div>
-
-              <div className="rounded-xl bg-muted p-3">
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-bold text-foreground">Déductions</h3>
-                  <button type="button" onClick={() => setDeductions([...deductions, { libelle: "Nouvelle déduction", pourcentage: 1 }])} className="mini-button"><Plus className="size-4" /> Ajouter</button>
-                </div>
-                <div className="space-y-3">
-                  {deductions.map((deduction, index) => (
-                    <div key={index} className="grid gap-2 rounded-lg bg-card p-3 sm:grid-cols-[1fr_120px_40px]">
-                      <input placeholder="Libellé (ex: Frais entreprise)" value={deduction.libelle} onChange={(e) => setDeductions(deductions.map((d, i) => i === index ? { ...d, libelle: e.target.value } : d))} className="form-control" />
-                      <input type="number" min="0" step="0.01" value={deduction.pourcentage} onChange={(e) => setDeductions(deductions.map((d, i) => i === index ? { ...d, pourcentage: Number(e.target.value) } : d))} placeholder="%" className="form-control" />
-                      <button type="button" onClick={() => setDeductions(deductions.filter((_, i) => i !== index))} className="tool-action danger"><Trash2 className="size-4" /></button>
-                    </div>
-                  ))}
-                  {!deductions.length && <p className="rounded-lg bg-card p-3 text-sm text-muted-foreground">Aucune déduction. Cliquez sur « Ajouter » pour en créer une.</p>}
-                </div>
-                <div className="mt-3 grid gap-2 text-sm font-bold text-foreground sm:grid-cols-3">
-                  <span>Brut : {Number(salaireBrut).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $</span>
-                  <span>Déductions : {totalDeductions.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $</span>
-                  <span className="text-primary">Net : {salaireNet.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $</span>
-                </div>
-              </div>
-
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">Notes (optionnel)</span><textarea rows={3} className="form-control" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Primes, retenues exceptionnelles, observations…" /></label>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label><span className="mb-1 block text-sm font-semibold text-foreground">Nom du signataire</span><input className="form-control" value={signataireNom} onChange={(e) => setSignataireNom(e.target.value)} placeholder="Direction SCM SARL" /></label>
-                <label><span className="mb-1 block text-sm font-semibold text-foreground">Fonction du signataire</span><input className="form-control" value={signataireFonction} onChange={(e) => setSignataireFonction(e.target.value)} /></label>
-                <label><span className="mb-1 block text-sm font-semibold text-foreground">Sceau de l'entreprise</span><input type="file" accept="image/*" onChange={(e) => setSceau(e.target.files?.[0])} className="file-input" /></label>
-                <label><span className="mb-1 block text-sm font-semibold text-foreground">Signature de l'employé</span><input type="file" accept="image/*" onChange={(e) => setSignature(e.target.files?.[0])} className="file-input" /></label>
-              </div>
-
-              <div className="mt-2 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <strong className="text-lg text-foreground">Net à payer : {salaireNet.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $</strong>
-                <button disabled={chargement} className="primary-action"><Save className="size-4" /> {chargement ? "Génération…" : editionId ? "Réenregistrer la facture" : "Générer et enregistrer la facture"}</button>
-              </div>
+        <section className="rounded-2xl border border-border bg-card/95 p-4 shadow-document lg:p-6">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {(["toutes", "en_attente", "approuvee", "refusee"] as const).map((f) => (
+                <button key={f} type="button" onClick={() => setFiltreStatut(f)} className={`mini-button ${filtreStatut === f ? "!bg-primary !text-primary-foreground" : ""}`}>{f === "toutes" ? "Toutes" : f === "en_attente" ? "En attente" : f === "approuvee" ? "Approuvées" : "Refusées"}</button>
+              ))}
             </div>
-          </form>
-
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-document">
-              <Wallet className="mb-3 size-8 text-primary" />
-              <h2 className="text-xl font-bold text-foreground">Facture professionnelle</h2>
-              <p className="mt-2 text-sm text-muted-foreground">Logo SCM SARL, drapeau de la RDC, mise en page élégante, déductions détaillées et calcul automatique du salaire net.</p>
-            </div>
-
-            <section className="rounded-2xl border border-border bg-card/90 p-4 shadow-document lg:p-6">
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">Historique</h2>
-                  <p className="text-sm text-muted-foreground">Factures employés générées, téléchargeables.</p>
-                </div>
-                <label className="relative block sm:w-72">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher" className="h-10 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm outline-none ring-ring transition focus:ring-2" />
-                </label>
-              </div>
-              <div className="space-y-3">
-                {factures.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-border bg-muted/60 p-6 text-center text-sm text-muted-foreground">Aucune facture employé pour le moment.</div>
-                ) : factures.map((facture) => (
-                  <article key={facture.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <h3 className="truncate text-sm font-semibold text-foreground">{facture.employe_nom || facture.nom_fichier}</h3>
-                      <p className="text-xs text-muted-foreground">{facture.numero} · {facture.matricule || "—"} · Net : {Number(facture.salaire_net).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $</p>
-                      <p className="text-xs text-muted-foreground">{new Date(facture.created_at).toLocaleDateString("fr-FR")}</p>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2 sm:flex">
-                      <button type="button" onClick={() => voirPdf(facture.pdf_base64)} className="tool-action" aria-label="Voir"><Eye className="size-4" /></button>
-                      <button type="button" onClick={() => telechargerPdf(facture.pdf_base64, facture.nom_fichier)} className="tool-action" aria-label="Télécharger"><FileDown className="size-4" /></button>
-                      <button type="button" onClick={() => editerFacture(facture)} className="tool-action" aria-label="Éditer"><Pencil className="size-4" /></button>
-                      <button type="button" onClick={() => supprimerFacture(facture.id)} className="tool-action danger" aria-label="Supprimer"><Trash2 className="size-4" /></button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
+            <label className="relative w-full sm:w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher (nom, chantier, note…)" className="form-control pl-9" /></label>
           </div>
-        </div>
+
+          {chargement && <p className="rounded-xl bg-muted p-4 text-sm">Chargement…</p>}
+          {!chargement && demandesFiltrees.length === 0 && <p className="rounded-xl border border-dashed border-border bg-muted/60 p-6 text-center text-sm text-muted-foreground">Aucune demande pour ce filtre.</p>}
+
+          <div className="space-y-3">
+            {demandesFiltrees.map((d) => (
+              <article key={d.id} className="rounded-2xl border border-border bg-background p-4 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      {badge(d.statut)}
+                      <p className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleString("fr-FR")}</p>
+                    </div>
+                    <p className="mt-2 text-lg font-black text-foreground">{d.employe_nom} <span className="text-xs font-normal text-muted-foreground">· {d.matricule || "—"} · {d.poste || "—"}</span></p>
+                    <p className="text-sm text-muted-foreground">Chantier : <strong className="text-foreground">{d.chantier_nom || "—"}</strong></p>
+                    {d.note && <p className="mt-2 rounded-lg bg-muted p-2 text-sm text-foreground">{d.note}</p>}
+                    {d.reponse_admin && <p className="mt-2 rounded-lg border border-primary/20 bg-primary/5 p-2 text-sm text-foreground"><strong>Réponse :</strong> {d.reponse_admin}</p>}
+                    {d.date_traitement && <p className="mt-1 text-xs text-muted-foreground">Traitée le {new Date(d.date_traitement).toLocaleString("fr-FR")}</p>}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-black text-primary tabular-nums">{Number(d.montant).toLocaleString("fr-FR")} $</p>
+                  </div>
+                </div>
+                {d.statut === "en_attente" && (
+                  <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
+                    <input className="form-control" placeholder="Réponse / message (optionnel)" value={reponses[d.id] || ""} onChange={(e) => setReponses((r) => ({ ...r, [d.id]: e.target.value }))} />
+                    <button type="button" className="primary-action" onClick={() => traiter(d, "approuvee")}><FileCheck2 className="size-4" /> Approuver</button>
+                    <button type="button" className="mini-button !bg-red-600 !text-white" onClick={() => traiter(d, "refusee")}>Refuser</button>
+                    <button type="button" className="tool-action danger" onClick={() => supprimer(d)} title="Supprimer"><Trash2 className="size-4" /></button>
+                  </div>
+                )}
+                {d.statut !== "en_attente" && (
+                  <div className="mt-3 flex justify-end">
+                    <button type="button" className="tool-action danger" onClick={() => supprimer(d)} title="Supprimer"><Trash2 className="size-4" /> Supprimer</button>
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   );
 }
+
 
 export function DocumentTool({ config, retour }: { config: Config; retour: () => void }) {
   if (config.type === "formulaire_personnalise") return <CustomFormTool retour={retour} />;
@@ -605,7 +502,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   if (config.type === "incidents_chantier") return <IncidentsChantierTool retour={retour} />;
   if (config.type === "archives_chantiers") return <ArchivesChantiersTool retour={retour} />;
   if (config.type === "organigramme_entreprise") return <OrganigrammeTool retour={retour} />;
-  if (config.type === "facture_employe") return <FactureEmployeTool retour={retour} />;
+  if (config.type === "demandes_paiement") return <DemandesPaiementTool retour={retour} />;
   if (config.type === "recu_employe") return <RecuEmployeTool retour={retour} />;
   if (config.type === "devis_estimatif") return <DevisEstimatifTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;

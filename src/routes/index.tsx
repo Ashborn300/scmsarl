@@ -44,7 +44,7 @@ const icones: Record<OutilType, React.ElementType> = {
   incidents_chantier: AlertTriangle,
   archives_chantiers: Archive,
   lettre_licenciement: FileX2,
-  facture_employe: Wallet,
+  demandes_paiement: Wallet,
   recu_employe: HandCoins,
   version_nuit: Moon,
 };
@@ -267,7 +267,7 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     action: { background: "rgba(180,83,9,0.12)", border: "1px solid rgba(127,29,29,0.16)" },
     icon: { background: "linear-gradient(135deg, #7f1d1d, #b45309)", color: "white" },
   },
-  facture_employe: {
+  demandes_paiement: {
     card: { background: "linear-gradient(180deg, rgba(21,94,117,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(202,138,4,0.28)" },
     banner: { background: "linear-gradient(135deg, #155e75, #ca8a04)", color: "white" },
     badge: { background: "rgba(255,255,255,0.18)", color: "white" },
