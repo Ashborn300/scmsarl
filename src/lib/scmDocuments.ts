@@ -135,7 +135,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   incidents_chantier: "incidents_chantier",
   archives_chantiers: "archives_chantiers",
   lettre_licenciement: "lettres_licenciement",
-  facture_employe: "factures_employes",
+  demandes_paiement: "demandes_paiement",
   recu_employe: "recus_employes",
   version_nuit: "versions_nuit",
 };
