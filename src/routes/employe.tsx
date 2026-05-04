@@ -173,6 +173,9 @@ const bilanSanteInitial = { semaine: new Date().toISOString().slice(0, 10), etat
 const materielInitial = { semaine: new Date().toISOString().slice(0, 10), chantier_id: "", materiel_prevu: [{ nom: "", quantite: 1 }], materiel_utilise: [] as LigneMateriel[], materiel_recupere: [] as LigneMateriel[], materiel_perdu: [] as LigneMateriel[], notes: "" };
 const arrivageInitial = { date_livraison: new Date().toISOString().slice(0, 10), chantier_id: "", nom_materiel: "", quantite: "", entreprise_partenaire: "", prix_total: "", informations_supplementaires: "", preuve_image_url: "" };
 const incidentInitial = { type_evenement: "Incident", date_evenement: new Date().toISOString().slice(0, 10), chantier_id: "", explication: "", images: [] as string[] };
+const demandePaiementInitial = { montant: "", note: "" };
+
+type DemandePaiementEmploye = { id: string; employe_id: string; employe_nom: string; matricule: string; poste: string; chantier_id: string | null; chantier_nom: string; montant: number; note: string; statut: "en_attente" | "approuvee" | "refusee"; reponse_admin: string; date_traitement: string | null; created_at: string };
 
 function nombre(value: number) { return new Intl.NumberFormat("fr-FR").format(value || 0); }
 function devise(value: number) { return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value || 0); }
