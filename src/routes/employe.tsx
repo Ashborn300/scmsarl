@@ -30,6 +30,7 @@ import {
   Upload,
   UserRound,
   UsersRound,
+  Wallet,
   Warehouse,
   X,
 } from "lucide-react";
@@ -172,6 +173,9 @@ const bilanSanteInitial = { semaine: new Date().toISOString().slice(0, 10), etat
 const materielInitial = { semaine: new Date().toISOString().slice(0, 10), chantier_id: "", materiel_prevu: [{ nom: "", quantite: 1 }], materiel_utilise: [] as LigneMateriel[], materiel_recupere: [] as LigneMateriel[], materiel_perdu: [] as LigneMateriel[], notes: "" };
 const arrivageInitial = { date_livraison: new Date().toISOString().slice(0, 10), chantier_id: "", nom_materiel: "", quantite: "", entreprise_partenaire: "", prix_total: "", informations_supplementaires: "", preuve_image_url: "" };
 const incidentInitial = { type_evenement: "Incident", date_evenement: new Date().toISOString().slice(0, 10), chantier_id: "", explication: "", images: [] as string[] };
+const demandePaiementInitial = { montant: "", note: "" };
+
+type DemandePaiementEmploye = { id: string; employe_id: string; employe_nom: string; matricule: string; poste: string; chantier_id: string | null; chantier_nom: string; montant: number; note: string; statut: "en_attente" | "approuvee" | "refusee"; reponse_admin: string; date_traitement: string | null; created_at: string };
 
 function nombre(value: number) { return new Intl.NumberFormat("fr-FR").format(value || 0); }
 function devise(value: number) { return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value || 0); }
@@ -227,6 +231,9 @@ function EmployePage() {
   const [presenceChantier, setPresenceChantier] = useState("");
   const [presenceNotes, setPresenceNotes] = useState("");
   const [presenceStatuts, setPresenceStatuts] = useState<Record<string, StatutPresence>>({});
+  const [demandePaiementChantier, setDemandePaiementChantier] = useState<Chantier | null>(null);
+  const [formDemandePaiement, setFormDemandePaiement] = useState(demandePaiementInitial);
+  const [demandesPaiement, setDemandesPaiement] = useState<DemandePaiementEmploye[]>([]);
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem(SESSION_KEY) : null;
@@ -384,6 +391,11 @@ function EmployePage() {
       : db.from("recus_employes").select("*").eq("employe_id", currentSession.employeId || "").order("created_at", { ascending: false });
     const recusRes = await recusReq;
     setRecusEmploye(recusRes.error ? [] : (recusRes.data || []));
+    // Charger les demandes de paiement : ses propres demandes pour employé/chef
+    if (currentSession.employeId) {
+      const dpRes = await db.from("demandes_paiement").select("*").eq("employe_id", currentSession.employeId).order("created_at", { ascending: false });
+      setDemandesPaiement(dpRes.error ? [] : (dpRes.data || []));
+    }
     if (currentSession.role !== "admin") {
       const today = new Date().toISOString().slice(0, 10);
       const jour = (joursRes.data || []).find((item: JourNonTravaille) => item.actif && item.date_jour === today);
@@ -733,6 +745,31 @@ function EmployePage() {
 
   function changerOnglet(tab: Onglet) { setOnglet(tab); setRecherche(""); setMenuOuvert(false); }
 
+  async function envoyerDemandePaiement(event: React.FormEvent) {
+    event.preventDefault();
+    if (!session?.employeId || !employeConnecte || !demandePaiementChantier) return;
+    const montantNum = Number(formDemandePaiement.montant);
+    if (!Number.isFinite(montantNum) || montantNum <= 0) return setMessage("Veuillez saisir un montant valide.");
+    setSauvegarde(true);
+    const { error } = await db.from("demandes_paiement").insert({
+      employe_id: session.employeId,
+      employe_nom: employeConnecte.nom_complet,
+      matricule: employeConnecte.matricule || "",
+      poste: employeConnecte.poste || "",
+      chantier_id: demandePaiementChantier.id,
+      chantier_nom: demandePaiementChantier.nom_chantier,
+      montant: montantNum,
+      note: formDemandePaiement.note.trim(),
+      statut: "en_attente",
+    });
+    setSauvegarde(false);
+    if (error) { setMessage(error.message || "Demande non envoyée."); return; }
+    setMessage("Demande de paiement envoyée à l’administration.");
+    setFormDemandePaiement(demandePaiementInitial);
+    setDemandePaiementChantier(null);
+    await chargerDonnees();
+  }
+
   async function confirmerRecuPaiement(recuId: string) {
     if (!session?.employeId) return;
     if (!confirm("Confirmer la réception de ce paiement ? Le montant sera déduit de votre salaire restant.")) return;
@@ -789,7 +826,7 @@ function EmployePage() {
             {!["organigramme", "demande_conge", "bilan_sante", "gestion_materiel", "arrivage_materiel", "incident_chantier", "paiement"].includes(onglet) && <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-document sm:flex-row sm:items-center sm:justify-between"><div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input className="form-control pl-10" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder={`Rechercher dans ${titreOnglet.toLowerCase()}...`} /></div><p className="text-sm font-bold text-muted-foreground">{onglet === "projets" ? projetsFiltres.length : onglet === "employes" ? employesFiltres.length : onglet === "chantiers" ? chantiersFiltres.length : presencesFiltrees.length} résultat(s)</p></div>}
             {onglet === "projets" && <ListeProjets projets={projetsFiltres} admin={isAdmin} voir={(id: string) => setDetail({ type: "projets", id })} modifier={(id: string) => ouvrirEdition("projets", id)} supprimer={(id: string) => supprimer("projets", id)} />}
             {onglet === "employes" && <ListeEmployes employes={employesFiltres} chantiers={chantiersVisibles} admin={isAdmin} showSalary={isAdmin || (!isChef && employesFiltres.length === 1)} voir={(id: string) => setDetail({ type: "employes", id })} modifier={(id: string) => ouvrirEdition("employes", id)} supprimer={(id: string) => supprimer("employes", id)} />}
-            {onglet === "chantiers" && <ListeChantiers chantiers={chantiersFiltres} projets={projets} employes={employes} admin={isAdmin} viewerRole={session.role} viewerId={session.employeId} voir={(id: string) => setDetail({ type: "chantiers", id })} modifier={(id: string) => ouvrirEdition("chantiers", id)} supprimer={(id: string) => supprimer("chantiers", id)} />}
+            {onglet === "chantiers" && <ListeChantiers chantiers={chantiersFiltres} projets={projets} employes={employes} admin={isAdmin} viewerRole={session.role} viewerId={session.employeId} voir={(id: string) => setDetail({ type: "chantiers", id })} modifier={(id: string) => ouvrirEdition("chantiers", id)} supprimer={(id: string) => supprimer("chantiers", id)} demanderPaiement={!isAdmin ? (c: Chantier) => { setFormDemandePaiement(demandePaiementInitial); setDemandePaiementChantier(c); } : undefined} />}
             {onglet === "annonces" && <AnnoncesSection annonces={annoncesVisibles} admin={isAdmin} voir={(id: string) => setDetail({ type: "annonces", id })} masquer={masquerAnnonce} supprimer={supprimerAnnonce} />}
             {onglet === "calendrier" && <CalendrierEmployes jours={joursVisibles} />}
             {onglet === "organigramme" && <OrganigrammeEmployes organigramme={organigrammes[0]} />}
@@ -807,6 +844,38 @@ function EmployePage() {
       {annonceModal && <Modal titre="Nouvelle annonce" fermer={() => setAnnonceModal(null)}><FormAnnonce form={formAnnonce} setForm={setFormAnnonce} onSubmit={enregistrerAnnonce} saving={sauvegarde} televerserImage={televerserImageAnnonce} retirerImage={retirerImageAnnonce} /></Modal>}
       {edition && <Modal titre={edition.id ? "Modifier" : "Créer"} fermer={() => setEdition(null)}>{edition.type === "projets" && <FormProjet form={formProjet} setForm={setFormProjet} onSubmit={enregistrerProjet} saving={sauvegarde} />}{edition.type === "employes" && <FormEmploye form={formEmploye} setForm={setFormEmploye} chantiers={chantiers} onSubmit={enregistrerEmploye} saving={sauvegarde} televerserPhoto={televerserPhotoEmploye} retirerPhoto={retirerPhotoEmploye} />}{edition.type === "chantiers" && <FormChantier form={formChantier} setForm={setFormChantier} projets={projets} employes={employes} onSubmit={enregistrerChantier} saving={sauvegarde} televerserImages={televerserImages} retirerImage={retirerImage} chantierId={edition.id} rechargerDonnees={chargerDonnees} setMessage={setMessage} />}</Modal>}
       {detail && <Modal titre="Détails" fermer={() => setDetail(null)}><Details detail={detail} projets={projetsVisibles} employes={employesVisibles} chantiers={chantiersVisibles} presences={presencesVisibles} annonces={annoncesVisibles} admin={isAdmin} role={session.role} viewerId={session.employeId} saving={sauvegarde} televerserPhotoProfil={televerserMaPhotoProfil} retirerPhotoProfil={retirerMaPhotoProfil} modifier={() => detail.type !== "presences" && detail.type !== "annonces" && ouvrirEdition(detail.type, detail.id)} supprimer={() => detail.type === "annonces" ? supprimerAnnonce(detail.id) : detail.type !== "presences" && supprimer(detail.type, detail.id)} /></Modal>}
+      {demandePaiementChantier && <Modal titre="Nouvelle demande de paiement" fermer={() => setDemandePaiementChantier(null)}>
+        <form onSubmit={envoyerDemandePaiement} className="space-y-4">
+          <div className="rounded-2xl border border-border bg-background p-4">
+            <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Chantier concerné</p>
+            <p className="mt-1 text-lg font-black">{demandePaiementChantier.nom_chantier}</p>
+            {demandePaiementChantier.localisation && <p className="text-sm text-muted-foreground">{demandePaiementChantier.localisation}</p>}
+          </div>
+          <Champ label="Montant demandé (USD)">
+            <input type="number" min="1" step="0.01" required className="form-control" value={formDemandePaiement.montant} onChange={(e) => setFormDemandePaiement({ ...formDemandePaiement, montant: e.target.value })} placeholder="Ex : 150" />
+          </Champ>
+          <Champ label="Note / motif">
+            <textarea className="form-control min-h-32" maxLength={1500} value={formDemandePaiement.note} onChange={(e) => setFormDemandePaiement({ ...formDemandePaiement, note: e.target.value })} placeholder="Précisez la raison de votre demande de paiement..." />
+          </Champ>
+          {(() => {
+            const mesDemandesChantier = demandesPaiement.filter((d) => d.chantier_id === demandePaiementChantier.id);
+            if (!mesDemandesChantier.length) return null;
+            return <div className="rounded-2xl border border-border bg-muted/40 p-4">
+              <p className="mb-3 text-xs font-black uppercase tracking-wide text-muted-foreground">Mes demandes pour ce chantier</p>
+              <ul className="space-y-2">
+                {mesDemandesChantier.slice(0, 5).map((d) => <li key={d.id} className="flex items-center justify-between gap-3 rounded-xl bg-card p-3 text-sm shadow-sm">
+                  <div><p className="font-black">{devise(d.montant)}</p><p className="text-xs text-muted-foreground">{dateFr(d.created_at)}</p></div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-black ${d.statut === "approuvee" ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : d.statut === "refusee" ? "bg-destructive/15 text-destructive" : "bg-amber-500/15 text-amber-700 dark:text-amber-300"}`}>{d.statut === "approuvee" ? "Approuvée" : d.statut === "refusee" ? "Refusée" : "En attente"}</span>
+                </li>)}
+              </ul>
+            </div>;
+          })()}
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button type="button" className="mini-button" onClick={() => setDemandePaiementChantier(null)}>Annuler</button>
+            <button type="submit" className="primary-action" disabled={sauvegarde}><Wallet className="size-4" /> Envoyer la demande</button>
+          </div>
+        </form>
+      </Modal>}
       {jourPopup && <Modal titre="Jour férié / non travaillé" fermer={() => { localStorage.setItem(`scm-jour-popup-${jourPopup.id}`, new Date().toISOString().slice(0, 10)); setJourPopup(null); }}><div className="tool-holiday-calendar rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool"><CalendarDays className="mb-4 size-10" /><p className="text-sm font-black uppercase opacity-85">{dateFr(jourPopup.date_jour)}</p><h2 className="mt-2 text-3xl font-black">{jourPopup.titre}</h2><p className="mt-3 leading-7 opacity-90">{jourPopup.description || "Cette date a été déclarée jour férié ou jour non travaillé par l’administration."}</p></div></Modal>}
     </main>
   );
@@ -837,7 +906,7 @@ function Champ({ label, children }: { label: string; children: React.ReactNode }
 function Select({ value, onChange, children }: any) { return <select className="form-control" value={value} onChange={(e) => onChange(e.target.value)}>{children}</select>; }
 function ListeProjets({ projets, admin, voir, modifier, supprimer }: any) { return <div className="grid gap-4 xl:grid-cols-2">{projets.map((p: Projet) => <article key={p.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex justify-between gap-4"><div><span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{p.statut}</span><h3 className="mt-3 text-xl font-black">{p.nom_projet}</h3><p className="mt-1 text-sm text-muted-foreground">{p.client}</p></div><Actions admin={admin} voir={() => voir(p.id)} modifier={() => modifier(p.id)} supprimer={() => supprimer(p.id)} /></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><Info icone={MapPin} label="Localisation" valeur={p.localisation || "Non définie"} /><Info icone={ClipboardList} label="Budget estimé" valeur={devise(p.budget_estime)} /></div></article>)}</div>; }
 function ListeEmployes({ employes, chantiers, admin, showSalary, voir, modifier, supprimer }: any) { return <div className="grid gap-4 xl:grid-cols-2">{employes.map((e: Employe) => <article key={e.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex justify-between gap-4"><div className="flex items-start gap-3">{e.photo_profil ? <img src={e.photo_profil} alt={`Photo de ${e.nom_complet}`} className="h-14 w-14 rounded-2xl object-cover" loading="lazy" /> : <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted"><UserRound className="size-6 text-muted-foreground" /></span>}<div><span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{e.role === "chef_chantier" ? "Chef de chantier" : "Employé"}</span><h3 className="mt-3 text-xl font-black">{e.nom_complet}</h3><p className="mt-1 text-sm text-muted-foreground">{e.poste} • {e.matricule}</p></div></div><Actions admin={admin} voir={() => voir(e.id)} modifier={() => modifier(e.id)} supprimer={() => supprimer(e.id)} /></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><Info icone={UserRound} label="Téléphone" valeur={e.telephone || "Non défini"} /><Info icone={CalendarDays} label="Admission" valeur={dateFr(e.date_admission)} />{showSalary && <Info icone={ClipboardList} label="Salaire restant" valeur={devise(e.salaire_restant ?? 0)} />}<Info icone={HardHat} label="Chantier" valeur={nomChantier(chantiers, e.chantier_assigne)} /><Info icone={MapPin} label="Adresse" valeur={e.adresse || "Non définie"} /></div></article>)}</div>; }
-function ListeChantiers({ chantiers, projets, employes, admin, viewerRole, viewerId, voir, modifier, supprimer }: any) { return <div className="grid gap-4 xl:grid-cols-2">{chantiers.map((c: Chantier) => { const canSeeBudget = admin || (viewerRole === "chef_chantier" && c.chef_chantier === viewerId && c.autoriser_budget_chef); return <article key={c.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex justify-between gap-4"><div><span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{c.statut}</span><h3 className="mt-3 text-xl font-black">{c.nom_chantier}</h3><p className="mt-1 text-sm text-muted-foreground">{c.localisation}</p></div><Actions admin={admin} voir={() => voir(c.id)} modifier={() => modifier(c.id)} supprimer={() => supprimer(c.id)} /></div>{(c.images_chantier || []).length > 0 && <img src={(c.images_chantier || [])[0]} alt={`Image du chantier ${c.nom_chantier}`} className="mt-4 h-40 w-full rounded-2xl object-cover" loading="lazy" />}<div className="mt-4 grid gap-3 sm:grid-cols-2"><Info icone={BriefcaseBusiness} label="Projet lié" valeur={nomProjet(projets, c.projet_lie)} /><Info icone={HardHat} label="Chef" valeur={nomEmploye(employes, c.chef_chantier)} />{canSeeBudget ? <Info icone={Eye} label="Budget global" valeur={devise(c.budget_global || 0)} /> : <Info icone={EyeOff} label="Budget global" valeur="Masqué" />}<Info icone={UsersRound} label="Employés" valeur={String((c.employes_assignes || []).length)} /></div></article>; })}</div>; }
+function ListeChantiers({ chantiers, projets, employes, admin, viewerRole, viewerId, voir, modifier, supprimer, demanderPaiement }: any) { return <div className="grid gap-4 xl:grid-cols-2">{chantiers.map((c: Chantier) => { const canSeeBudget = admin || (viewerRole === "chef_chantier" && c.chef_chantier === viewerId && c.autoriser_budget_chef); const estAffecte = !admin && viewerId && ((c.employes_assignes || []).includes(viewerId) || c.chef_chantier === viewerId); return <article key={c.id} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex justify-between gap-4"><div><span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{c.statut}</span><h3 className="mt-3 text-xl font-black">{c.nom_chantier}</h3><p className="mt-1 text-sm text-muted-foreground">{c.localisation}</p></div><Actions admin={admin} voir={() => voir(c.id)} modifier={() => modifier(c.id)} supprimer={() => supprimer(c.id)} /></div>{(c.images_chantier || []).length > 0 && <img src={(c.images_chantier || [])[0]} alt={`Image du chantier ${c.nom_chantier}`} className="mt-4 h-40 w-full rounded-2xl object-cover" loading="lazy" />}<div className="mt-4 grid gap-3 sm:grid-cols-2"><Info icone={BriefcaseBusiness} label="Projet lié" valeur={nomProjet(projets, c.projet_lie)} /><Info icone={HardHat} label="Chef" valeur={nomEmploye(employes, c.chef_chantier)} />{canSeeBudget ? <Info icone={Eye} label="Budget global" valeur={devise(c.budget_global || 0)} /> : <Info icone={EyeOff} label="Budget global" valeur="Masqué" />}<Info icone={UsersRound} label="Employés" valeur={String((c.employes_assignes || []).length)} /></div>{estAffecte && demanderPaiement && <button type="button" onClick={() => demanderPaiement(c)} className="primary-action mt-4 w-full justify-center"><Wallet className="size-4" /> Demande de paiement</button>}</article>; })}</div>; }
 function AnnoncesDashboard({ annonces, admin, voir, masquer, setOnglet }: any) { return <section className="dashboard-card rounded-3xl p-5"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Communications</p><h3 className="text-xl font-black">Annonces récentes</h3></div><button className="mini-button" onClick={() => setOnglet("annonces")}>Tout voir</button></div><div className="mt-4 grid gap-3 lg:grid-cols-3">{annonces.slice(0, 3).map((a: Annonce) => <article key={a.id} className="overflow-hidden rounded-2xl border border-border bg-background/70"><div className="tool-purple bg-tool-gradient p-4 text-tool-foreground"><Megaphone className="size-5" /><h4 className="mt-2 line-clamp-2 font-black">{a.titre}</h4></div>{a.image_url && <img src={a.image_url} alt={`Image annonce ${a.titre}`} className="h-28 w-full object-cover" loading="lazy" />}<div className="p-4"><p className="line-clamp-3 text-sm text-muted-foreground">{a.contenu}</p><div className="mt-3 flex flex-wrap gap-2"><button className="mini-button" onClick={() => voir(a.id)}>Lire</button>{!admin && <button className="tool-action danger" onClick={() => masquer(a.id)} aria-label="Retirer"><Trash2 className="size-4" /></button>}</div></div></article>)}{!annonces.length && <p className="rounded-2xl bg-muted p-4 text-sm text-muted-foreground lg:col-span-3">Aucune annonce.</p>}</div></section>; }
 function AnnoncesSection({ annonces, admin, voir, masquer, supprimer }: any) { return <div className="grid gap-4 xl:grid-cols-2">{annonces.map((a: Annonce) => <article key={a.id} className="overflow-hidden rounded-2xl border border-border bg-card shadow-document">{a.image_url && <img src={a.image_url} alt={`Image annonce ${a.titre}`} className="h-52 w-full object-cover" loading="lazy" />}<div className="p-5"><div className="flex items-start justify-between gap-4"><div><span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{dateFr(a.created_at)}</span><h3 className="mt-3 text-xl font-black">{a.titre}</h3></div><div className="flex gap-2"><button className="mini-button" onClick={() => voir(a.id)}>Lire</button>{admin ? <button className="tool-action danger" onClick={() => supprimer(a.id)} aria-label="Supprimer"><Trash2 className="size-4" /></button> : <button className="tool-action danger" onClick={() => masquer(a.id)} aria-label="Retirer"><Trash2 className="size-4" /></button>}</div></div><p className="mt-3 line-clamp-3 text-sm leading-6 text-muted-foreground">{a.contenu}</p></div></article>)}{!annonces.length && <p className="rounded-2xl bg-muted p-5 text-sm text-muted-foreground">Aucune annonce disponible.</p>}</div>; }
 function CalendrierEmployes({ jours }: { jours: JourNonTravaille[] }) { return <div className="grid gap-4 xl:grid-cols-2">{jours.map((jour) => <article key={jour.id} className="tool-holiday-calendar rounded-2xl border border-border bg-card p-5 shadow-document"><div className="flex items-start gap-4"><span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-tool-gradient text-tool-foreground shadow-tool"><CalendarDays className="size-6" /></span><div><span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{jour.type_jour === "jour_ferie" ? "Jour férié" : "Jour non travaillé"}</span><h3 className="mt-3 text-xl font-black">{jour.titre}</h3><p className="mt-1 text-sm font-bold text-muted-foreground">{dateFr(jour.date_jour)}</p><p className="mt-3 text-sm leading-6 text-muted-foreground">{jour.description || "Aucune description."}</p></div></div></article>)}{!jours.length && <p className="rounded-2xl bg-muted p-5 text-sm text-muted-foreground">Aucun jour férié ou non travaillé n’est programmé.</p>}</div>; }
