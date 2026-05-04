@@ -844,6 +844,38 @@ function EmployePage() {
       {annonceModal && <Modal titre="Nouvelle annonce" fermer={() => setAnnonceModal(null)}><FormAnnonce form={formAnnonce} setForm={setFormAnnonce} onSubmit={enregistrerAnnonce} saving={sauvegarde} televerserImage={televerserImageAnnonce} retirerImage={retirerImageAnnonce} /></Modal>}
       {edition && <Modal titre={edition.id ? "Modifier" : "Créer"} fermer={() => setEdition(null)}>{edition.type === "projets" && <FormProjet form={formProjet} setForm={setFormProjet} onSubmit={enregistrerProjet} saving={sauvegarde} />}{edition.type === "employes" && <FormEmploye form={formEmploye} setForm={setFormEmploye} chantiers={chantiers} onSubmit={enregistrerEmploye} saving={sauvegarde} televerserPhoto={televerserPhotoEmploye} retirerPhoto={retirerPhotoEmploye} />}{edition.type === "chantiers" && <FormChantier form={formChantier} setForm={setFormChantier} projets={projets} employes={employes} onSubmit={enregistrerChantier} saving={sauvegarde} televerserImages={televerserImages} retirerImage={retirerImage} chantierId={edition.id} rechargerDonnees={chargerDonnees} setMessage={setMessage} />}</Modal>}
       {detail && <Modal titre="Détails" fermer={() => setDetail(null)}><Details detail={detail} projets={projetsVisibles} employes={employesVisibles} chantiers={chantiersVisibles} presences={presencesVisibles} annonces={annoncesVisibles} admin={isAdmin} role={session.role} viewerId={session.employeId} saving={sauvegarde} televerserPhotoProfil={televerserMaPhotoProfil} retirerPhotoProfil={retirerMaPhotoProfil} modifier={() => detail.type !== "presences" && detail.type !== "annonces" && ouvrirEdition(detail.type, detail.id)} supprimer={() => detail.type === "annonces" ? supprimerAnnonce(detail.id) : detail.type !== "presences" && supprimer(detail.type, detail.id)} /></Modal>}
+      {demandePaiementChantier && <Modal titre="Nouvelle demande de paiement" fermer={() => setDemandePaiementChantier(null)}>
+        <form onSubmit={envoyerDemandePaiement} className="space-y-4">
+          <div className="rounded-2xl border border-border bg-background p-4">
+            <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Chantier concerné</p>
+            <p className="mt-1 text-lg font-black">{demandePaiementChantier.nom_chantier}</p>
+            {demandePaiementChantier.localisation && <p className="text-sm text-muted-foreground">{demandePaiementChantier.localisation}</p>}
+          </div>
+          <Champ label="Montant demandé (USD)">
+            <input type="number" min="1" step="0.01" required className="form-control" value={formDemandePaiement.montant} onChange={(e) => setFormDemandePaiement({ ...formDemandePaiement, montant: e.target.value })} placeholder="Ex : 150" />
+          </Champ>
+          <Champ label="Note / motif">
+            <textarea className="form-control min-h-32" maxLength={1500} value={formDemandePaiement.note} onChange={(e) => setFormDemandePaiement({ ...formDemandePaiement, note: e.target.value })} placeholder="Précisez la raison de votre demande de paiement..." />
+          </Champ>
+          {(() => {
+            const mesDemandesChantier = demandesPaiement.filter((d) => d.chantier_id === demandePaiementChantier.id);
+            if (!mesDemandesChantier.length) return null;
+            return <div className="rounded-2xl border border-border bg-muted/40 p-4">
+              <p className="mb-3 text-xs font-black uppercase tracking-wide text-muted-foreground">Mes demandes pour ce chantier</p>
+              <ul className="space-y-2">
+                {mesDemandesChantier.slice(0, 5).map((d) => <li key={d.id} className="flex items-center justify-between gap-3 rounded-xl bg-card p-3 text-sm shadow-sm">
+                  <div><p className="font-black">{devise(d.montant)}</p><p className="text-xs text-muted-foreground">{dateFr(d.created_at)}</p></div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-black ${d.statut === "approuvee" ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : d.statut === "refusee" ? "bg-destructive/15 text-destructive" : "bg-amber-500/15 text-amber-700 dark:text-amber-300"}`}>{d.statut === "approuvee" ? "Approuvée" : d.statut === "refusee" ? "Refusée" : "En attente"}</span>
+                </li>)}
+              </ul>
+            </div>;
+          })()}
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button type="button" className="mini-button" onClick={() => setDemandePaiementChantier(null)}>Annuler</button>
+            <button type="submit" className="primary-action" disabled={sauvegarde}><Wallet className="size-4" /> Envoyer la demande</button>
+          </div>
+        </form>
+      </Modal>}
       {jourPopup && <Modal titre="Jour férié / non travaillé" fermer={() => { localStorage.setItem(`scm-jour-popup-${jourPopup.id}`, new Date().toISOString().slice(0, 10)); setJourPopup(null); }}><div className="tool-holiday-calendar rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool"><CalendarDays className="mb-4 size-10" /><p className="text-sm font-black uppercase opacity-85">{dateFr(jourPopup.date_jour)}</p><h2 className="mt-2 text-3xl font-black">{jourPopup.titre}</h2><p className="mt-3 leading-7 opacity-90">{jourPopup.description || "Cette date a été déclarée jour férié ou jour non travaillé par l’administration."}</p></div></Modal>}
     </main>
   );
