@@ -18,7 +18,7 @@ function formaterMontant(valeur: number, options: { decimales?: number } = {}): 
   return signe + avecSeparateurs + (partieDecimale ? "," + partieDecimale : "");
 }
 
-export type OutilType = "facture" | "devis" | "devis_estimatif" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "plan_architectural" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement" | "facture_employe" | "recu_employe" | "version_nuit";
+export type OutilType = "facture" | "devis" | "devis_estimatif" | "recu" | "contrat_construction" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "plan_architectural" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement" | "demandes_paiement" | "recu_employe" | "version_nuit";
 export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
 export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
