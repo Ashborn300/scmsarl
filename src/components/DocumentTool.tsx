@@ -502,7 +502,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   if (config.type === "incidents_chantier") return <IncidentsChantierTool retour={retour} />;
   if (config.type === "archives_chantiers") return <ArchivesChantiersTool retour={retour} />;
   if (config.type === "organigramme_entreprise") return <OrganigrammeTool retour={retour} />;
-  if (config.type === "facture_employe") return <FactureEmployeTool retour={retour} />;
+  if (config.type === "demandes_paiement") return <DemandesPaiementTool retour={retour} />;
   if (config.type === "recu_employe") return <RecuEmployeTool retour={retour} />;
   if (config.type === "devis_estimatif") return <DevisEstimatifTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
