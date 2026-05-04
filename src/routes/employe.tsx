@@ -231,6 +231,9 @@ function EmployePage() {
   const [presenceChantier, setPresenceChantier] = useState("");
   const [presenceNotes, setPresenceNotes] = useState("");
   const [presenceStatuts, setPresenceStatuts] = useState<Record<string, StatutPresence>>({});
+  const [demandePaiementChantier, setDemandePaiementChantier] = useState<Chantier | null>(null);
+  const [formDemandePaiement, setFormDemandePaiement] = useState(demandePaiementInitial);
+  const [demandesPaiement, setDemandesPaiement] = useState<DemandePaiementEmploye[]>([]);
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem(SESSION_KEY) : null;
