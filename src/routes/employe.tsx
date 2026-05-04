@@ -745,6 +745,31 @@ function EmployePage() {
 
   function changerOnglet(tab: Onglet) { setOnglet(tab); setRecherche(""); setMenuOuvert(false); }
 
+  async function envoyerDemandePaiement(event: React.FormEvent) {
+    event.preventDefault();
+    if (!session?.employeId || !employeConnecte || !demandePaiementChantier) return;
+    const montantNum = Number(formDemandePaiement.montant);
+    if (!Number.isFinite(montantNum) || montantNum <= 0) return setMessage("Veuillez saisir un montant valide.");
+    setSauvegarde(true);
+    const { error } = await db.from("demandes_paiement").insert({
+      employe_id: session.employeId,
+      employe_nom: employeConnecte.nom_complet,
+      matricule: employeConnecte.matricule || "",
+      poste: employeConnecte.poste || "",
+      chantier_id: demandePaiementChantier.id,
+      chantier_nom: demandePaiementChantier.nom_chantier,
+      montant: montantNum,
+      note: formDemandePaiement.note.trim(),
+      statut: "en_attente",
+    });
+    setSauvegarde(false);
+    if (error) { setMessage(error.message || "Demande non envoyée."); return; }
+    setMessage("Demande de paiement envoyée à l’administration.");
+    setFormDemandePaiement(demandePaiementInitial);
+    setDemandePaiementChantier(null);
+    await chargerDonnees();
+  }
+
   async function confirmerRecuPaiement(recuId: string) {
     if (!session?.employeId) return;
     if (!confirm("Confirmer la réception de ce paiement ? Le montant sera déduit de votre salaire restant.")) return;
