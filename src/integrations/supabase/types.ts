@@ -633,6 +633,57 @@ export type Database = {
         }
         Relationships: []
       }
+      demandes_paiement: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          created_at: string
+          date_traitement: string | null
+          employe_id: string
+          employe_nom: string
+          id: string
+          matricule: string
+          montant: number
+          note: string
+          poste: string
+          reponse_admin: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date_traitement?: string | null
+          employe_id: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          montant?: number
+          note?: string
+          poste?: string
+          reponse_admin?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date_traitement?: string | null
+          employe_id?: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          montant?: number
+          note?: string
+          poste?: string
+          reponse_admin?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       descriptions_projets: {
         Row: {
           created_at: string
