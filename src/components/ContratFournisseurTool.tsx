@@ -88,18 +88,18 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
     setChargement(true);
     try {
       const numero = editionNumero || (await genererNumero("contrat_fournisseur"));
-      const [sceauScmB64, signatureScmB64, sceauFB64, signatureFB64] = await Promise.all([
-        lireImage(sceauScm), lireImage(signatureScm), lireImage(sceauFournisseur), lireImage(signatureFournisseur),
+      const [sceauScmB64, signatureFB64] = await Promise.all([
+        lireImage(sceauScm), lireImage(signatureFournisseur),
       ]);
       const donnees = {
         numero, dateDocument, lieu,
-        fournisseurNom, fournisseurRepresentant, fournisseurAdresse, fournisseurTelephone,
-        fournisseurEmail, fournisseurRccm, fournisseurIdnat,
+        fournisseurNom, fournisseurRepresentant: "", fournisseurAdresse: "", fournisseurTelephone,
+        fournisseurEmail: "", fournisseurRccm: "", fournisseurIdnat: "",
         objet, lignes: lignesValides,
         conditionsLivraison, modalitesPaiement, duree, clauses,
         signataireScmNom, signataireScmFonction,
-        sceauScm: sceauScmB64, signatureScm: signatureScmB64,
-        sceauFournisseur: sceauFB64, signatureFournisseur: signatureFB64,
+        sceauScm: sceauScmB64, signatureScm: undefined,
+        sceauFournisseur: undefined, signatureFournisseur: signatureFB64,
       };
       const pdf = await creerPdfContratFournisseur(donnees);
       await enregistrerContratFournisseur(donnees, pdf, numero, editionId || undefined);
