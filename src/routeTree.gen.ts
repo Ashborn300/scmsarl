@@ -9,11 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StagiaireRouteImport } from './routes/stagiaire'
+import { Route as StageRouteImport } from './routes/stage'
 import { Route as EmployeRouteImport } from './routes/employe'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QrEmployeEmployeIdRouteImport } from './routes/qr-employe.$employeId'
 import { Route as FormulaireFormulaireIdRouteImport } from './routes/formulaire.$formulaireId'
 
+const StagiaireRoute = StagiaireRouteImport.update({
+  id: '/stagiaire',
+  path: '/stagiaire',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StageRoute = StageRouteImport.update({
+  id: '/stage',
+  path: '/stage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EmployeRoute = EmployeRouteImport.update({
   id: '/employe',
   path: '/employe',
@@ -38,12 +50,16 @@ const FormulaireFormulaireIdRoute = FormulaireFormulaireIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/stage': typeof StageRoute
+  '/stagiaire': typeof StagiaireRoute
   '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
   '/qr-employe/$employeId': typeof QrEmployeEmployeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/stage': typeof StageRoute
+  '/stagiaire': typeof StagiaireRoute
   '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
   '/qr-employe/$employeId': typeof QrEmployeEmployeIdRoute
 }
@@ -51,6 +67,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/stage': typeof StageRoute
+  '/stagiaire': typeof StagiaireRoute
   '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
   '/qr-employe/$employeId': typeof QrEmployeEmployeIdRoute
 }
@@ -59,14 +77,24 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/employe'
+    | '/stage'
+    | '/stagiaire'
     | '/formulaire/$formulaireId'
     | '/qr-employe/$employeId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/employe' | '/formulaire/$formulaireId' | '/qr-employe/$employeId'
+  to:
+    | '/'
+    | '/employe'
+    | '/stage'
+    | '/stagiaire'
+    | '/formulaire/$formulaireId'
+    | '/qr-employe/$employeId'
   id:
     | '__root__'
     | '/'
     | '/employe'
+    | '/stage'
+    | '/stagiaire'
     | '/formulaire/$formulaireId'
     | '/qr-employe/$employeId'
   fileRoutesById: FileRoutesById
@@ -74,12 +102,28 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EmployeRoute: typeof EmployeRoute
+  StageRoute: typeof StageRoute
+  StagiaireRoute: typeof StagiaireRoute
   FormulaireFormulaireIdRoute: typeof FormulaireFormulaireIdRoute
   QrEmployeEmployeIdRoute: typeof QrEmployeEmployeIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/stagiaire': {
+      id: '/stagiaire'
+      path: '/stagiaire'
+      fullPath: '/stagiaire'
+      preLoaderRoute: typeof StagiaireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stage': {
+      id: '/stage'
+      path: '/stage'
+      fullPath: '/stage'
+      preLoaderRoute: typeof StageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/employe': {
       id: '/employe'
       path: '/employe'
@@ -114,9 +158,20 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EmployeRoute: EmployeRoute,
+  StageRoute: StageRoute,
+  StagiaireRoute: StagiaireRoute,
   FormulaireFormulaireIdRoute: FormulaireFormulaireIdRoute,
   QrEmployeEmployeIdRoute: QrEmployeEmployeIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
