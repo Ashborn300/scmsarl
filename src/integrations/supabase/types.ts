@@ -106,6 +106,30 @@ export type Database = {
           },
         ]
       }
+      annonces_stagiaires: {
+        Row: {
+          contenu: string
+          created_at: string
+          destinataires: string[]
+          id: string
+          titre: string
+        }
+        Insert: {
+          contenu?: string
+          created_at?: string
+          destinataires?: string[]
+          id?: string
+          titre?: string
+        }
+        Update: {
+          contenu?: string
+          created_at?: string
+          destinataires?: string[]
+          id?: string
+          titre?: string
+        }
+        Relationships: []
+      }
       archives_chantiers: {
         Row: {
           adresse_projet: string
@@ -1735,6 +1759,54 @@ export type Database = {
           last_seen_at?: string
           role?: string
           token_hash?: string
+        }
+        Relationships: []
+      }
+      stagiaires: {
+        Row: {
+          adresse: string
+          chantier_id: string | null
+          created_at: string
+          ecole: string
+          id: string
+          matricule: string
+          motivation: string
+          niveau_etude: string
+          nom_complet: string
+          photo_profil: string
+          statut: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string
+          chantier_id?: string | null
+          created_at?: string
+          ecole?: string
+          id?: string
+          matricule?: string
+          motivation?: string
+          niveau_etude?: string
+          nom_complet?: string
+          photo_profil?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string
+          chantier_id?: string | null
+          created_at?: string
+          ecole?: string
+          id?: string
+          matricule?: string
+          motivation?: string
+          niveau_etude?: string
+          nom_complet?: string
+          photo_profil?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
         }
         Relationships: []
       }
