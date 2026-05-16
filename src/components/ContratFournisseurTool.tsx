@@ -178,11 +178,9 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
                   <label className="mt-2 block"><span className="mb-1 block text-sm font-semibold text-foreground">Nom du signataire SCM</span><input value={signataireScmNom} onChange={(e) => setSignataireScmNom(e.target.value)} className="form-control" /></label>
                   <label className="mt-3 block"><span className="mb-1 block text-sm font-semibold text-foreground">Fonction</span><input value={signataireScmFonction} onChange={(e) => setSignataireScmFonction(e.target.value)} className="form-control" /></label>
                   <label className="mt-3 block"><span className="mb-1 block text-sm font-semibold text-foreground">Sceau SCM</span><input type="file" accept="image/*" onChange={(e) => setSceauScm(e.target.files?.[0])} className="file-input" /></label>
-                  <label className="mt-3 block"><span className="mb-1 block text-sm font-semibold text-foreground">Signature SCM</span><input type="file" accept="image/*" onChange={(e) => setSignatureScm(e.target.files?.[0])} className="file-input" /></label>
                 </fieldset>
                 <fieldset className="rounded-xl border border-border/60 bg-muted/40 p-4">
                   <legend className="px-2 text-sm font-bold uppercase tracking-wide text-foreground">Fournisseur</legend>
-                  <label className="block"><span className="mb-1 block text-sm font-semibold text-foreground">Sceau du fournisseur</span><input type="file" accept="image/*" onChange={(e) => setSceauFournisseur(e.target.files?.[0])} className="file-input" /></label>
                   <label className="mt-3 block"><span className="mb-1 block text-sm font-semibold text-foreground">Signature du fournisseur</span><input type="file" accept="image/*" onChange={(e) => setSignatureFournisseur(e.target.files?.[0])} className="file-input" /></label>
                 </fieldset>
               </div>
