@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, Archive, ArrowRight, Award, Building2, CalendarDays, ClipboardList, Cuboid, GraduationCap, HandCoins, HeartPulse, FileClock, FileText, FilePlus2, FileX2, Hammer, HardHat, IdCard, LayoutGrid, Megaphone, Moon, Network, PackageCheck, PiggyBank, QrCode, ReceiptText, Receipt, Search, ShieldCheck, SquarePen, Truck, UsersRound, Wallet, Warehouse, X } from "lucide-react";
+import { AlertTriangle, Archive, ArrowRight, Award, Building2, CalendarDays, ClipboardCheck, ClipboardList, Cuboid, GraduationCap, HandCoins, HeartPulse, FileClock, FileText, FilePlus2, FileX2, Hammer, HardHat, IdCard, LayoutGrid, Megaphone, Moon, Network, PackageCheck, PiggyBank, QrCode, ReceiptText, Receipt, Search, ShieldCheck, SquarePen, Truck, UsersRound, Wallet, Warehouse, X } from "lucide-react";
 import { useMemo, useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
