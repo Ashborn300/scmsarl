@@ -40,8 +40,8 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
   const [signataireScmNom, setSignataireScmNom] = useState("");
   const [signataireScmFonction, setSignataireScmFonction] = useState("Directeur Général");
   const [sceauScm, setSceauScm] = useState<File>();
-  const [signatureScm, setSignatureScm] = useState<File>();
-  const [sceauFournisseur, setSceauFournisseur] = useState<File>();
+  // signature SCM et sceau fournisseur retirés sur demande
+
   const [signatureFournisseur, setSignatureFournisseur] = useState<File>();
   const [chargement, setChargement] = useState(false);
   const [actualisation, setActualisation] = useState(0);
