@@ -756,6 +756,51 @@ export type Database = {
         }
         Relationships: []
       }
+      dettes: {
+        Row: {
+          adresse: string
+          created_at: string
+          date_dette: string
+          date_paiement: string
+          devise: string
+          id: string
+          montant: number
+          nom_contractant: string
+          notes: string
+          statut: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string
+          created_at?: string
+          date_dette?: string
+          date_paiement: string
+          devise?: string
+          id?: string
+          montant?: number
+          nom_contractant?: string
+          notes?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string
+          created_at?: string
+          date_dette?: string
+          date_paiement?: string
+          devise?: string
+          id?: string
+          montant?: number
+          nom_contractant?: string
+          notes?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       devis: {
         Row: {
           client: string
