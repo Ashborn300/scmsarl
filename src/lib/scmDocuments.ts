@@ -2765,8 +2765,7 @@ export async function creerPdfContratFournisseur(data: DonneesContratFournisseur
   pdf.setFontSize(9.5);
   pdf.setTextColor(...couleurs.principal);
   pdf.text("LE FOURNISSEUR", xF, yBloc);
-  if (data.sceauFournisseur) { try { pdf.addImage(data.sceauFournisseur, "JPEG", xF, yBloc + 4, 36, 24, undefined, "FAST"); } catch { /* ignore */ } }
-  if (data.signatureFournisseur) { try { pdf.addImage(data.signatureFournisseur, "JPEG", xF + 40, yBloc + 4, 40, 20, undefined, "FAST"); } catch { /* ignore */ } }
+  if (data.signatureFournisseur) { try { pdf.addImage(data.signatureFournisseur, "JPEG", xF, yBloc + 4, 44, 24, undefined, "FAST"); } catch { /* ignore */ } }
   pdf.setDrawColor(180, 180, 180);
   pdf.setLineWidth(0.2);
   pdf.line(xF, yBloc + 30, xF + blocW - 4, yBloc + 30);
