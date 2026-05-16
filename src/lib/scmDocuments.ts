@@ -141,6 +141,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   demandes_paiement: "demandes_paiement",
   recu_employe: "recus_employes",
   version_nuit: "versions_nuit",
+  gestion_caisse: "mouvements_caisse",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -174,6 +175,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   demandes_paiement: "DPM",
   recu_employe: "REM",
   version_nuit: "VNT",
+  gestion_caisse: "CAI",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
