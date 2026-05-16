@@ -17,8 +17,10 @@ function lireImage(fichier?: File) {
     if (!fichier) return resolve(undefined);
     const r = new FileReader();
     r.onload = () => resolve(String(r.result));
-    r.onerror = reject;
-    r.readAsDataURL(fichier);
+    r.onerror = () => reject(new Error(`Impossible de lire le fichier ${fichier.name}`));
+    try { r.readAsDataURL(fichier); } catch (err) {
+      reject(err instanceof Error ? err : new Error("Lecture du fichier impossible"));
+    }
   });
 }
 
