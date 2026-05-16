@@ -519,6 +519,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   if (config.type === "gestion_caisse") return <GestionCaisseTool retour={retour} />;
   if (config.type === "gestion_dettes") return <GestionDettesTool retour={retour} />;
   if (config.type === "gestion_stage") return <GestionStageTool retour={retour} />;
+  if (config.type === "gestion_presence") return <GestionPresenceTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
 }
 
