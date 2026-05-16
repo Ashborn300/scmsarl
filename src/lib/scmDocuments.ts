@@ -2746,8 +2746,7 @@ export async function creerPdfContratFournisseur(data: DonneesContratFournisseur
   pdf.setFontSize(9.5);
   pdf.setTextColor(...couleurs.principal);
   pdf.text("L'ACHETEUR — SCM SARL", MARGE_X, yBloc);
-  if (data.sceauScm) { try { pdf.addImage(data.sceauScm, "JPEG", MARGE_X, yBloc + 4, 36, 24, undefined, "FAST"); } catch { /* ignore */ } }
-  if (data.signatureScm) { try { pdf.addImage(data.signatureScm, "JPEG", MARGE_X + 40, yBloc + 4, 40, 20, undefined, "FAST"); } catch { /* ignore */ } }
+  if (data.sceauScm) { try { pdf.addImage(data.sceauScm, "JPEG", MARGE_X, yBloc + 4, 44, 28, undefined, "FAST"); } catch { /* ignore */ } }
   pdf.setDrawColor(180, 180, 180);
   pdf.setLineWidth(0.2);
   pdf.line(MARGE_X, yBloc + 30, MARGE_X + blocW - 4, yBloc + 30);
