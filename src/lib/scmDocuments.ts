@@ -2725,7 +2725,7 @@ export async function creerPdfContratFournisseur(data: DonneesContratFournisseur
   if (data.clauses?.trim()) { titreSection("CLAUSES GÉNÉRALES"); paragraphe(data.clauses); }
 
   // SIGNATURES
-  verifierPlace(70);
+  verifierPlace(48);
   y += 4;
   pdf.setDrawColor(...couleurs.secondaire);
   pdf.setLineWidth(0.4);
