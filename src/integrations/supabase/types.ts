@@ -600,6 +600,42 @@ export type Database = {
         }
         Relationships: []
       }
+      contrats_fournisseurs: {
+        Row: {
+          client: string
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at?: string
+        }
+        Update: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       demandes_conges: {
         Row: {
           created_at: string
