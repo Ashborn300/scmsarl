@@ -1202,6 +1202,42 @@ export type Database = {
         }
         Relationships: []
       }
+      mouvements_caisse: {
+        Row: {
+          auteur: string
+          created_at: string
+          date_mouvement: string
+          description: string
+          devise: string
+          id: string
+          montant: number
+          type_mouvement: string
+          updated_at: string
+        }
+        Insert: {
+          auteur?: string
+          created_at?: string
+          date_mouvement?: string
+          description?: string
+          devise?: string
+          id?: string
+          montant: number
+          type_mouvement: string
+          updated_at?: string
+        }
+        Update: {
+          auteur?: string
+          created_at?: string
+          date_mouvement?: string
+          description?: string
+          devise?: string
+          id?: string
+          montant?: number
+          type_mouvement?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organigrammes_entreprise: {
         Row: {
           actif: boolean
