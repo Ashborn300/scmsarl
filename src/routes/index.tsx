@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, Archive, Award, Building2, CalendarDays, ClipboardList, Cuboid, HandCoins, HeartPulse, FileClock, FileText, FilePlus2, FileX2, Hammer, HardHat, IdCard, LayoutGrid, Megaphone, Moon, Network, PackageCheck, QrCode, ReceiptText, ShieldCheck, SquarePen, UsersRound, Wallet, Warehouse } from "lucide-react";
+import { AlertTriangle, Archive, Award, Building2, CalendarDays, ClipboardList, Cuboid, HandCoins, HeartPulse, FileClock, FileText, FilePlus2, FileX2, Hammer, HandshakeIcon, HardHat, IdCard, LayoutGrid, Megaphone, Moon, Network, PackageCheck, QrCode, ReceiptText, ShieldCheck, SquarePen, Truck, UsersRound, Wallet, Warehouse } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -23,6 +23,7 @@ const icones: Record<OutilType, React.ElementType> = {
   devis_estimatif: ClipboardList,
   recu: ReceiptText,
   contrat_construction: ShieldCheck,
+  contrat_fournisseur: Truck,
   contrat_employe: UsersRound,
   description_projet: Building2,
   communiquer: Megaphone,
@@ -98,6 +99,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.16)" },
     action: { background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.18)" },
     icon: { background: "linear-gradient(135deg, #a855f7, #7c3aed)", color: "white" },
+  },
+  contrat_fournisseur: {
+    card: { background: "linear-gradient(180deg, rgba(30,64,175,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(14,165,233,0.28)" },
+    banner: { background: "linear-gradient(135deg, #1e40af, #0ea5e9)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(30,64,175,0.08)", border: "1px solid rgba(14,165,233,0.16)" },
+    action: { background: "rgba(14,165,233,0.12)", border: "1px solid rgba(30,64,175,0.18)" },
+    icon: { background: "linear-gradient(135deg, #1e40af, #0ea5e9)", color: "white" },
   },
   contrat_employe: {
     card: { background: "linear-gradient(180deg, rgba(20,184,166,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(20,184,166,0.28)" },

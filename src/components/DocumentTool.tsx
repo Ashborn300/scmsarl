@@ -5,6 +5,7 @@ import { z } from "zod";
 import { DocumentHistory } from "./DocumentHistory";
 import { RecuEmployeTool } from "./RecuEmployeTool";
 import { DevisEstimatifTool } from "./DevisEstimatifTool";
+import { ContratFournisseurTool } from "./ContratFournisseurTool";
 import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerPlanArchitectural, enregistrerRealisticSketchup, enregistrerRendu3D, enregistrerVersionNuit, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerDemandesPaiement, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mettreAJourStatutDemandePaiement, modifierFormulairePersonnalise, supprimerDemandePaiementParId, supprimerDocument, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, voirPdf, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DemandePaiementRecord, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type StatutDemandePaiement, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
@@ -29,6 +30,7 @@ export const configs: Config[] = [
   { type: "contrat_construction", titre: "Générateur de contrat de construction", theme: "purple", description: "Contrat officiel avec travaux, délais, paiement et clauses éditables.", fields: [
     { name: "client", label: "Informations client", type: "textarea", required: true }, { name: "projet", label: "Détails du projet", type: "textarea", required: true }, { name: "travaux", label: "Étendue des travaux", type: "textarea", required: true }, { name: "delais", label: "Délais", type: "textarea" }, { name: "paiement", label: "Modalités de paiement", type: "textarea" }, { name: "clauses", label: "Clauses légales", type: "textarea", defaultValue: "Les parties s’engagent à respecter les dispositions légales applicables en République Démocratique du Congo et les normes professionnelles du secteur de la construction." },
   ]},
+  { type: "contrat_fournisseur", titre: "Contrat avec fournisseur", theme: "blue", description: "Contrat de fourniture entre SCM SARL et un fournisseur : objet, articles à livrer (description + quantité), conditions, sceau et signature.", showTotal: false, fields: [] },
   { type: "contrat_employe", titre: "Générateur de contrat d’employé", theme: "teal", description: "Contrat d’employé avec poste, salaire, durée et responsabilités.", fields: [
     { name: "employe", label: "Nom de l’employé", required: true }, { name: "poste", label: "Poste", required: true }, { name: "salaire", label: "Salaire ($)", type: "number", required: true }, { name: "duree", label: "Durée du contrat", required: true }, { name: "responsabilites", label: "Responsabilités", type: "textarea" }, { name: "conditions", label: "Conditions", type: "textarea" },
   ]},
@@ -505,6 +507,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   if (config.type === "demandes_paiement") return <DemandesPaiementTool retour={retour} />;
   if (config.type === "recu_employe") return <RecuEmployeTool retour={retour} />;
   if (config.type === "devis_estimatif") return <DevisEstimatifTool retour={retour} />;
+  if (config.type === "contrat_fournisseur") return <ContratFournisseurTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
 }
 
