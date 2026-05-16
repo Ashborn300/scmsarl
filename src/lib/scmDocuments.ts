@@ -3164,3 +3164,179 @@ export async function creerPdfDettes(options: {
 
   return pdf.output("datauristring");
 }
+
+// ====================== Gestion de présence ======================
+export type EmployePresence = { employe_id: string; nom_complet: string; statut: string };
+export type PresenceRecord = {
+  id: string;
+  date: string;
+  chantier_id: string;
+  chef_chantier_id: string;
+  employes_presence: EmployePresence[];
+  notes: string;
+  created_at: string;
+  updated_at: string;
+};
+export type ChantierBasique = { id: string; nom_chantier: string; localisation: string };
+
+export async function listerPresences(options: { dateDebut?: string; dateFin?: string; chantierId?: string } = {}): Promise<PresenceRecord[]> {
+  let q = (supabase.from("presences" as never) as unknown as { select: (c: string) => unknown }).select("*") as unknown as {
+    gte: (k: string, v: string) => unknown;
+    lte: (k: string, v: string) => unknown;
+    eq: (k: string, v: string) => unknown;
+    order: (k: string, opts: { ascending: boolean }) => unknown;
+  };
+  if (options.dateDebut) q = q.gte("date", options.dateDebut) as typeof q;
+  if (options.dateFin) q = q.lte("date", options.dateFin) as typeof q;
+  if (options.chantierId) q = q.eq("chantier_id", options.chantierId) as typeof q;
+  const finale = q.order("date", { ascending: false }) as unknown as Promise<{ data: PresenceRecord[] | null; error: { message: string } | null }>;
+  const { data, error } = await finale;
+  if (error) throw new Error(error.message);
+  return (data || []).map((p) => ({ ...p, employes_presence: Array.isArray(p.employes_presence) ? p.employes_presence : [] })) as PresenceRecord[];
+}
+
+export async function listerChantiersBasique(): Promise<ChantierBasique[]> {
+  const { data, error } = await (supabase.from("chantiers" as never) as unknown as {
+    select: (c: string) => { order: (k: string, o: { ascending: boolean }) => Promise<{ data: ChantierBasique[] | null; error: { message: string } | null }> };
+  }).select("id, nom_chantier, localisation").order("nom_chantier", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data || []) as ChantierBasique[];
+}
+
+export async function creerPdfPresences(options: {
+  presences: PresenceRecord[];
+  chantiers: ChantierBasique[];
+  dateDebut?: string;
+  dateFin?: string;
+  chantierNom?: string;
+}): Promise<string> {
+  const { presences, chantiers, dateDebut, dateFin, chantierNom } = options;
+  const pdf = new jsPDF({ format: "a4", unit: "mm", orientation: "portrait" });
+  const PAGE_W = pdf.internal.pageSize.getWidth();
+  const PAGE_H = pdf.internal.pageSize.getHeight();
+  const principal: [number, number, number] = [30, 64, 175];
+  const secondaire: [number, number, number] = [16, 185, 129];
+  const doux: [number, number, number] = [228, 240, 255];
+
+  const logo = await imageVersBase64(logoUrl).catch(() => "");
+  const drapeau = await drapeauRdcVersPng().catch(() => "");
+
+  const nomChantier = (id: string) => chantiers.find((c) => c.id === id)?.nom_chantier || "Chantier";
+
+  const dessinerEntete = (numeroPage: number) => {
+    pdf.setFillColor(...principal); pdf.rect(0, 0, PAGE_W, 32, "F");
+    pdf.setFillColor(...secondaire); pdf.rect(0, 32, PAGE_W, 2, "F");
+    if (logo) { try { pdf.addImage(logo, "JPEG", 12, 6, 22, 22, undefined, "FAST"); } catch { /* ignore */ } }
+    if (drapeau) { try { pdf.addImage(drapeau, "PNG", PAGE_W - 38, 9, 24, 16, undefined, "FAST"); } catch { /* ignore */ } }
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(16);
+    pdf.text("SCM SARL", 40, 14);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
+    pdf.text("Société de Construction et Maintenance · République Démocratique du Congo", 40, 19);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(11);
+    pdf.text("RAPPORT DE PRÉSENCES CHANTIERS", 40, 26);
+    pdf.setFontSize(8); pdf.setFont("helvetica", "normal");
+    pdf.text(`Page ${numeroPage}`, PAGE_W - 14, 30, { align: "right" });
+    pdf.setTextColor(40, 40, 40);
+  };
+
+  dessinerEntete(1);
+  let y = 42;
+
+  const periode = dateDebut && dateFin
+    ? (dateDebut === dateFin ? `Journée du ${formaterDateFr(dateDebut)}` : `Du ${formaterDateFr(dateDebut)} au ${formaterDateFr(dateFin)}`)
+    : "Toutes périodes";
+
+  const totalEmployes = presences.reduce((s, p) => s + p.employes_presence.length, 0);
+  const totalPresents = presences.reduce((s, p) => s + p.employes_presence.filter((e) => e.statut === "présent").length, 0);
+  const totalAbsents = presences.reduce((s, p) => s + p.employes_presence.filter((e) => e.statut === "absent").length, 0);
+  const totalRetards = presences.reduce((s, p) => s + p.employes_presence.filter((e) => e.statut === "en retard").length, 0);
+  const totalExcuses = presences.reduce((s, p) => s + p.employes_presence.filter((e) => e.statut === "excusé").length, 0);
+
+  pdf.setFillColor(...doux); pdf.roundedRect(12, y, PAGE_W - 24, 30, 2, 2, "F");
+  pdf.setTextColor(...principal); pdf.setFont("helvetica", "bold"); pdf.setFontSize(10);
+  pdf.text("SYNTHÈSE", 16, y + 7);
+  pdf.setTextColor(30, 30, 30); pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
+  pdf.text(`Période : ${periode}`, 16, y + 13);
+  pdf.text(`Chantier : ${chantierNom || "Tous les chantiers"}`, 16, y + 18);
+  pdf.text(`Rapports : ${presences.length} · Pointages : ${totalEmployes}`, 16, y + 23);
+  pdf.setFont("helvetica", "bold"); pdf.setTextColor(...principal);
+  pdf.text(`Présents: ${totalPresents}   Absents: ${totalAbsents}   Retards: ${totalRetards}   Excusés: ${totalExcuses}`, PAGE_W - 16, y + 23, { align: "right" });
+  pdf.setFont("helvetica", "italic"); pdf.setFontSize(8); pdf.setTextColor(110, 110, 110);
+  pdf.text(`Édité le ${formaterDateFr(new Date().toISOString().slice(0, 10))}`, PAGE_W - 16, y + 13, { align: "right" });
+  y += 36;
+
+  let pageCourante = 1;
+  const triees = [...presences].sort((a, b) => b.date.localeCompare(a.date));
+
+  // En-tête tableau : Date | Chantier | Employé | Statut
+  const colDate = 12, colChantier = 42, colEmploye = 92, colStatut = PAGE_W - 12;
+  const dessinerEnteteTableau = () => {
+    pdf.setFillColor(...principal); pdf.rect(12, y, PAGE_W - 24, 8, "F");
+    pdf.setTextColor(255, 255, 255); pdf.setFont("helvetica", "bold"); pdf.setFontSize(9);
+    pdf.text("Date", colDate + 2, y + 5.5);
+    pdf.text("Chantier", colChantier, y + 5.5);
+    pdf.text("Employé", colEmploye, y + 5.5);
+    pdf.text("Statut", colStatut - 2, y + 5.5, { align: "right" });
+    y += 8;
+    pdf.setTextColor(30, 30, 30); pdf.setFont("helvetica", "normal");
+  };
+  dessinerEnteteTableau();
+
+  let zebra = false;
+  pdf.setFontSize(9);
+
+  if (triees.length === 0) {
+    pdf.setTextColor(120, 120, 120); pdf.setFont("helvetica", "italic");
+    pdf.text("Aucune présence enregistrée pour cette sélection.", PAGE_W / 2, y + 10, { align: "center" });
+  }
+
+  for (const p of triees) {
+    const nomCh = nomChantier(p.chantier_id);
+    const lignesEmp = p.employes_presence.length || 1;
+    const employes = p.employes_presence.length > 0 ? p.employes_presence : [{ employe_id: "", nom_complet: "—", statut: "—" } as EmployePresence];
+    for (let i = 0; i < employes.length; i++) {
+      const e = employes[i];
+      const hauteurLigne = 7;
+      if (y + hauteurLigne > PAGE_H - 14) {
+        pdf.addPage(); pageCourante += 1; dessinerEntete(pageCourante); y = 42; dessinerEnteteTableau();
+        zebra = false;
+      }
+      if (zebra) { pdf.setFillColor(247, 247, 247); pdf.rect(12, y, PAGE_W - 24, hauteurLigne, "F"); }
+      zebra = !zebra;
+      pdf.setTextColor(30, 30, 30); pdf.setFont("helvetica", "normal");
+      if (i === 0) pdf.text(formaterDateFr(p.date), colDate + 2, y + 5);
+      const nomChCourt = pdf.splitTextToSize(nomCh, colEmploye - colChantier - 2)[0] || nomCh;
+      if (i === 0) pdf.text(nomChCourt, colChantier, y + 5);
+      const nomEmpCourt = pdf.splitTextToSize(e.nom_complet || "—", colStatut - colEmploye - 22)[0] || e.nom_complet;
+      pdf.text(nomEmpCourt, colEmploye, y + 5);
+      // Statut coloré
+      const statut = (e.statut || "—").toLowerCase();
+      if (statut === "présent") pdf.setTextColor(22, 128, 61);
+      else if (statut === "absent") pdf.setTextColor(170, 30, 30);
+      else if (statut === "en retard") pdf.setTextColor(180, 83, 9);
+      else if (statut === "excusé") pdf.setTextColor(30, 64, 175);
+      else pdf.setTextColor(30, 30, 30);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(e.statut || "—", colStatut - 2, y + 5, { align: "right" });
+      pdf.setFont("helvetica", "normal"); pdf.setTextColor(30, 30, 30);
+      y += hauteurLigne;
+      void lignesEmp;
+    }
+    // Note du rapport (optionnel) sur une ligne discrète
+    if (p.notes && p.notes.trim()) {
+      const noteLines = pdf.splitTextToSize(`Note : ${p.notes.trim()}`, PAGE_W - 28);
+      const h = noteLines.length * 4.2 + 2;
+      if (y + h > PAGE_H - 14) { pdf.addPage(); pageCourante += 1; dessinerEntete(pageCourante); y = 42; dessinerEnteteTableau(); zebra = false; }
+      pdf.setTextColor(110, 110, 110); pdf.setFont("helvetica", "italic"); pdf.setFontSize(8);
+      pdf.text(noteLines, 14, y + 4);
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(30, 30, 30);
+      y += h;
+    }
+  }
+
+  pdf.setFont("helvetica", "italic"); pdf.setFontSize(8); pdf.setTextColor(110, 110, 110);
+  pdf.text("Document généré automatiquement par le système SCM SARL.", PAGE_W / 2, PAGE_H - 8, { align: "center" });
+
+  return pdf.output("datauristring");
+}
