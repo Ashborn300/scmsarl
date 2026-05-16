@@ -2810,3 +2810,195 @@ export async function enregistrerContratFournisseur(payload: Record<string, unkn
   if (error) throw new Error(error.message);
   return data as ContratFournisseurRecord;
 }
+
+// ====================== Gestion de caisse ======================
+export type MouvementCaisse = {
+  id: string;
+  type_mouvement: "depot" | "retrait";
+  montant: number;
+  devise: string;
+  description: string;
+  date_mouvement: string;
+  auteur: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DonneesMouvementCaisse = Omit<MouvementCaisse, "id" | "created_at" | "updated_at">;
+
+export async function listerMouvementsCaisse(dateDebut?: string, dateFin?: string): Promise<MouvementCaisse[]> {
+  const db = supabase as unknown as { from: (table: string) => { select: (cols: string) => { gte: (k: string, v: string) => unknown; order: (k: string, opts: { ascending: boolean }) => Promise<{ data: MouvementCaisse[] | null; error: { message: string } | null }> } } };
+  // Use any-friendly chaining
+  let q = (supabase.from("mouvements_caisse" as never) as unknown as { select: (c: string) => unknown }).select("*") as unknown as {
+    gte: (k: string, v: string) => unknown;
+    lte: (k: string, v: string) => unknown;
+    order: (k: string, opts: { ascending: boolean }) => unknown;
+  };
+  if (dateDebut) q = q.gte("date_mouvement", dateDebut) as typeof q;
+  if (dateFin) q = q.lte("date_mouvement", dateFin) as typeof q;
+  const finale = q.order("date_mouvement", { ascending: false }) as unknown as Promise<{ data: MouvementCaisse[] | null; error: { message: string } | null }>;
+  const { data, error } = await finale;
+  if (error) throw new Error(error.message);
+  void db;
+  return (data || []) as MouvementCaisse[];
+}
+
+export async function enregistrerMouvementCaisse(payload: DonneesMouvementCaisse, id?: string): Promise<MouvementCaisse> {
+  const ligne = { ...payload };
+  const table = supabase.from("mouvements_caisse" as never) as unknown as {
+    update: (l: typeof ligne) => { eq: (k: string, v: string) => { select: () => { single: () => Promise<{ data: MouvementCaisse | null; error: { message: string } | null }> } } };
+    insert: (l: typeof ligne) => { select: () => { single: () => Promise<{ data: MouvementCaisse | null; error: { message: string } | null }> } };
+  };
+  const r = id
+    ? await table.update(ligne).eq("id", id).select().single()
+    : await table.insert(ligne).select().single();
+  if (r.error) throw new Error(r.error.message);
+  return r.data as MouvementCaisse;
+}
+
+export async function supprimerMouvementCaisse(id: string): Promise<void> {
+  const table = supabase.from("mouvements_caisse" as never) as unknown as {
+    delete: () => { eq: (k: string, v: string) => Promise<{ error: { message: string } | null }> };
+  };
+  const { error } = await table.delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function creerPdfMouvementsCaisse(options: {
+  mouvements: MouvementCaisse[];
+  dateDebut?: string;
+  dateFin?: string;
+  soldeAvant?: number;
+  devise?: string;
+}): Promise<string> {
+  const { mouvements, dateDebut, dateFin } = options;
+  const devise = options.devise || "USD";
+  const pdf = new jsPDF({ format: "a4", unit: "mm", orientation: "portrait" });
+  const PAGE_W = pdf.internal.pageSize.getWidth();
+  const PAGE_H = pdf.internal.pageSize.getHeight();
+  const principal: [number, number, number] = [21, 94, 117];
+  const secondaire: [number, number, number] = [202, 138, 4];
+  const doux: [number, number, number] = [228, 244, 248];
+
+  const logo = await imageVersBase64(logoUrl).catch(() => "");
+  const drapeau = await drapeauRdcVersPng().catch(() => "");
+
+  const dessinerEntete = (numeroPage: number) => {
+    pdf.setFillColor(...principal); pdf.rect(0, 0, PAGE_W, 32, "F");
+    pdf.setFillColor(...secondaire); pdf.rect(0, 32, PAGE_W, 2, "F");
+    if (logo) { try { pdf.addImage(logo, "JPEG", 12, 6, 22, 22, undefined, "FAST"); } catch { /* ignore */ } }
+    if (drapeau) { try { pdf.addImage(drapeau, "PNG", PAGE_W - 38, 9, 24, 16, undefined, "FAST"); } catch { /* ignore */ } }
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(16);
+    pdf.text("SCM SARL", 40, 14);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
+    pdf.text("Société de Construction et Maintenance · République Démocratique du Congo", 40, 19);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(11);
+    pdf.text("RAPPORT DE GESTION DE CAISSE", 40, 26);
+    pdf.setFontSize(8); pdf.setFont("helvetica", "normal");
+    pdf.text(`Page ${numeroPage}`, PAGE_W - 14, 30, { align: "right" });
+    pdf.setTextColor(40, 40, 40);
+  };
+
+  dessinerEntete(1);
+  let y = 42;
+
+  // Bandeau période
+  pdf.setFillColor(...doux); pdf.roundedRect(12, y, PAGE_W - 24, 18, 2, 2, "F");
+  pdf.setTextColor(...principal);
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(10);
+  pdf.text("PÉRIODE", 16, y + 6);
+  pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); pdf.setTextColor(30, 30, 30);
+  const periode = dateDebut && dateFin
+    ? (dateDebut === dateFin ? `Journée du ${formaterDateFr(dateDebut)}` : `Du ${formaterDateFr(dateDebut)} au ${formaterDateFr(dateFin)}`)
+    : "Tous les mouvements enregistrés";
+  pdf.text(periode, 16, y + 12);
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(...principal);
+  pdf.text(`Édité le ${formaterDateFr(new Date().toISOString().slice(0, 10))}`, PAGE_W - 16, y + 12, { align: "right" });
+  y += 24;
+
+  // Calcul totaux
+  const totalDepots = mouvements.filter((m) => m.type_mouvement === "depot").reduce((s, m) => s + Number(m.montant || 0), 0);
+  const totalRetraits = mouvements.filter((m) => m.type_mouvement === "retrait").reduce((s, m) => s + Number(m.montant || 0), 0);
+  const solde = totalDepots - totalRetraits;
+
+  // Cartes synthèse
+  const cardW = (PAGE_W - 24 - 8) / 3;
+  const dessinerCarte = (x: number, titre: string, valeur: string, couleur: [number, number, number]) => {
+    pdf.setFillColor(...couleur); pdf.roundedRect(x, y, cardW, 22, 2, 2, "F");
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(8);
+    pdf.text(titre.toUpperCase(), x + 4, y + 7);
+    pdf.setFontSize(13);
+    pdf.text(valeur, x + 4, y + 17);
+  };
+  dessinerCarte(12, "Total dépôts", `+ ${formaterMontant(totalDepots, { decimales: 2 })} ${devise}`, [22, 163, 74]);
+  dessinerCarte(12 + cardW + 4, "Total retraits", `- ${formaterMontant(totalRetraits, { decimales: 2 })} ${devise}`, [185, 28, 28]);
+  dessinerCarte(12 + (cardW + 4) * 2, "Solde de caisse", `${formaterMontant(solde, { decimales: 2 })} ${devise}`, principal);
+  y += 28;
+
+  // Tableau
+  const colDate = 12, colType = 38, colDesc = 70, colMontant = PAGE_W - 12;
+  const dessinerEnteteTableau = () => {
+    pdf.setFillColor(...principal); pdf.rect(12, y, PAGE_W - 24, 8, "F");
+    pdf.setTextColor(255, 255, 255); pdf.setFont("helvetica", "bold"); pdf.setFontSize(9);
+    pdf.text("Date", colDate + 2, y + 5.5);
+    pdf.text("Type", colType, y + 5.5);
+    pdf.text("Description", colDesc, y + 5.5);
+    pdf.text(`Montant (${devise})`, colMontant - 2, y + 5.5, { align: "right" });
+    y += 8;
+    pdf.setTextColor(30, 30, 30); pdf.setFont("helvetica", "normal");
+  };
+  dessinerEnteteTableau();
+
+  // Mouvements triés par date ascendante pour le rapport
+  const tries = [...mouvements].sort((a, b) => a.date_mouvement.localeCompare(b.date_mouvement) || a.created_at.localeCompare(b.created_at));
+  let pageCourante = 1;
+  let zebra = false;
+  pdf.setFontSize(9);
+  for (const m of tries) {
+    const lignesDesc = pdf.splitTextToSize(m.description || "—", colMontant - colDesc - 6);
+    const hauteurLigne = Math.max(7, lignesDesc.length * 4.6 + 2);
+    if (y + hauteurLigne > PAGE_H - 28) {
+      pdf.addPage(); pageCourante += 1; y = 12; dessinerEntete(pageCourante); y = 42; dessinerEnteteTableau();
+      zebra = false;
+    }
+    if (zebra) { pdf.setFillColor(247, 247, 247); pdf.rect(12, y, PAGE_W - 24, hauteurLigne, "F"); }
+    zebra = !zebra;
+    pdf.setTextColor(30, 30, 30);
+    pdf.text(formaterDateFr(m.date_mouvement), colDate + 2, y + 5);
+    if (m.type_mouvement === "depot") { pdf.setTextColor(22, 130, 60); pdf.setFont("helvetica", "bold"); pdf.text("DÉPÔT", colType, y + 5); }
+    else { pdf.setTextColor(170, 30, 30); pdf.setFont("helvetica", "bold"); pdf.text("RETRAIT", colType, y + 5); }
+    pdf.setFont("helvetica", "normal"); pdf.setTextColor(30, 30, 30);
+    pdf.text(lignesDesc, colDesc, y + 5);
+    pdf.setFont("helvetica", "bold");
+    const signe = m.type_mouvement === "depot" ? "+" : "-";
+    pdf.setTextColor(...(m.type_mouvement === "depot" ? [22, 130, 60] as [number, number, number] : [170, 30, 30] as [number, number, number]));
+    pdf.text(`${signe} ${formaterMontant(Number(m.montant || 0), { decimales: 2 })}`, colMontant - 2, y + 5, { align: "right" });
+    pdf.setFont("helvetica", "normal"); pdf.setTextColor(30, 30, 30);
+    y += hauteurLigne;
+  }
+
+  if (y > PAGE_H - 38) { pdf.addPage(); pageCourante += 1; dessinerEntete(pageCourante); y = 42; }
+  // Ligne de solde final
+  y += 4;
+  pdf.setDrawColor(...principal); pdf.setLineWidth(0.6); pdf.line(12, y, PAGE_W - 12, y);
+  y += 6;
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(...principal);
+  pdf.text("SOLDE FINAL DE LA CAISSE", 14, y);
+  pdf.text(`${formaterMontant(solde, { decimales: 2 })} ${devise}`, PAGE_W - 14, y, { align: "right" });
+
+  // Pied de page
+  pdf.setFont("helvetica", "italic"); pdf.setFontSize(8); pdf.setTextColor(110, 110, 110);
+  pdf.text("Document généré automatiquement par le système SCM SARL.", PAGE_W / 2, PAGE_H - 8, { align: "center" });
+
+  return pdf.output("datauristring");
+}
+
+function formaterDateFr(iso: string) {
+  if (!iso) return "—";
+  try {
+    const [a, m, j] = iso.split("-");
+    return `${j}/${m}/${a}`;
+  } catch { return iso; }
+}
