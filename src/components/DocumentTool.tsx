@@ -93,6 +93,7 @@ export const configs: Config[] = [
   { type: "gestion_caisse", titre: "Gestion de caisse", theme: "cash-register", description: "Enregistrez dépôts et retraits, suivez le solde en temps réel et exportez un rapport PDF par jour ou plage de dates.", showTotal: false, fields: [] },
   { type: "gestion_dettes", titre: "Gestion de dettes", theme: "debt-management", description: "Enregistrez les dettes (contractant, téléphone, adresse, montant, dates) classées par échéance, et exportez la liste en PDF.", showTotal: false, fields: [] },
   { type: "gestion_stage", titre: "Gestion de stage", theme: "internship-management", description: "Consultez les demandes de stage, validez ou rejetez, attribuez un matricule et un chantier, et envoyez des annonces aux stagiaires.", showTotal: false, fields: [] },
+  { type: "gestion_presence", titre: "Gestion de présence", theme: "presence-management", description: "Consultez toutes les présences enregistrées sur les chantiers et téléchargez le rapport PDF par date, plage de dates ou chantier précis.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
