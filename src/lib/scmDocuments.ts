@@ -2597,34 +2597,45 @@ export async function creerPdfContratFournisseur(data: DonneesContratFournisseur
     pdf.setFillColor(255, 255, 255);
     pdf.roundedRect(10, 10, PAGE_W - 20, PAGE_H - 20, 3, 3, "F");
 
-    if (logo) { try { pdf.addImage(logo, "JPEG", 16, 14, 30, 18, undefined, "FAST"); } catch { /* ignore */ } }
-    if (drapeauRdc) { try { pdf.addImage(drapeauRdc, "PNG", PAGE_W - 38, 15, 22, 14, undefined, "FAST"); } catch { /* ignore */ } }
+    if (numeroPage === 1) {
+      if (logo) { try { pdf.addImage(logo, "JPEG", 16, 14, 30, 18, undefined, "FAST"); } catch { /* ignore */ } }
+      if (drapeauRdc) { try { pdf.addImage(drapeauRdc, "PNG", PAGE_W - 38, 15, 22, 14, undefined, "FAST"); } catch { /* ignore */ } }
 
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(13);
-    pdf.setTextColor(...couleurs.principal);
-    pdf.text("SCM SARL", 50, 19);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7.5);
-    pdf.setTextColor(80, 90, 110);
-    pdf.text("Solution des constructions modernes Sarl", 50, 23.5);
-    pdf.text("RCCM : CD/KNM/RCCM/24-B-01256  ·  N° Impôt : A24217735  ·  IDNAT : 01-F2300-N55523N", 50, 27);
-    pdf.text("Kinshasa / Ngaliema / Av. Kilimani n° 28 A", 50, 30.5);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(13);
+      pdf.setTextColor(...couleurs.principal);
+      pdf.text("SCM SARL", 50, 19);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(80, 90, 110);
+      pdf.text("Solution des constructions modernes Sarl", 50, 23.5);
+      pdf.text("RCCM : CD/KNM/RCCM/24-B-01256  ·  N° Impôt : A24217735  ·  IDNAT : 01-F2300-N55523N", 50, 27);
+      pdf.text("Kinshasa / Ngaliema / Av. Kilimani n° 28 A", 50, 30.5);
 
-    pdf.setDrawColor(...couleurs.secondaire);
-    pdf.setLineWidth(0.6);
-    pdf.line(MARGE_X, 35, PAGE_W - MARGE_X, 35);
+      pdf.setDrawColor(...couleurs.secondaire);
+      pdf.setLineWidth(0.6);
+      pdf.line(MARGE_X, 35, PAGE_W - MARGE_X, 35);
 
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(13);
-    pdf.setTextColor(...couleurs.principal);
-    pdf.text("CONTRAT DE FOURNITURE", PAGE_W / 2, 42, { align: "center" });
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(13);
+      pdf.setTextColor(...couleurs.principal);
+      pdf.text("CONTRAT DE FOURNITURE", PAGE_W / 2, 42, { align: "center" });
 
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8.5);
-    pdf.setTextColor(90, 100, 120);
-    pdf.text(`N° ${data.numero}${numeroPage > 1 ? `  ·  Page ${numeroPage}` : ""}`, MARGE_X, 49);
-    pdf.text(`Date : ${new Date(data.dateDocument || Date.now()).toLocaleDateString("fr-FR")}`, PAGE_W - MARGE_X, 49, { align: "right" });
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8.5);
+      pdf.setTextColor(90, 100, 120);
+      pdf.text(`N° ${data.numero}`, MARGE_X, 49);
+      pdf.text(`Date : ${new Date(data.dateDocument || Date.now()).toLocaleDateString("fr-FR")}`, PAGE_W - MARGE_X, 49, { align: "right" });
+    } else {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(120, 130, 150);
+      pdf.text(`Contrat de fourniture N° ${data.numero}`, MARGE_X, 16);
+      pdf.text(`Page ${numeroPage}`, PAGE_W - MARGE_X, 16, { align: "right" });
+      pdf.setDrawColor(...couleurs.secondaire);
+      pdf.setLineWidth(0.3);
+      pdf.line(MARGE_X, 19, PAGE_W - MARGE_X, 19);
+    }
   };
 
   let pageCourante = 1;
@@ -2635,8 +2646,9 @@ export async function creerPdfContratFournisseur(data: DonneesContratFournisseur
     pdf.addPage();
     pageCourante += 1;
     dessinerEntete(pageCourante);
-    return 58;
+    return 24;
   };
+
   const verifierPlace = (h: number) => { if (y + h > Y_LIMITE) y = passerPage(); };
 
   const titreSection = (texte: string) => {
@@ -2666,14 +2678,7 @@ export async function creerPdfContratFournisseur(data: DonneesContratFournisseur
   // ENTRE LES SOUSSIGNÉS
   titreSection("ENTRE LES SOUSSIGNÉS");
   paragraphe("L'ACHETEUR : SCM SARL — Solution des constructions modernes Sarl, société immatriculée au RCCM sous le n° CD/KNM/RCCM/24-B-01256, N° Impôt A24217735, IDNAT 01-F2300-N55523N, ayant son siège à Kinshasa / Ngaliema / Av. Kilimani n° 28 A.");
-  paragraphe(`LE FOURNISSEUR : ${data.fournisseurNom || "—"}${data.fournisseurRepresentant ? `, représenté par ${data.fournisseurRepresentant}` : ""}.`);
-  const infosF: string[] = [];
-  if (data.fournisseurAdresse) infosF.push(`Adresse : ${data.fournisseurAdresse}`);
-  if (data.fournisseurTelephone) infosF.push(`Téléphone : ${data.fournisseurTelephone}`);
-  if (data.fournisseurEmail) infosF.push(`Email : ${data.fournisseurEmail}`);
-  if (data.fournisseurRccm) infosF.push(`RCCM : ${data.fournisseurRccm}`);
-  if (data.fournisseurIdnat) infosF.push(`IDNAT : ${data.fournisseurIdnat}`);
-  if (infosF.length) paragraphe(infosF.join("  ·  "), { taille: 9 });
+  paragraphe(`LE FOURNISSEUR : ${data.fournisseurNom || "—"}${data.fournisseurTelephone ? `  ·  Téléphone : ${data.fournisseurTelephone}` : ""}.`);
 
   // OBJET DU CONTRAT
   titreSection("OBJET DU CONTRAT");
@@ -2741,8 +2746,7 @@ export async function creerPdfContratFournisseur(data: DonneesContratFournisseur
   pdf.setFontSize(9.5);
   pdf.setTextColor(...couleurs.principal);
   pdf.text("L'ACHETEUR — SCM SARL", MARGE_X, yBloc);
-  if (data.sceauScm) { try { pdf.addImage(data.sceauScm, "JPEG", MARGE_X, yBloc + 4, 36, 24, undefined, "FAST"); } catch { /* ignore */ } }
-  if (data.signatureScm) { try { pdf.addImage(data.signatureScm, "JPEG", MARGE_X + 40, yBloc + 4, 40, 20, undefined, "FAST"); } catch { /* ignore */ } }
+  if (data.sceauScm) { try { pdf.addImage(data.sceauScm, "JPEG", MARGE_X, yBloc + 4, 44, 28, undefined, "FAST"); } catch { /* ignore */ } }
   pdf.setDrawColor(180, 180, 180);
   pdf.setLineWidth(0.2);
   pdf.line(MARGE_X, yBloc + 30, MARGE_X + blocW - 4, yBloc + 30);
@@ -2761,8 +2765,7 @@ export async function creerPdfContratFournisseur(data: DonneesContratFournisseur
   pdf.setFontSize(9.5);
   pdf.setTextColor(...couleurs.principal);
   pdf.text("LE FOURNISSEUR", xF, yBloc);
-  if (data.sceauFournisseur) { try { pdf.addImage(data.sceauFournisseur, "JPEG", xF, yBloc + 4, 36, 24, undefined, "FAST"); } catch { /* ignore */ } }
-  if (data.signatureFournisseur) { try { pdf.addImage(data.signatureFournisseur, "JPEG", xF + 40, yBloc + 4, 40, 20, undefined, "FAST"); } catch { /* ignore */ } }
+  if (data.signatureFournisseur) { try { pdf.addImage(data.signatureFournisseur, "JPEG", xF, yBloc + 4, 44, 24, undefined, "FAST"); } catch { /* ignore */ } }
   pdf.setDrawColor(180, 180, 180);
   pdf.setLineWidth(0.2);
   pdf.line(xF, yBloc + 30, xF + blocW - 4, yBloc + 30);

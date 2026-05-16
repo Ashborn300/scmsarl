@@ -30,12 +30,7 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
   const [dateDocument, setDateDocument] = useState(aujourdhui);
   const [lieu, setLieu] = useState("Kinshasa");
   const [fournisseurNom, setFournisseurNom] = useState("");
-  const [fournisseurRepresentant, setFournisseurRepresentant] = useState("");
-  const [fournisseurAdresse, setFournisseurAdresse] = useState("");
   const [fournisseurTelephone, setFournisseurTelephone] = useState("");
-  const [fournisseurEmail, setFournisseurEmail] = useState("");
-  const [fournisseurRccm, setFournisseurRccm] = useState("");
-  const [fournisseurIdnat, setFournisseurIdnat] = useState("");
   const [objet, setObjet] = useState("la fourniture de sable destiné aux travaux de construction");
   const [lignes, setLignes] = useState<LigneFourniture[]>([nouvelleLigne()]);
   const [conditionsLivraison, setConditionsLivraison] = useState("Les livraisons s'effectuent aux chantiers indiqués par l'Acheteur, aux dates convenues entre les parties. Tout retard de livraison doit être notifié par écrit dans un délai de 48h.");
@@ -45,8 +40,8 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
   const [signataireScmNom, setSignataireScmNom] = useState("");
   const [signataireScmFonction, setSignataireScmFonction] = useState("Directeur Général");
   const [sceauScm, setSceauScm] = useState<File>();
-  const [signatureScm, setSignatureScm] = useState<File>();
-  const [sceauFournisseur, setSceauFournisseur] = useState<File>();
+  // signature SCM et sceau fournisseur retirés sur demande
+
   const [signatureFournisseur, setSignatureFournisseur] = useState<File>();
   const [chargement, setChargement] = useState(false);
   const [actualisation, setActualisation] = useState(0);
@@ -55,11 +50,10 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
 
   function reinitialiser() {
     setDateDocument(aujourdhui); setLieu("Kinshasa");
-    setFournisseurNom(""); setFournisseurRepresentant(""); setFournisseurAdresse("");
-    setFournisseurTelephone(""); setFournisseurEmail(""); setFournisseurRccm(""); setFournisseurIdnat("");
+    setFournisseurNom(""); setFournisseurTelephone("");
     setLignes([nouvelleLigne()]);
-    setSceauScm(undefined); setSignatureScm(undefined);
-    setSceauFournisseur(undefined); setSignatureFournisseur(undefined);
+    setSceauScm(undefined);
+    setSignatureFournisseur(undefined);
     setSignataireScmNom(""); setEditionId(null); setEditionNumero(null);
   }
 
@@ -70,12 +64,7 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
       setDateDocument(String(d.dateDocument || aujourdhui));
       setLieu(String(d.lieu || "Kinshasa"));
       setFournisseurNom(String(d.fournisseurNom || ""));
-      setFournisseurRepresentant(String(d.fournisseurRepresentant || ""));
-      setFournisseurAdresse(String(d.fournisseurAdresse || ""));
       setFournisseurTelephone(String(d.fournisseurTelephone || ""));
-      setFournisseurEmail(String(d.fournisseurEmail || ""));
-      setFournisseurRccm(String(d.fournisseurRccm || ""));
-      setFournisseurIdnat(String(d.fournisseurIdnat || ""));
       setObjet(String(d.objet || ""));
       setLignes(Array.isArray(d.lignes) && d.lignes.length ? (d.lignes as LigneFourniture[]) : [nouvelleLigne()]);
       setConditionsLivraison(String(d.conditionsLivraison || ""));
@@ -99,18 +88,18 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
     setChargement(true);
     try {
       const numero = editionNumero || (await genererNumero("contrat_fournisseur"));
-      const [sceauScmB64, signatureScmB64, sceauFB64, signatureFB64] = await Promise.all([
-        lireImage(sceauScm), lireImage(signatureScm), lireImage(sceauFournisseur), lireImage(signatureFournisseur),
+      const [sceauScmB64, signatureFB64] = await Promise.all([
+        lireImage(sceauScm), lireImage(signatureFournisseur),
       ]);
       const donnees = {
         numero, dateDocument, lieu,
-        fournisseurNom, fournisseurRepresentant, fournisseurAdresse, fournisseurTelephone,
-        fournisseurEmail, fournisseurRccm, fournisseurIdnat,
+        fournisseurNom, fournisseurRepresentant: "", fournisseurAdresse: "", fournisseurTelephone,
+        fournisseurEmail: "", fournisseurRccm: "", fournisseurIdnat: "",
         objet, lignes: lignesValides,
         conditionsLivraison, modalitesPaiement, duree, clauses,
         signataireScmNom, signataireScmFonction,
-        sceauScm: sceauScmB64, signatureScm: signatureScmB64,
-        sceauFournisseur: sceauFB64, signatureFournisseur: signatureFB64,
+        sceauScm: sceauScmB64, signatureScm: undefined,
+        sceauFournisseur: undefined, signatureFournisseur: signatureFB64,
       };
       const pdf = await creerPdfContratFournisseur(donnees);
       await enregistrerContratFournisseur(donnees, pdf, numero, editionId || undefined);
@@ -142,14 +131,9 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
               <span className="hidden text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:inline">{editionNumero ? `Modification · ${editionNumero}` : "Nouveau contrat"}</span>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5">
-              <label className="sm:col-span-2 xl:col-span-3"><span className="mb-1 block text-sm font-semibold text-foreground">Nom du fournisseur / société *</span><input value={fournisseurNom} onChange={(e) => setFournisseurNom(e.target.value)} className="form-control" /></label>
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">Représentant légal</span><input value={fournisseurRepresentant} onChange={(e) => setFournisseurRepresentant(e.target.value)} className="form-control" /></label>
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">Téléphone</span><input value={fournisseurTelephone} onChange={(e) => setFournisseurTelephone(e.target.value)} className="form-control" /></label>
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">Email</span><input type="email" value={fournisseurEmail} onChange={(e) => setFournisseurEmail(e.target.value)} className="form-control" /></label>
-              <label className="sm:col-span-2 xl:col-span-3"><span className="mb-1 block text-sm font-semibold text-foreground">Adresse</span><input value={fournisseurAdresse} onChange={(e) => setFournisseurAdresse(e.target.value)} className="form-control" /></label>
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">RCCM</span><input value={fournisseurRccm} onChange={(e) => setFournisseurRccm(e.target.value)} className="form-control" /></label>
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">IDNAT</span><input value={fournisseurIdnat} onChange={(e) => setFournisseurIdnat(e.target.value)} className="form-control" /></label>
+            <div className="grid gap-4 sm:grid-cols-2 xl:gap-5">
+              <label className="sm:col-span-2"><span className="mb-1 block text-sm font-semibold text-foreground">Nom du fournisseur / société *</span><input value={fournisseurNom} onChange={(e) => setFournisseurNom(e.target.value)} className="form-control" /></label>
+              <label className="sm:col-span-2"><span className="mb-1 block text-sm font-semibold text-foreground">Numéro de téléphone</span><input value={fournisseurTelephone} onChange={(e) => setFournisseurTelephone(e.target.value)} className="form-control" /></label>
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Date du contrat</span><input type="date" value={dateDocument} onChange={(e) => setDateDocument(e.target.value)} className="form-control" /></label>
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Lieu de signature</span><input value={lieu} onChange={(e) => setLieu(e.target.value)} className="form-control" /></label>
             </div>
@@ -194,11 +178,9 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
                   <label className="mt-2 block"><span className="mb-1 block text-sm font-semibold text-foreground">Nom du signataire SCM</span><input value={signataireScmNom} onChange={(e) => setSignataireScmNom(e.target.value)} className="form-control" /></label>
                   <label className="mt-3 block"><span className="mb-1 block text-sm font-semibold text-foreground">Fonction</span><input value={signataireScmFonction} onChange={(e) => setSignataireScmFonction(e.target.value)} className="form-control" /></label>
                   <label className="mt-3 block"><span className="mb-1 block text-sm font-semibold text-foreground">Sceau SCM</span><input type="file" accept="image/*" onChange={(e) => setSceauScm(e.target.files?.[0])} className="file-input" /></label>
-                  <label className="mt-3 block"><span className="mb-1 block text-sm font-semibold text-foreground">Signature SCM</span><input type="file" accept="image/*" onChange={(e) => setSignatureScm(e.target.files?.[0])} className="file-input" /></label>
                 </fieldset>
                 <fieldset className="rounded-xl border border-border/60 bg-muted/40 p-4">
                   <legend className="px-2 text-sm font-bold uppercase tracking-wide text-foreground">Fournisseur</legend>
-                  <label className="block"><span className="mb-1 block text-sm font-semibold text-foreground">Sceau du fournisseur</span><input type="file" accept="image/*" onChange={(e) => setSceauFournisseur(e.target.files?.[0])} className="file-input" /></label>
                   <label className="mt-3 block"><span className="mb-1 block text-sm font-semibold text-foreground">Signature du fournisseur</span><input type="file" accept="image/*" onChange={(e) => setSignatureFournisseur(e.target.files?.[0])} className="file-input" /></label>
                 </fieldset>
               </div>
