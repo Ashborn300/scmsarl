@@ -50,8 +50,7 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
 
   function reinitialiser() {
     setDateDocument(aujourdhui); setLieu("Kinshasa");
-    setFournisseurNom(""); setFournisseurRepresentant(""); setFournisseurAdresse("");
-    setFournisseurTelephone(""); setFournisseurEmail(""); setFournisseurRccm(""); setFournisseurIdnat("");
+    setFournisseurNom(""); setFournisseurTelephone("");
     setLignes([nouvelleLigne()]);
     setSceauScm(undefined); setSignatureScm(undefined);
     setSceauFournisseur(undefined); setSignatureFournisseur(undefined);
