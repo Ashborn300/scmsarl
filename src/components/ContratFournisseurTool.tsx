@@ -107,8 +107,10 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
       reinitialiser();
       setActualisation((n) => n + 1);
     } catch (e) {
-      console.error("[ContratFournisseur] Erreur génération:", e);
-      alert(e instanceof Error ? `Erreur : ${e.message}` : "Une erreur est survenue lors de la génération du PDF.");
+      console.error("[ContratFournisseur] Erreur génération (raw):", e);
+      console.error("[ContratFournisseur] Erreur génération (stringified):", JSON.stringify(e, Object.getOwnPropertyNames(e || {})));
+      const message = e instanceof Error ? e.message : (typeof e === "string" ? e : "Une erreur est survenue lors de la génération du PDF. Vérifiez la console pour les détails.");
+      alert(`Erreur : ${message}`);
     } finally { setChargement(false); }
   }
 
