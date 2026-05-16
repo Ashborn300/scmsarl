@@ -401,7 +401,7 @@ function Index() {
               <p className="mt-1 text-xs text-muted-foreground">Essayez un autre mot-clé.</p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 sm:gap-5">
               {outilsFiltres.map((config) => {
                 const Icone = icones[config.type] ?? FileText;
                 const visual = stylesOutils[config.type] ?? stylesOutils.communiquer;
@@ -411,19 +411,19 @@ function Index() {
                     key={config.type}
                     type="button"
                     onClick={() => setOutilActif(config.type)}
-                    className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-document sm:p-5"
+                    className="group relative flex h-full flex-col items-start gap-3 overflow-hidden rounded-2xl border border-border bg-card p-3.5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-document sm:flex-row sm:items-center sm:gap-4 sm:p-5"
                   >
                     <span
                       style={visual.icon}
-                      className="flex size-14 shrink-0 items-center justify-center rounded-2xl shadow-tool transition group-hover:scale-105 sm:size-16"
+                      className="flex size-11 shrink-0 items-center justify-center rounded-xl shadow-tool transition group-hover:scale-105 sm:size-16 sm:rounded-2xl"
                     >
-                      <Icone className="size-6 sm:size-7" />
+                      <Icone className="size-5 sm:size-7" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-base font-black text-foreground sm:text-lg">{titreCourt}</h3>
-                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground sm:text-sm">{config.description}</p>
+                      <h3 className="line-clamp-2 text-sm font-black leading-tight text-foreground sm:truncate sm:text-lg">{titreCourt}</h3>
+                      <p className="mt-1 line-clamp-2 hidden text-xs leading-5 text-muted-foreground sm:block sm:text-sm">{config.description}</p>
                     </div>
-                    <ArrowRight className="size-5 shrink-0 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-primary" />
+                    <ArrowRight className="hidden size-5 shrink-0 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-primary sm:block" />
                   </button>
                 );
               })}
