@@ -147,6 +147,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   gestion_caisse: "mouvements_caisse",
   gestion_dettes: "dettes",
   gestion_stage: "stagiaires",
+  gestion_presence: "presences",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
