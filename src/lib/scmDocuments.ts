@@ -18,7 +18,7 @@ function formaterMontant(valeur: number, options: { decimales?: number } = {}): 
   return signe + avecSeparateurs + (partieDecimale ? "," + partieDecimale : "");
 }
 
-export type OutilType = "facture" | "devis" | "devis_estimatif" | "recu" | "contrat_construction" | "contrat_fournisseur" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "plan_architectural" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement" | "demandes_paiement" | "recu_employe" | "version_nuit" | "gestion_caisse";
+export type OutilType = "facture" | "devis" | "devis_estimatif" | "recu" | "contrat_construction" | "contrat_fournisseur" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "plan_architectural" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement" | "demandes_paiement" | "recu_employe" | "version_nuit" | "gestion_caisse" | "gestion_dettes";
 export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
 export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
@@ -108,6 +108,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   recu_employe: { principal: [13, 148, 136], secondaire: [22, 163, 74], doux: [224, 247, 240] },
   version_nuit: { principal: [15, 23, 42], secondaire: [99, 102, 241], doux: [226, 232, 240] },
   gestion_caisse: { principal: [21, 94, 117], secondaire: [202, 138, 4], doux: [228, 244, 248] },
+  gestion_dettes: { principal: [136, 19, 55], secondaire: [217, 119, 6], doux: [253, 232, 240] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -142,6 +143,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   recu_employe: "recus_employes",
   version_nuit: "versions_nuit",
   gestion_caisse: "mouvements_caisse",
+  gestion_dettes: "dettes",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -176,6 +178,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   recu_employe: "REM",
   version_nuit: "VNT",
   gestion_caisse: "CAI",
+  gestion_dettes: "DET",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -210,6 +213,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   recu_employe: ["nom_fichier", "numero", "employe_nom", "matricule", "chantier_nom", "motif"],
   version_nuit: ["nom_fichier", "numero", "titre"],
   gestion_caisse: ["description", "auteur"],
+  gestion_dettes: ["nom_contractant", "telephone", "adresse", "notes"],
 };
 
 const db = supabase as any;
@@ -3005,4 +3009,150 @@ function formaterDateFr(iso: string) {
     const [a, m, j] = iso.split("-");
     return `${j}/${m}/${a}`;
   } catch { return iso; }
+}
+
+// ====================== Gestion de dettes ======================
+export type Dette = {
+  id: string;
+  nom_contractant: string;
+  telephone: string;
+  adresse: string;
+  montant: number;
+  devise: string;
+  date_dette: string;
+  date_paiement: string;
+  notes: string;
+  statut: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DonneesDette = Omit<Dette, "id" | "created_at" | "updated_at">;
+
+export async function listerDettes(): Promise<Dette[]> {
+  const table = supabase.from("dettes" as never) as unknown as {
+    select: (cols: string) => { order: (k: string, opts: { ascending: boolean }) => Promise<{ data: Dette[] | null; error: { message: string } | null }> };
+  };
+  const { data, error } = await table.select("*").order("date_paiement", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data || []) as Dette[];
+}
+
+export async function enregistrerDette(payload: DonneesDette, id?: string): Promise<Dette> {
+  const ligne = { ...payload };
+  const table = supabase.from("dettes" as never) as unknown as {
+    update: (l: typeof ligne) => { eq: (k: string, v: string) => { select: () => { single: () => Promise<{ data: Dette | null; error: { message: string } | null }> } } };
+    insert: (l: typeof ligne) => { select: () => { single: () => Promise<{ data: Dette | null; error: { message: string } | null }> } };
+  };
+  const r = id
+    ? await table.update(ligne).eq("id", id).select().single()
+    : await table.insert(ligne).select().single();
+  if (r.error) throw new Error(r.error.message);
+  return r.data as Dette;
+}
+
+export async function supprimerDette(id: string): Promise<void> {
+  const table = supabase.from("dettes" as never) as unknown as {
+    delete: () => { eq: (k: string, v: string) => Promise<{ error: { message: string } | null }> };
+  };
+  const { error } = await table.delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function creerPdfDettes(options: {
+  dettes: Dette[];
+  devise?: string;
+}): Promise<string> {
+  const { dettes } = options;
+  const devise = options.devise || "USD";
+  const pdf = new jsPDF({ format: "a4", unit: "mm", orientation: "portrait" });
+  const PAGE_W = pdf.internal.pageSize.getWidth();
+  const PAGE_H = pdf.internal.pageSize.getHeight();
+  const principal: [number, number, number] = [136, 19, 55];
+  const secondaire: [number, number, number] = [217, 119, 6];
+  const doux: [number, number, number] = [253, 232, 240];
+
+  const logo = await imageVersBase64(logoUrl).catch(() => "");
+  const drapeau = await drapeauRdcVersPng().catch(() => "");
+
+  const dessinerEntete = (numeroPage: number) => {
+    pdf.setFillColor(...principal); pdf.rect(0, 0, PAGE_W, 32, "F");
+    pdf.setFillColor(...secondaire); pdf.rect(0, 32, PAGE_W, 2, "F");
+    if (logo) { try { pdf.addImage(logo, "JPEG", 12, 6, 22, 22, undefined, "FAST"); } catch { /* ignore */ } }
+    if (drapeau) { try { pdf.addImage(drapeau, "PNG", PAGE_W - 38, 9, 24, 16, undefined, "FAST"); } catch { /* ignore */ } }
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(16);
+    pdf.text("SCM SARL", 40, 14);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
+    pdf.text("Société de Construction et Maintenance · République Démocratique du Congo", 40, 19);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(11);
+    pdf.text("RAPPORT DES DETTES", 40, 26);
+    pdf.setFontSize(8); pdf.setFont("helvetica", "normal");
+    pdf.text(`Page ${numeroPage}`, PAGE_W - 14, 30, { align: "right" });
+    pdf.setTextColor(40, 40, 40);
+  };
+
+  dessinerEntete(1);
+  let y = 42;
+
+  const total = dettes.reduce((s, d) => s + Number(d.montant || 0), 0);
+
+  pdf.setFillColor(...doux); pdf.roundedRect(12, y, PAGE_W - 24, 22, 2, 2, "F");
+  pdf.setTextColor(...principal); pdf.setFont("helvetica", "bold"); pdf.setFontSize(10);
+  pdf.text("SYNTHÈSE", 16, y + 7);
+  pdf.setTextColor(30, 30, 30); pdf.setFont("helvetica", "normal"); pdf.setFontSize(10);
+  pdf.text(`Nombre de dettes : ${dettes.length}`, 16, y + 14);
+  pdf.setFont("helvetica", "bold"); pdf.setTextColor(...principal); pdf.setFontSize(12);
+  pdf.text(`Total dû : ${formaterMontant(total, { decimales: 2 })} ${devise}`, PAGE_W - 16, y + 14, { align: "right" });
+  pdf.setFont("helvetica", "italic"); pdf.setFontSize(8); pdf.setTextColor(110, 110, 110);
+  pdf.text(`Édité le ${formaterDateFr(new Date().toISOString().slice(0, 10))}`, 16, y + 20);
+  y += 28;
+
+  // Tableau : Nom | Tél | Montant | Date dette | Date paiement
+  const colNom = 12, colTel = 58, colMontant = 100, colDateDette = 132, colDatePaie = PAGE_W - 12;
+  const dessinerEnteteTableau = () => {
+    pdf.setFillColor(...principal); pdf.rect(12, y, PAGE_W - 24, 8, "F");
+    pdf.setTextColor(255, 255, 255); pdf.setFont("helvetica", "bold"); pdf.setFontSize(9);
+    pdf.text("Nom", colNom + 2, y + 5.5);
+    pdf.text("Téléphone", colTel, y + 5.5);
+    pdf.text(`Montant (${devise})`, colMontant, y + 5.5);
+    pdf.text("Date dette", colDateDette, y + 5.5);
+    pdf.text("Date paiement", colDatePaie - 2, y + 5.5, { align: "right" });
+    y += 8;
+    pdf.setTextColor(30, 30, 30); pdf.setFont("helvetica", "normal");
+  };
+  dessinerEnteteTableau();
+
+  const tries = [...dettes].sort((a, b) => a.date_paiement.localeCompare(b.date_paiement));
+  let pageCourante = 1;
+  let zebra = false;
+  pdf.setFontSize(9);
+  const aujourd = new Date().toISOString().slice(0, 10);
+  for (const d of tries) {
+    const lignesNom = pdf.splitTextToSize(d.nom_contractant || "—", colTel - colNom - 4);
+    const hauteurLigne = Math.max(7, lignesNom.length * 4.6 + 2);
+    if (y + hauteurLigne > PAGE_H - 22) {
+      pdf.addPage(); pageCourante += 1; dessinerEntete(pageCourante); y = 42; dessinerEnteteTableau();
+      zebra = false;
+    }
+    if (zebra) { pdf.setFillColor(247, 247, 247); pdf.rect(12, y, PAGE_W - 24, hauteurLigne, "F"); }
+    zebra = !zebra;
+    pdf.setTextColor(30, 30, 30); pdf.setFont("helvetica", "normal");
+    pdf.text(lignesNom, colNom + 2, y + 5);
+    pdf.text(d.telephone || "—", colTel, y + 5);
+    pdf.setFont("helvetica", "bold");
+    pdf.text(formaterMontant(Number(d.montant || 0), { decimales: 2 }), colMontant, y + 5);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(formaterDateFr(d.date_dette), colDateDette, y + 5);
+    const enRetard = d.date_paiement < aujourd && d.statut !== "paye";
+    if (enRetard) { pdf.setTextColor(170, 30, 30); pdf.setFont("helvetica", "bold"); }
+    pdf.text(formaterDateFr(d.date_paiement), colDatePaie - 2, y + 5, { align: "right" });
+    pdf.setTextColor(30, 30, 30); pdf.setFont("helvetica", "normal");
+    y += hauteurLigne;
+  }
+
+  pdf.setFont("helvetica", "italic"); pdf.setFontSize(8); pdf.setTextColor(110, 110, 110);
+  pdf.text("Document généré automatiquement par le système SCM SARL.", PAGE_W / 2, PAGE_H - 8, { align: "center" });
+
+  return pdf.output("datauristring");
 }
