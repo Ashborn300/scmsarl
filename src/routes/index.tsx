@@ -313,9 +313,6 @@ function Index() {
   const [outilActif, setOutilActif] = useState<OutilType | null>(null);
   const [recherche, setRecherche] = useState("");
 
-  const configActive = configs.find((config) => config.type === outilActif);
-  if (configActive) return <DocumentTool config={configActive} retour={() => setOutilActif(null)} />;
-
   const requete = normaliser(recherche.trim());
   const outilsFiltres = useMemo(() => {
     if (!requete) return configs;
@@ -324,6 +321,9 @@ function Index() {
       return haystack.includes(requete);
     });
   }, [requete]);
+
+  const configActive = configs.find((config) => config.type === outilActif);
+  if (configActive) return <DocumentTool config={configActive} retour={() => setOutilActif(null)} />;
 
   return (
     <main className="min-h-screen overflow-hidden bg-background">
