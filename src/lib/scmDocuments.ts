@@ -2678,14 +2678,7 @@ export async function creerPdfContratFournisseur(data: DonneesContratFournisseur
   // ENTRE LES SOUSSIGNÉS
   titreSection("ENTRE LES SOUSSIGNÉS");
   paragraphe("L'ACHETEUR : SCM SARL — Solution des constructions modernes Sarl, société immatriculée au RCCM sous le n° CD/KNM/RCCM/24-B-01256, N° Impôt A24217735, IDNAT 01-F2300-N55523N, ayant son siège à Kinshasa / Ngaliema / Av. Kilimani n° 28 A.");
-  paragraphe(`LE FOURNISSEUR : ${data.fournisseurNom || "—"}${data.fournisseurRepresentant ? `, représenté par ${data.fournisseurRepresentant}` : ""}.`);
-  const infosF: string[] = [];
-  if (data.fournisseurAdresse) infosF.push(`Adresse : ${data.fournisseurAdresse}`);
-  if (data.fournisseurTelephone) infosF.push(`Téléphone : ${data.fournisseurTelephone}`);
-  if (data.fournisseurEmail) infosF.push(`Email : ${data.fournisseurEmail}`);
-  if (data.fournisseurRccm) infosF.push(`RCCM : ${data.fournisseurRccm}`);
-  if (data.fournisseurIdnat) infosF.push(`IDNAT : ${data.fournisseurIdnat}`);
-  if (infosF.length) paragraphe(infosF.join("  ·  "), { taille: 9 });
+  paragraphe(`LE FOURNISSEUR : ${data.fournisseurNom || "—"}${data.fournisseurTelephone ? `  ·  Téléphone : ${data.fournisseurTelephone}` : ""}.`);
 
   // OBJET DU CONTRAT
   titreSection("OBJET DU CONTRAT");
