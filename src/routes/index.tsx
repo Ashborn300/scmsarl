@@ -51,6 +51,7 @@ const icones: Record<OutilType, React.ElementType> = {
   gestion_caisse: PiggyBank,
   gestion_dettes: Receipt,
   gestion_stage: GraduationCap,
+  gestion_presence: ClipboardCheck,
 };
 
 type ToolVisual = {
