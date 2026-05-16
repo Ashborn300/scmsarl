@@ -18,7 +18,7 @@ function formaterMontant(valeur: number, options: { decimales?: number } = {}): 
   return signe + avecSeparateurs + (partieDecimale ? "," + partieDecimale : "");
 }
 
-export type OutilType = "facture" | "devis" | "devis_estimatif" | "recu" | "contrat_construction" | "contrat_fournisseur" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "plan_architectural" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement" | "demandes_paiement" | "recu_employe" | "version_nuit" | "gestion_caisse";
+export type OutilType = "facture" | "devis" | "devis_estimatif" | "recu" | "contrat_construction" | "contrat_fournisseur" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "plan_architectural" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement" | "demandes_paiement" | "recu_employe" | "version_nuit" | "gestion_caisse" | "gestion_dettes";
 export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
 export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
@@ -108,6 +108,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   recu_employe: { principal: [13, 148, 136], secondaire: [22, 163, 74], doux: [224, 247, 240] },
   version_nuit: { principal: [15, 23, 42], secondaire: [99, 102, 241], doux: [226, 232, 240] },
   gestion_caisse: { principal: [21, 94, 117], secondaire: [202, 138, 4], doux: [228, 244, 248] },
+  gestion_dettes: { principal: [136, 19, 55], secondaire: [217, 119, 6], doux: [253, 232, 240] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -142,6 +143,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   recu_employe: "recus_employes",
   version_nuit: "versions_nuit",
   gestion_caisse: "mouvements_caisse",
+  gestion_dettes: "dettes",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -176,6 +178,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   recu_employe: "REM",
   version_nuit: "VNT",
   gestion_caisse: "CAI",
+  gestion_dettes: "DET",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -210,6 +213,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   recu_employe: ["nom_fichier", "numero", "employe_nom", "matricule", "chantier_nom", "motif"],
   version_nuit: ["nom_fichier", "numero", "titre"],
   gestion_caisse: ["description", "auteur"],
+  gestion_dettes: ["nom_contractant", "telephone", "adresse", "notes"],
 };
 
 const db = supabase as any;
