@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, Archive, ArrowRight, Award, Building2, CalendarDays, ClipboardList, Cuboid, HandCoins, HeartPulse, FileClock, FileText, FilePlus2, FileX2, Hammer, HardHat, IdCard, LayoutGrid, Megaphone, Moon, Network, PackageCheck, PiggyBank, QrCode, ReceiptText, Search, ShieldCheck, SquarePen, Truck, UsersRound, Wallet, Warehouse, X } from "lucide-react";
+import { AlertTriangle, Archive, ArrowRight, Award, Building2, CalendarDays, ClipboardList, Cuboid, HandCoins, HeartPulse, FileClock, FileText, FilePlus2, FileX2, Hammer, HardHat, IdCard, LayoutGrid, Megaphone, Moon, Network, PackageCheck, PiggyBank, QrCode, ReceiptText, Receipt, Search, ShieldCheck, SquarePen, Truck, UsersRound, Wallet, Warehouse, X } from "lucide-react";
 import { useMemo, useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -49,6 +49,7 @@ const icones: Record<OutilType, React.ElementType> = {
   recu_employe: HandCoins,
   version_nuit: Moon,
   gestion_caisse: PiggyBank,
+  gestion_dettes: Receipt,
 };
 
 type ToolVisual = {
@@ -308,6 +309,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(21,94,117,0.08)", border: "1px solid rgba(202,138,4,0.16)" },
     action: { background: "rgba(202,138,4,0.14)", border: "1px solid rgba(21,94,117,0.18)" },
     icon: { background: "linear-gradient(135deg, #155e75, #ca8a04)", color: "white" },
+  },
+  gestion_dettes: {
+    card: { background: "linear-gradient(180deg, rgba(136,19,55,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(217,119,6,0.32)" },
+    banner: { background: "linear-gradient(135deg, #881337, #d97706)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(136,19,55,0.08)", border: "1px solid rgba(217,119,6,0.16)" },
+    action: { background: "rgba(217,119,6,0.14)", border: "1px solid rgba(136,19,55,0.18)" },
+    icon: { background: "linear-gradient(135deg, #881337, #d97706)", color: "white" },
   },
 };
 
