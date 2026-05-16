@@ -184,6 +184,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   gestion_caisse: "CAI",
   gestion_dettes: "DET",
   gestion_stage: "STG",
+  gestion_presence: "PRE",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
