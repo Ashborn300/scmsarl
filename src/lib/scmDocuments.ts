@@ -2746,7 +2746,12 @@ export async function creerPdfContratFournisseur(data: DonneesContratFournisseur
   pdf.setFontSize(9.5);
   pdf.setTextColor(...couleurs.principal);
   pdf.text("L'ACHETEUR — SCM SARL", MARGE_X, yBloc);
-  if (data.sceauScm) { try { pdf.addImage(data.sceauScm, "JPEG", MARGE_X, yBloc + 4, 44, 28, undefined, "FAST"); } catch { /* ignore */ } }
+  if (data.sceauScm) {
+    try {
+      const fmt = data.sceauScm.startsWith("data:image/png") ? "PNG" : "JPEG";
+      pdf.addImage(data.sceauScm, fmt, MARGE_X, yBloc + 4, 44, 28, undefined, "FAST");
+    } catch (e) { console.warn("[ContratFournisseur] sceau SCM ignoré:", e); }
+  }
   pdf.setDrawColor(180, 180, 180);
   pdf.setLineWidth(0.2);
   pdf.line(MARGE_X, yBloc + 30, MARGE_X + blocW - 4, yBloc + 30);
@@ -2765,7 +2770,12 @@ export async function creerPdfContratFournisseur(data: DonneesContratFournisseur
   pdf.setFontSize(9.5);
   pdf.setTextColor(...couleurs.principal);
   pdf.text("LE FOURNISSEUR", xF, yBloc);
-  if (data.signatureFournisseur) { try { pdf.addImage(data.signatureFournisseur, "JPEG", xF, yBloc + 4, 44, 24, undefined, "FAST"); } catch { /* ignore */ } }
+  if (data.signatureFournisseur) {
+    try {
+      const fmt = data.signatureFournisseur.startsWith("data:image/png") ? "PNG" : "JPEG";
+      pdf.addImage(data.signatureFournisseur, fmt, xF, yBloc + 4, 44, 24, undefined, "FAST");
+    } catch (e) { console.warn("[ContratFournisseur] signature fournisseur ignorée:", e); }
+  }
   pdf.setDrawColor(180, 180, 180);
   pdf.setLineWidth(0.2);
   pdf.line(xF, yBloc + 30, xF + blocW - 4, yBloc + 30);
