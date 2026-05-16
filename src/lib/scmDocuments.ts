@@ -110,6 +110,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   gestion_caisse: { principal: [21, 94, 117], secondaire: [202, 138, 4], doux: [228, 244, 248] },
   gestion_dettes: { principal: [136, 19, 55], secondaire: [217, 119, 6], doux: [253, 232, 240] },
   gestion_stage: { principal: [15, 52, 96], secondaire: [22, 33, 62], doux: [232, 238, 248] },
+  gestion_presence: { principal: [30, 64, 175], secondaire: [16, 185, 129], doux: [228, 240, 255] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
