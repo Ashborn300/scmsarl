@@ -2543,3 +2543,257 @@ export async function enregistrerDevisEstimatif(payload: Record<string, unknown>
   if (error) throw new Error(error.message);
   return data as DevisEstimatifRecord;
 }
+
+// ============================================================
+// CONTRAT AVEC FOURNISSEUR
+// ============================================================
+
+export type LigneFourniture = { description: string; quantite: string };
+
+export type DonneesContratFournisseur = {
+  numero: string;
+  dateDocument: string;
+  lieu: string;
+  // Fournisseur
+  fournisseurNom: string;
+  fournisseurRepresentant: string;
+  fournisseurAdresse: string;
+  fournisseurTelephone: string;
+  fournisseurEmail: string;
+  fournisseurRccm: string;
+  fournisseurIdnat: string;
+  // Objet
+  objet: string; // ex: "la fourniture de sable destiné aux travaux de construction"
+  lignes: LigneFourniture[];
+  conditionsLivraison: string;
+  modalitesPaiement: string;
+  duree: string;
+  clauses: string;
+  // Signatures
+  sceauFournisseur?: string;
+  signatureFournisseur?: string;
+  sceauScm?: string;
+  signatureScm?: string;
+  signataireScmNom: string;
+  signataireScmFonction: string;
+};
+
+export type ContratFournisseurRecord = DocumentRecord;
+
+export async function creerPdfContratFournisseur(data: DonneesContratFournisseur): Promise<string> {
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const couleurs = couleursPdfParOutil.contrat_fournisseur;
+  const logo = await imageVersBase64(logoUrl);
+  const drapeauRdc = await drapeauRdcVersPng();
+
+  const PAGE_W = 210;
+  const PAGE_H = 297;
+  const MARGE_X = 16;
+  const Y_LIMITE = 272;
+
+  const dessinerEntete = (numeroPage: number) => {
+    pdf.setFillColor(247, 249, 252);
+    pdf.rect(0, 0, PAGE_W, PAGE_H, "F");
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(10, 10, PAGE_W - 20, PAGE_H - 20, 3, 3, "F");
+
+    if (logo) { try { pdf.addImage(logo, "JPEG", 16, 14, 30, 18, undefined, "FAST"); } catch { /* ignore */ } }
+    if (drapeauRdc) { try { pdf.addImage(drapeauRdc, "PNG", PAGE_W - 38, 15, 22, 14, undefined, "FAST"); } catch { /* ignore */ } }
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(13);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text("SCM SARL", 50, 19);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(80, 90, 110);
+    pdf.text("Solution des constructions modernes Sarl", 50, 23.5);
+    pdf.text("RCCM : CD/KNM/RCCM/24-B-01256  ·  N° Impôt : A24217735  ·  IDNAT : 01-F2300-N55523N", 50, 27);
+    pdf.text("Kinshasa / Ngaliema / Av. Kilimani n° 28 A", 50, 30.5);
+
+    pdf.setDrawColor(...couleurs.secondaire);
+    pdf.setLineWidth(0.6);
+    pdf.line(MARGE_X, 35, PAGE_W - MARGE_X, 35);
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(13);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text("CONTRAT DE FOURNITURE", PAGE_W / 2, 42, { align: "center" });
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(90, 100, 120);
+    pdf.text(`N° ${data.numero}${numeroPage > 1 ? `  ·  Page ${numeroPage}` : ""}`, MARGE_X, 49);
+    pdf.text(`Date : ${new Date(data.dateDocument || Date.now()).toLocaleDateString("fr-FR")}`, PAGE_W - MARGE_X, 49, { align: "right" });
+  };
+
+  let pageCourante = 1;
+  dessinerEntete(1);
+  let y = 58;
+
+  const passerPage = () => {
+    pdf.addPage();
+    pageCourante += 1;
+    dessinerEntete(pageCourante);
+    return 58;
+  };
+  const verifierPlace = (h: number) => { if (y + h > Y_LIMITE) y = passerPage(); };
+
+  const titreSection = (texte: string) => {
+    verifierPlace(9);
+    pdf.setFillColor(...couleurs.doux);
+    pdf.rect(MARGE_X, y, PAGE_W - 2 * MARGE_X, 6.5, "F");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text(texte, MARGE_X + 2, y + 4.5);
+    y += 9.5;
+  };
+
+  const paragraphe = (texte: string, options: { italique?: boolean; taille?: number } = {}) => {
+    pdf.setFont("helvetica", options.italique ? "italic" : "normal");
+    pdf.setFontSize(options.taille ?? 9.5);
+    pdf.setTextColor(36, 45, 64);
+    const lignes = pdf.splitTextToSize(texte, PAGE_W - 2 * MARGE_X);
+    lignes.forEach((ligne: string) => {
+      verifierPlace(5.5);
+      pdf.text(ligne, MARGE_X, y);
+      y += 5;
+    });
+    y += 1.5;
+  };
+
+  // ENTRE LES SOUSSIGNÉS
+  titreSection("ENTRE LES SOUSSIGNÉS");
+  paragraphe("L'ACHETEUR : SCM SARL — Solution des constructions modernes Sarl, société immatriculée au RCCM sous le n° CD/KNM/RCCM/24-B-01256, N° Impôt A24217735, IDNAT 01-F2300-N55523N, ayant son siège à Kinshasa / Ngaliema / Av. Kilimani n° 28 A.");
+  paragraphe(`LE FOURNISSEUR : ${data.fournisseurNom || "—"}${data.fournisseurRepresentant ? `, représenté par ${data.fournisseurRepresentant}` : ""}.`);
+  const infosF: string[] = [];
+  if (data.fournisseurAdresse) infosF.push(`Adresse : ${data.fournisseurAdresse}`);
+  if (data.fournisseurTelephone) infosF.push(`Téléphone : ${data.fournisseurTelephone}`);
+  if (data.fournisseurEmail) infosF.push(`Email : ${data.fournisseurEmail}`);
+  if (data.fournisseurRccm) infosF.push(`RCCM : ${data.fournisseurRccm}`);
+  if (data.fournisseurIdnat) infosF.push(`IDNAT : ${data.fournisseurIdnat}`);
+  if (infosF.length) paragraphe(infosF.join("  ·  "), { taille: 9 });
+
+  // OBJET DU CONTRAT
+  titreSection("OBJET DU CONTRAT");
+  paragraphe(`Le présent contrat a pour objet ${data.objet || "la fourniture de sable destiné aux travaux de construction"} réalisés par l'Acheteur.`);
+  paragraphe("Le Fournisseur s'engage à livrer :", { italique: true });
+
+  // Tableau des fournitures
+  const tableW = PAGE_W - 2 * MARGE_X;
+  const colDesc = tableW * 0.7;
+  const colQte = tableW * 0.3;
+
+  verifierPlace(8);
+  pdf.setFillColor(...couleurs.principal);
+  pdf.rect(MARGE_X, y, tableW, 7, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text("DESCRIPTION", MARGE_X + 2, y + 4.8);
+  pdf.text("QUANTITÉ", MARGE_X + colDesc + 2, y + 4.8);
+  y += 7;
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(36, 45, 64);
+  data.lignes.forEach((ligne, idx) => {
+    const lignesDesc = pdf.splitTextToSize(ligne.description || "—", colDesc - 4);
+    const lignesQte = pdf.splitTextToSize(ligne.quantite || "—", colQte - 4);
+    const hauteurLigne = Math.max(lignesDesc.length, lignesQte.length) * 4.5 + 3;
+    verifierPlace(hauteurLigne);
+    if (idx % 2 === 0) { pdf.setFillColor(248, 250, 253); pdf.rect(MARGE_X, y, tableW, hauteurLigne, "F"); }
+    pdf.setDrawColor(220, 224, 232);
+    pdf.setLineWidth(0.1);
+    pdf.line(MARGE_X, y + hauteurLigne, MARGE_X + tableW, y + hauteurLigne);
+    pdf.text(lignesDesc, MARGE_X + 2, y + 4.5);
+    pdf.text(lignesQte, MARGE_X + colDesc + 2, y + 4.5);
+    y += hauteurLigne;
+  });
+  y += 4;
+
+  // CONDITIONS
+  if (data.conditionsLivraison?.trim()) { titreSection("CONDITIONS DE LIVRAISON"); paragraphe(data.conditionsLivraison); }
+  if (data.modalitesPaiement?.trim()) { titreSection("MODALITÉS DE PAIEMENT"); paragraphe(data.modalitesPaiement); }
+  if (data.duree?.trim()) { titreSection("DURÉE DU CONTRAT"); paragraphe(data.duree); }
+  if (data.clauses?.trim()) { titreSection("CLAUSES GÉNÉRALES"); paragraphe(data.clauses); }
+
+  // SIGNATURES
+  verifierPlace(70);
+  y += 4;
+  pdf.setDrawColor(...couleurs.secondaire);
+  pdf.setLineWidth(0.4);
+  pdf.line(MARGE_X, y, PAGE_W - MARGE_X, y);
+  y += 4;
+
+  pdf.setFont("helvetica", "italic");
+  pdf.setFontSize(9);
+  pdf.setTextColor(80, 90, 110);
+  pdf.text(`Fait à ${data.lieu || "Kinshasa"}, le ${new Date(data.dateDocument || Date.now()).toLocaleDateString("fr-FR")}, en deux exemplaires originaux.`, MARGE_X, y);
+  y += 8;
+
+  const blocW = (PAGE_W - 2 * MARGE_X - 8) / 2;
+  const yBloc = y;
+
+  // Acheteur (SCM SARL)
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9.5);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("L'ACHETEUR — SCM SARL", MARGE_X, yBloc);
+  if (data.sceauScm) { try { pdf.addImage(data.sceauScm, "JPEG", MARGE_X, yBloc + 4, 36, 24, undefined, "FAST"); } catch { /* ignore */ } }
+  if (data.signatureScm) { try { pdf.addImage(data.signatureScm, "JPEG", MARGE_X + 40, yBloc + 4, 40, 20, undefined, "FAST"); } catch { /* ignore */ } }
+  pdf.setDrawColor(180, 180, 180);
+  pdf.setLineWidth(0.2);
+  pdf.line(MARGE_X, yBloc + 30, MARGE_X + blocW - 4, yBloc + 30);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(36, 45, 64);
+  pdf.text(data.signataireScmNom || "—", MARGE_X, yBloc + 34);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(80, 90, 110);
+  pdf.text(data.signataireScmFonction || "Représentant SCM SARL", MARGE_X, yBloc + 38);
+
+  // Fournisseur
+  const xF = MARGE_X + blocW + 8;
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9.5);
+  pdf.setTextColor(...couleurs.principal);
+  pdf.text("LE FOURNISSEUR", xF, yBloc);
+  if (data.sceauFournisseur) { try { pdf.addImage(data.sceauFournisseur, "JPEG", xF, yBloc + 4, 36, 24, undefined, "FAST"); } catch { /* ignore */ } }
+  if (data.signatureFournisseur) { try { pdf.addImage(data.signatureFournisseur, "JPEG", xF + 40, yBloc + 4, 40, 20, undefined, "FAST"); } catch { /* ignore */ } }
+  pdf.setDrawColor(180, 180, 180);
+  pdf.setLineWidth(0.2);
+  pdf.line(xF, yBloc + 30, xF + blocW - 4, yBloc + 30);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(36, 45, 64);
+  pdf.text(data.fournisseurRepresentant || data.fournisseurNom || "—", xF, yBloc + 34);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(80, 90, 110);
+  pdf.text(data.fournisseurNom || "Fournisseur", xF, yBloc + 38);
+
+  return pdf.output("datauristring");
+}
+
+export async function enregistrerContratFournisseur(payload: Record<string, unknown>, pdfBase64: string, numero?: string, id?: string) {
+  const documentNumero = numero || (await genererNumero("contrat_fournisseur"));
+  const sourceNom = (payload.fournisseurNom as string) || "contrat-fournisseur";
+  const nomFichier = `${documentNumero}-${String(sourceNom).replace(/[^a-z0-9À-ÿ-]+/gi, "-")}.pdf`;
+  const ligne = {
+    numero: documentNumero,
+    nom_fichier: nomFichier,
+    donnees_formulaire: payload,
+    pdf_base64: pdfBase64,
+    client: String(payload.fournisseurNom || ""),
+    date_document: String(payload.dateDocument || new Date().toISOString().slice(0, 10)),
+  };
+  const requete = id
+    ? db.from("contrats_fournisseurs").update(ligne).eq("id", id).select().single()
+    : db.from("contrats_fournisseurs").insert(ligne).select().single();
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+  return data as ContratFournisseurRecord;
+}
