@@ -209,6 +209,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   demandes_paiement: ["employe_nom", "matricule", "chantier_nom", "note", "statut"],
   recu_employe: ["nom_fichier", "numero", "employe_nom", "matricule", "chantier_nom", "motif"],
   version_nuit: ["nom_fichier", "numero", "titre"],
+  gestion_caisse: ["description", "auteur"],
 };
 
 const db = supabase as any;
