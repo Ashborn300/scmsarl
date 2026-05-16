@@ -8,6 +8,7 @@ import { DevisEstimatifTool } from "./DevisEstimatifTool";
 import { ContratFournisseurTool } from "./ContratFournisseurTool";
 import { GestionCaisseTool } from "./GestionCaisseTool";
 import { GestionDettesTool } from "./GestionDettesTool";
+import { GestionStageTool } from "./GestionStageTool";
 import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerPlanArchitectural, enregistrerRealisticSketchup, enregistrerRendu3D, enregistrerVersionNuit, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerDemandesPaiement, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mettreAJourStatutDemandePaiement, modifierFormulairePersonnalise, supprimerDemandePaiementParId, supprimerDocument, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, voirPdf, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DemandePaiementRecord, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type StatutDemandePaiement, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
@@ -90,6 +91,7 @@ export const configs: Config[] = [
   ]},
   { type: "gestion_caisse", titre: "Gestion de caisse", theme: "cash-register", description: "Enregistrez dépôts et retraits, suivez le solde en temps réel et exportez un rapport PDF par jour ou plage de dates.", showTotal: false, fields: [] },
   { type: "gestion_dettes", titre: "Gestion de dettes", theme: "debt-management", description: "Enregistrez les dettes (contractant, téléphone, adresse, montant, dates) classées par échéance, et exportez la liste en PDF.", showTotal: false, fields: [] },
+  { type: "gestion_stage", titre: "Gestion de stage", theme: "internship-management", description: "Consultez les demandes de stage, validez ou rejetez, attribuez un matricule et un chantier, et envoyez des annonces aux stagiaires.", showTotal: false, fields: [] },
 ];
 
 function lireImage(fichier?: File) {
@@ -514,6 +516,7 @@ export function DocumentTool({ config, retour }: { config: Config; retour: () =>
   if (config.type === "contrat_fournisseur") return <ContratFournisseurTool retour={retour} />;
   if (config.type === "gestion_caisse") return <GestionCaisseTool retour={retour} />;
   if (config.type === "gestion_dettes") return <GestionDettesTool retour={retour} />;
+  if (config.type === "gestion_stage") return <GestionStageTool retour={retour} />;
   return <DocumentToolStandard config={config} retour={retour} />;
 }
 
