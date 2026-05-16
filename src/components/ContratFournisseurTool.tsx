@@ -64,12 +64,7 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
       setDateDocument(String(d.dateDocument || aujourdhui));
       setLieu(String(d.lieu || "Kinshasa"));
       setFournisseurNom(String(d.fournisseurNom || ""));
-      setFournisseurRepresentant(String(d.fournisseurRepresentant || ""));
-      setFournisseurAdresse(String(d.fournisseurAdresse || ""));
       setFournisseurTelephone(String(d.fournisseurTelephone || ""));
-      setFournisseurEmail(String(d.fournisseurEmail || ""));
-      setFournisseurRccm(String(d.fournisseurRccm || ""));
-      setFournisseurIdnat(String(d.fournisseurIdnat || ""));
       setObjet(String(d.objet || ""));
       setLignes(Array.isArray(d.lignes) && d.lignes.length ? (d.lignes as LigneFourniture[]) : [nouvelleLigne()]);
       setConditionsLivraison(String(d.conditionsLivraison || ""));
