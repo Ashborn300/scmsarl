@@ -131,14 +131,9 @@ export function ContratFournisseurTool({ retour }: { retour: () => void }) {
               <span className="hidden text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:inline">{editionNumero ? `Modification · ${editionNumero}` : "Nouveau contrat"}</span>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5">
-              <label className="sm:col-span-2 xl:col-span-3"><span className="mb-1 block text-sm font-semibold text-foreground">Nom du fournisseur / société *</span><input value={fournisseurNom} onChange={(e) => setFournisseurNom(e.target.value)} className="form-control" /></label>
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">Représentant légal</span><input value={fournisseurRepresentant} onChange={(e) => setFournisseurRepresentant(e.target.value)} className="form-control" /></label>
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">Téléphone</span><input value={fournisseurTelephone} onChange={(e) => setFournisseurTelephone(e.target.value)} className="form-control" /></label>
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">Email</span><input type="email" value={fournisseurEmail} onChange={(e) => setFournisseurEmail(e.target.value)} className="form-control" /></label>
-              <label className="sm:col-span-2 xl:col-span-3"><span className="mb-1 block text-sm font-semibold text-foreground">Adresse</span><input value={fournisseurAdresse} onChange={(e) => setFournisseurAdresse(e.target.value)} className="form-control" /></label>
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">RCCM</span><input value={fournisseurRccm} onChange={(e) => setFournisseurRccm(e.target.value)} className="form-control" /></label>
-              <label><span className="mb-1 block text-sm font-semibold text-foreground">IDNAT</span><input value={fournisseurIdnat} onChange={(e) => setFournisseurIdnat(e.target.value)} className="form-control" /></label>
+            <div className="grid gap-4 sm:grid-cols-2 xl:gap-5">
+              <label className="sm:col-span-2"><span className="mb-1 block text-sm font-semibold text-foreground">Nom du fournisseur / société *</span><input value={fournisseurNom} onChange={(e) => setFournisseurNom(e.target.value)} className="form-control" /></label>
+              <label className="sm:col-span-2"><span className="mb-1 block text-sm font-semibold text-foreground">Numéro de téléphone</span><input value={fournisseurTelephone} onChange={(e) => setFournisseurTelephone(e.target.value)} className="form-control" /></label>
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Date du contrat</span><input type="date" value={dateDocument} onChange={(e) => setDateDocument(e.target.value)} className="form-control" /></label>
               <label><span className="mb-1 block text-sm font-semibold text-foreground">Lieu de signature</span><input value={lieu} onChange={(e) => setLieu(e.target.value)} className="form-control" /></label>
             </div>
