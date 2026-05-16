@@ -302,11 +302,28 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
   },
 };
 
+function normaliser(texte: string) {
+  return texte
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function Index() {
   const [outilActif, setOutilActif] = useState<OutilType | null>(null);
+  const [recherche, setRecherche] = useState("");
 
   const configActive = configs.find((config) => config.type === outilActif);
   if (configActive) return <DocumentTool config={configActive} retour={() => setOutilActif(null)} />;
+
+  const requete = normaliser(recherche.trim());
+  const outilsFiltres = useMemo(() => {
+    if (!requete) return configs;
+    return configs.filter((config) => {
+      const haystack = normaliser(`${config.titre} ${config.description}`);
+      return haystack.includes(requete);
+    });
+  }, [requete]);
 
   return (
     <main className="min-h-screen overflow-hidden bg-background">
@@ -320,67 +337,98 @@ function Index() {
                 <h1 className="text-xl font-black text-foreground sm:text-2xl">SCM SARL</h1>
               </div>
             </div>
-            <div className="hidden rounded-xl bg-primary px-4 py-3 text-primary-foreground sm:block">
-              <p className="text-xs font-bold uppercase">Documents officiels</p>
-              <p className="text-sm">PDF persistants</p>
-            </div>
+            <Link to="/employe" className="primary-action tool-green hidden sm:inline-flex">
+              <UsersRound className="size-4" /> Espace employés
+            </Link>
           </header>
 
-          <div className="grid gap-6 lg:grid-cols-[1.05fr_.95fr] lg:items-stretch">
-            <div className="signature-lift rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool tool-blue lg:p-9">
-              <span className="mb-5 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-black uppercase tracking-wide">Tableau de bord principal</span>
-              <h2 className="max-w-3xl text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">Gestion documentaire professionnelle pour chantier.</h2>
-              <p className="mt-4 max-w-2xl text-base opacity-90 sm:text-lg">Générez, archivez, consultez, téléchargez et supprimez vos factures, devis, reçus, contrats et descriptions de projets en français.</p>
-              <div className="mt-7 grid grid-cols-3 gap-3 text-center">
-                <div className="rounded-2xl bg-tool-foreground/12 p-3"><strong className="block text-2xl">8</strong><span className="text-xs">outils</span></div>
-                <div className="rounded-2xl bg-tool-foreground/12 p-3"><strong className="block text-2xl">PDF</strong><span className="text-xs">officiels</span></div>
-                <div className="rounded-2xl bg-tool-foreground/12 p-3"><strong className="block text-2xl">Cloud</strong><span className="text-xs">persistant</span></div>
+          <div className="signature-lift rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool tool-blue lg:p-8">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl">
+                <span className="mb-3 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-black uppercase tracking-wide">Tableau de bord</span>
+                <h2 className="text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">Tous vos outils documentaires, en un seul endroit.</h2>
+                <p className="mt-3 text-sm opacity-90 sm:text-base">Générez, archivez et téléchargez vos documents officiels SCM SARL en quelques clics.</p>
+              </div>
+              <div className="flex items-center gap-3 rounded-2xl bg-tool-foreground/12 px-4 py-3">
+                <HardHat className="size-7" />
+                <div className="text-left">
+                  <strong className="block text-2xl leading-none">{configs.length}</strong>
+                  <span className="text-xs opacity-90">outils disponibles</span>
+                </div>
               </div>
             </div>
-            <aside className="rounded-3xl border border-border bg-card/90 p-5 shadow-document backdrop-blur lg:p-6">
-              <div className="flex h-full flex-col justify-center gap-4">
-                <HardHat className="size-10 text-primary" />
-                <h2 className="text-2xl font-black text-foreground">Archives par outil</h2>
-                <p className="text-sm leading-6 text-muted-foreground">Les documents générés sont désormais visibles uniquement dans l’historique de leur outil correspondant.</p>
-              </div>
-            </aside>
           </div>
         </div>
       </section>
 
-      <section className="px-4 pb-10 sm:px-6 lg:px-8">
+      <section className="px-4 pb-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-5 mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-black text-foreground lg:text-3xl">Outils disponibles</h2>
-              <p className="text-sm text-muted-foreground">Chaque carte ouvre un générateur complet avec PDF et historique dédié.</p>
+              <p className="text-sm text-muted-foreground">Recherchez ou parcourez vos générateurs.</p>
             </div>
-            <Link to="/employe" className="primary-action tool-green w-full sm:w-auto">
+            <Link to="/employe" className="primary-action tool-green w-full sm:hidden">
               <UsersRound className="size-4" /> Espace employés
             </Link>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {configs.map((config) => {
-              const Icone = icones[config.type] ?? FileText;
-              const visual = stylesOutils[config.type] ?? stylesOutils.communiquer;
-              return (
-                <button key={config.type} type="button" onClick={() => setOutilActif(config.type)} style={visual.card} className="tool-card group relative overflow-hidden rounded-3xl border p-5 text-left shadow-document transition hover:-translate-y-1 hover:shadow-tool">
-                  <div style={visual.banner} className="tool-card-banner -mx-5 -mt-5 mb-5 flex items-center justify-between px-5 py-4">
-                    <span style={visual.badge} className="flex size-14 items-center justify-center rounded-2xl transition group-hover:scale-105"><Icone className="size-7" /></span>
-                    <span style={visual.badge} className="rounded-full px-3 py-1 text-xs font-black uppercase">SCM</span>
-                  </div>
-                  <h3 className="mt-6 text-xl font-black text-foreground">{config.titre.replace("Générateur de ", "")}</h3>
-                  <p className="mt-2 min-h-14 text-sm leading-6 text-muted-foreground">{config.description}</p>
-                  <div style={visual.footer} className="tool-card-soft mt-5 rounded-2xl p-3">
-                    <div style={visual.action} className="tool-card-action flex items-center justify-between rounded-2xl p-2 pl-4">
-                    <span className="text-xs font-black text-foreground">Ouvrir l’outil</span>
-                    <span style={visual.icon} className="flex size-9 items-center justify-center rounded-xl shadow-tool">→</span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+
+          <div className="relative mb-6">
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={recherche}
+              onChange={(event) => setRecherche(event.target.value)}
+              placeholder="Rechercher un outil (facture, contrat, employé…)"
+              className="w-full rounded-2xl border border-border bg-card/90 py-3.5 pl-12 pr-12 text-sm font-medium text-foreground shadow-document outline-none ring-0 transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              aria-label="Rechercher un outil"
+            />
+            {recherche && (
+              <button
+                type="button"
+                onClick={() => setRecherche("")}
+                className="absolute right-3 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                aria-label="Effacer la recherche"
+              >
+                <X className="size-4" />
+              </button>
+            )}
           </div>
+
+          {outilsFiltres.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-border bg-card/60 p-10 text-center">
+              <p className="text-sm font-semibold text-foreground">Aucun outil ne correspond à « {recherche} ».</p>
+              <p className="mt-1 text-xs text-muted-foreground">Essayez un autre mot-clé.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
+              {outilsFiltres.map((config) => {
+                const Icone = icones[config.type] ?? FileText;
+                const visual = stylesOutils[config.type] ?? stylesOutils.communiquer;
+                const titreCourt = config.titre.replace("Générateur de ", "").replace("Générateur d’", "");
+                return (
+                  <button
+                    key={config.type}
+                    type="button"
+                    onClick={() => setOutilActif(config.type)}
+                    className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-document sm:p-5"
+                  >
+                    <span
+                      style={visual.icon}
+                      className="flex size-14 shrink-0 items-center justify-center rounded-2xl shadow-tool transition group-hover:scale-105 sm:size-16"
+                    >
+                      <Icone className="size-6 sm:size-7" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-base font-black text-foreground sm:text-lg">{titreCourt}</h3>
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground sm:text-sm">{config.description}</p>
+                    </div>
+                    <ArrowRight className="size-5 shrink-0 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-primary" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
     </main>
