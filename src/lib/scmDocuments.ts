@@ -18,7 +18,7 @@ function formaterMontant(valeur: number, options: { decimales?: number } = {}): 
   return signe + avecSeparateurs + (partieDecimale ? "," + partieDecimale : "");
 }
 
-export type OutilType = "facture" | "devis" | "devis_estimatif" | "recu" | "contrat_construction" | "contrat_fournisseur" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "plan_architectural" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement" | "demandes_paiement" | "recu_employe" | "version_nuit" | "gestion_caisse" | "gestion_dettes" | "gestion_stage" | "gestion_presence";
+export type OutilType = "facture" | "devis" | "devis_estimatif" | "recu" | "contrat_construction" | "contrat_fournisseur" | "contrat_employe" | "description_projet" | "communiquer" | "certificat" | "carte_service" | "rendu_3d" | "realistic_sketchup" | "plan_architectural" | "fiche_employe" | "code_qr" | "formulaire_personnalise" | "historique_connexion" | "calendrier_feries" | "organigramme_entreprise" | "demandes_conges" | "bilans_sante" | "gestion_materiel" | "arrivages_materiel" | "incidents_chantier" | "archives_chantiers" | "lettre_licenciement" | "demandes_paiement" | "recu_employe" | "version_nuit" | "gestion_caisse" | "gestion_dettes" | "gestion_stage" | "gestion_presence" | "offres_emploi";
 export type TypeChampPersonnalise = "texte" | "nombre" | "image" | "fichier";
 export type ChampPersonnalise = { id: string; label: string; type: TypeChampPersonnalise; requis: boolean };
 export type FormulairePersonnalise = { id: string; titre: string; description: string; champs: ChampPersonnalise[]; url_publique: string; publie: boolean; created_at: string; updated_at: string };
@@ -111,6 +111,7 @@ const couleursPdfParOutil: Record<OutilType, { principal: [number, number, numbe
   gestion_dettes: { principal: [136, 19, 55], secondaire: [217, 119, 6], doux: [253, 232, 240] },
   gestion_stage: { principal: [15, 52, 96], secondaire: [22, 33, 62], doux: [232, 238, 248] },
   gestion_presence: { principal: [30, 64, 175], secondaire: [16, 185, 129], doux: [228, 240, 255] },
+  offres_emploi: { principal: [30, 64, 175], secondaire: [15, 23, 42], doux: [228, 234, 248] },
 };
 
 export const tablesParOutil: Record<OutilType, string> = {
@@ -148,6 +149,7 @@ export const tablesParOutil: Record<OutilType, string> = {
   gestion_dettes: "dettes",
   gestion_stage: "stagiaires",
   gestion_presence: "presences",
+  offres_emploi: "candidatures_emploi",
 };
 
 export const prefixesParOutil: Record<OutilType, string> = {
@@ -185,6 +187,7 @@ export const prefixesParOutil: Record<OutilType, string> = {
   gestion_dettes: "DET",
   gestion_stage: "STG",
   gestion_presence: "PRE",
+  offres_emploi: "EMP",
 };
 
 const colonnesRechercheParOutil: Record<OutilType, string[]> = {
@@ -222,6 +225,7 @@ const colonnesRechercheParOutil: Record<OutilType, string[]> = {
   gestion_dettes: ["nom_contractant", "telephone", "adresse", "notes"],
   gestion_stage: ["nom_complet", "telephone", "matricule", "ecole", "niveau_etude"],
   gestion_presence: ["notes"],
+  offres_emploi: ["nom_complet", "telephone", "poste_vise", "poste_autre", "niveau_etude"],
 };
 
 const db = supabase as any;
