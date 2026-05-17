@@ -11,8 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StagiaireRouteImport } from './routes/stagiaire'
 import { Route as StageRouteImport } from './routes/stage'
+import { Route as OutilsRouteImport } from './routes/outils'
 import { Route as EmployeRouteImport } from './routes/employe'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as QrEmployeEmployeIdRouteImport } from './routes/qr-employe.$employeId'
 import { Route as FormulaireFormulaireIdRouteImport } from './routes/formulaire.$formulaireId'
 
@@ -26,14 +26,14 @@ const StageRoute = StageRouteImport.update({
   path: '/stage',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OutilsRoute = OutilsRouteImport.update({
+  id: '/outils',
+  path: '/outils',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EmployeRoute = EmployeRouteImport.update({
   id: '/employe',
   path: '/employe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QrEmployeEmployeIdRoute = QrEmployeEmployeIdRouteImport.update({
@@ -48,16 +48,16 @@ const FormulaireFormulaireIdRoute = FormulaireFormulaireIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
   '/stagiaire': typeof StagiaireRoute
   '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
   '/qr-employe/$employeId': typeof QrEmployeEmployeIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
   '/stagiaire': typeof StagiaireRoute
   '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
@@ -65,8 +65,8 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
   '/stagiaire': typeof StagiaireRoute
   '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
@@ -75,24 +75,24 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/employe'
+    | '/outils'
     | '/stage'
     | '/stagiaire'
     | '/formulaire/$formulaireId'
     | '/qr-employe/$employeId'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/employe'
+    | '/outils'
     | '/stage'
     | '/stagiaire'
     | '/formulaire/$formulaireId'
     | '/qr-employe/$employeId'
   id:
     | '__root__'
-    | '/'
     | '/employe'
+    | '/outils'
     | '/stage'
     | '/stagiaire'
     | '/formulaire/$formulaireId'
@@ -100,8 +100,8 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   EmployeRoute: typeof EmployeRoute
+  OutilsRoute: typeof OutilsRoute
   StageRoute: typeof StageRoute
   StagiaireRoute: typeof StagiaireRoute
   FormulaireFormulaireIdRoute: typeof FormulaireFormulaireIdRoute
@@ -124,18 +124,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/outils': {
+      id: '/outils'
+      path: '/outils'
+      fullPath: '/outils'
+      preLoaderRoute: typeof OutilsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/employe': {
       id: '/employe'
       path: '/employe'
       fullPath: '/employe'
       preLoaderRoute: typeof EmployeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qr-employe/$employeId': {
@@ -156,8 +156,8 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   EmployeRoute: EmployeRoute,
+  OutilsRoute: OutilsRoute,
   StageRoute: StageRoute,
   StagiaireRoute: StagiaireRoute,
   FormulaireFormulaireIdRoute: FormulaireFormulaireIdRoute,

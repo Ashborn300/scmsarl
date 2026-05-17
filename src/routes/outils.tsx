@@ -5,7 +5,7 @@ import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/outils")({
   head: () => ({
     meta: [
       { title: "SCM SARL — Tableau de bord documents" },
