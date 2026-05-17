@@ -66,7 +66,7 @@ function RootComponent() {
     <>
       <Outlet />
       <InstallPwaPrompt />
-      <div className="fixed bottom-3 right-3 z-[90] hidden md:block">
+      <div className="fixed bottom-3 right-3 z-[90]">
         <UninstallPwaButton />
       </div>
     </>
