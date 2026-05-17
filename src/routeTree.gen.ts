@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StagiaireRouteImport } from './routes/stagiaire'
 import { Route as StageRouteImport } from './routes/stage'
+import { Route as OutilsRouteImport } from './routes/outils'
 import { Route as EmployeRouteImport } from './routes/employe'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QrEmployeEmployeIdRouteImport } from './routes/qr-employe.$employeId'
@@ -24,6 +25,11 @@ const StagiaireRoute = StagiaireRouteImport.update({
 const StageRoute = StageRouteImport.update({
   id: '/stage',
   path: '/stage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OutilsRoute = OutilsRouteImport.update({
+  id: '/outils',
+  path: '/outils',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmployeRoute = EmployeRouteImport.update({
@@ -50,6 +56,7 @@ const FormulaireFormulaireIdRoute = FormulaireFormulaireIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
   '/stagiaire': typeof StagiaireRoute
   '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
   '/stagiaire': typeof StagiaireRoute
   '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
+  '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
   '/stagiaire': typeof StagiaireRoute
   '/formulaire/$formulaireId': typeof FormulaireFormulaireIdRoute
@@ -77,6 +86,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/employe'
+    | '/outils'
     | '/stage'
     | '/stagiaire'
     | '/formulaire/$formulaireId'
@@ -85,6 +95,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/employe'
+    | '/outils'
     | '/stage'
     | '/stagiaire'
     | '/formulaire/$formulaireId'
@@ -93,6 +104,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/employe'
+    | '/outils'
     | '/stage'
     | '/stagiaire'
     | '/formulaire/$formulaireId'
@@ -102,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EmployeRoute: typeof EmployeRoute
+  OutilsRoute: typeof OutilsRoute
   StageRoute: typeof StageRoute
   StagiaireRoute: typeof StagiaireRoute
   FormulaireFormulaireIdRoute: typeof FormulaireFormulaireIdRoute
@@ -122,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/stage'
       fullPath: '/stage'
       preLoaderRoute: typeof StageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/outils': {
+      id: '/outils'
+      path: '/outils'
+      fullPath: '/outils'
+      preLoaderRoute: typeof OutilsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/employe': {
@@ -158,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EmployeRoute: EmployeRoute,
+  OutilsRoute: OutilsRoute,
   StageRoute: StageRoute,
   StagiaireRoute: StagiaireRoute,
   FormulaireFormulaireIdRoute: FormulaireFormulaireIdRoute,
@@ -166,12 +187,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
