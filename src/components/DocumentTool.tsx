@@ -482,7 +482,7 @@ function OrganigrammeTool({ retour }: { retour: () => void }) {
         <p className="mt-4 text-center text-sm font-black text-muted-foreground">{description}</p>
       </section>
     </div>
-  </div></div></main>;
+  </div></main>;
 }
 
 export function OrganigrammeArbre({ blocs }: { blocs: BlocOrganigramme[] }) {
