@@ -363,7 +363,6 @@ function InfoMini({ label, value }: { label: string; value: string }) { return <
 function ListeMateriel({ titre, items }: { titre: string; items: { nom: string; quantite: number }[] }) { return <div className="rounded-xl border border-border bg-background p-3"><p className="text-xs font-black uppercase text-muted-foreground">{titre}</p><div className="mt-2 space-y-1">{items?.length ? items.map((item, index) => <p key={`${titre}-${item.nom}-${index}`} className="text-sm font-bold">{item.nom} × {item.quantite || 1}</p>) : <p className="text-sm font-bold text-muted-foreground">—</p>}</div></div>; }
 
 function OrganigrammeTool({ retour }: { retour: () => void }) {
-function OrganigrammeTool({ retour }: { retour: () => void }) {
   const [organigrammes, setOrganigrammes] = useState<OrganigrammeEntreprise[]>([]);
   const [employes, setEmployes] = useState<EmployeRecord[]>([]);
   const [editionId, setEditionId] = useState<string | undefined>();
