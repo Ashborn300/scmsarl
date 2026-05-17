@@ -7,6 +7,7 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 const DISMISS_KEY = "scm-install-dismissed";
+const INSTALLED_KEY = "scm-app-installed";
 
 export function InstallPwaPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
@@ -37,10 +38,36 @@ export function InstallPwaPrompt() {
     const standalone =
       window.matchMedia?.("(display-mode: standalone)").matches ||
       (window.navigator as any).standalone === true;
-    if (standalone) return;
+    if (standalone) {
+      localStorage.setItem(INSTALLED_KEY, "1");
+      return;
+    }
+
+    // If app is already installed but user opened in browser, try to launch the installed PWA.
+    // Browsers don't allow forced redirect, but with manifest launch_handler:navigate-existing,
+    // a protocol/intent or web_app launch will focus the installed window. We at least show a banner.
+    const wasInstalled = localStorage.getItem(INSTALLED_KEY) === "1";
+    const nav = navigator as any;
+    if (nav.getInstalledRelatedApps) {
+      nav.getInstalledRelatedApps().then((apps: unknown[]) => {
+        if (apps && apps.length > 0) localStorage.setItem(INSTALLED_KEY, "1");
+      }).catch(() => {});
+    }
+
+    // Auto-open after install: when the user accepts install, the appinstalled event fires.
+    const onInstalled = () => {
+      localStorage.setItem(INSTALLED_KEY, "1");
+      setVisible(false);
+      // Best-effort: try to launch standalone via the manifest start_url in a new context.
+      // Most browsers will simply mark the PWA installed; the next launch from the home icon opens it.
+      try {
+        window.location.href = "/?utm_source=pwa_installed";
+      } catch {}
+    };
+    window.addEventListener("appinstalled", onInstalled);
 
     const dismissed = localStorage.getItem(DISMISS_KEY);
-    if (dismissed === "1") return;
+    if (dismissed === "1" && !wasInstalled) return;
 
     const ua = window.navigator.userAgent || "";
     const iOS = /iPhone|iPad|iPod/i.test(ua) && !/CriOS|FxiOS/i.test(ua);
@@ -59,7 +86,10 @@ export function InstallPwaPrompt() {
       if (isMobile) setVisible(true);
     }
 
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
   const handleInstall = async () => {
