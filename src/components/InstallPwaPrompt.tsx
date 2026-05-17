@@ -71,7 +71,12 @@ export function InstallPwaPrompt() {
 
     const ua = window.navigator.userAgent || "";
     const iOS = /iPhone|iPad|iPod/i.test(ua) && !/CriOS|FxiOS/i.test(ua);
+    const isAndroid = /Android/i.test(ua);
+    const isMobileUA = iOS || isAndroid || /Mobile|Mobi/i.test(ua);
     setIsIOS(iOS);
+
+    // Installation autorisée uniquement sur mobile
+    if (!isMobileUA) return;
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -80,11 +85,8 @@ export function InstallPwaPrompt() {
     };
     window.addEventListener("beforeinstallprompt", handler);
 
-    // For iOS (no beforeinstallprompt), still show manual instructions on mobile
-    if (iOS) {
-      const isMobile = window.innerWidth < 768;
-      if (isMobile) setVisible(true);
-    }
+    // iOS n'émet pas beforeinstallprompt : afficher les instructions manuelles
+    if (iOS) setVisible(true);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
