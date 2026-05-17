@@ -16,6 +16,24 @@ export function InstallPwaPrompt() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // Register service worker (needed for installability), but skip in iframes/preview
+    const isInIframe = (() => {
+      try { return window.self !== window.top; } catch { return true; }
+    })();
+    const host = window.location.hostname;
+    const isPreviewHost =
+      host.includes("id-preview--") || host.includes("lovableproject.com");
+
+    if ("serviceWorker" in navigator) {
+      if (isInIframe || isPreviewHost) {
+        navigator.serviceWorker.getRegistrations().then((regs) =>
+          regs.forEach((r) => r.unregister())
+        );
+      } else {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      }
+    }
+
     const standalone =
       window.matchMedia?.("(display-mode: standalone)").matches ||
       (window.navigator as any).standalone === true;
