@@ -14,13 +14,2027 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_accounts: {
+        Row: {
+          actif: boolean
+          created_at: string
+          id: string
+          nom_complet: string
+          password_hash: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          id?: string
+          nom_complet?: string
+          password_hash: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          id?: string
+          nom_complet?: string
+          password_hash?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      annonces: {
+        Row: {
+          auteur_admin_id: string | null
+          contenu: string
+          created_at: string
+          id: string
+          image_url: string
+          publiee: boolean
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          auteur_admin_id?: string | null
+          contenu?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          publiee?: boolean
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          auteur_admin_id?: string | null
+          contenu?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          publiee?: boolean
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      annonces_masquees: {
+        Row: {
+          annonce_id: string
+          created_at: string
+          employe_id: string
+          id: string
+        }
+        Insert: {
+          annonce_id: string
+          created_at?: string
+          employe_id: string
+          id?: string
+        }
+        Update: {
+          annonce_id?: string
+          created_at?: string
+          employe_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annonces_masquees_annonce_id_fkey"
+            columns: ["annonce_id"]
+            isOneToOne: false
+            referencedRelation: "annonces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      annonces_stagiaires: {
+        Row: {
+          contenu: string
+          created_at: string
+          destinataires: string[]
+          id: string
+          titre: string
+        }
+        Insert: {
+          contenu?: string
+          created_at?: string
+          destinataires?: string[]
+          id?: string
+          titre?: string
+        }
+        Update: {
+          contenu?: string
+          created_at?: string
+          destinataires?: string[]
+          id?: string
+          titre?: string
+        }
+        Relationships: []
+      }
+      archives_chantiers: {
+        Row: {
+          adresse_projet: string
+          budget_estime_debut: number
+          budget_final: number
+          created_at: string
+          date_debut_construction: string | null
+          date_finalisation_construction: string | null
+          employes_participants: Json
+          id: string
+          images_chantier: string[]
+          nom_chantier: string
+          nom_client: string
+          nom_fichier: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          adresse_projet?: string
+          budget_estime_debut?: number
+          budget_final?: number
+          created_at?: string
+          date_debut_construction?: string | null
+          date_finalisation_construction?: string | null
+          employes_participants?: Json
+          id?: string
+          images_chantier?: string[]
+          nom_chantier?: string
+          nom_client?: string
+          nom_fichier?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse_projet?: string
+          budget_estime_debut?: number
+          budget_final?: number
+          created_at?: string
+          date_debut_construction?: string | null
+          date_finalisation_construction?: string | null
+          employes_participants?: Json
+          id?: string
+          images_chantier?: string[]
+          nom_chantier?: string
+          nom_client?: string
+          nom_fichier?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      arrivages_materiel: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          chef_chantier_id: string
+          chef_chantier_nom: string
+          created_at: string
+          date_livraison: string
+          entreprise_partenaire: string
+          id: string
+          informations_supplementaires: string
+          nom_materiel: string
+          preuve_image_url: string
+          prix_total: number
+          quantite: number
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id: string
+          chef_chantier_nom?: string
+          created_at?: string
+          date_livraison?: string
+          entreprise_partenaire?: string
+          id?: string
+          informations_supplementaires?: string
+          nom_materiel?: string
+          preuve_image_url?: string
+          prix_total?: number
+          quantite?: number
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id?: string
+          chef_chantier_nom?: string
+          created_at?: string
+          date_livraison?: string
+          entreprise_partenaire?: string
+          id?: string
+          informations_supplementaires?: string
+          nom_materiel?: string
+          preuve_image_url?: string
+          prix_total?: number
+          quantite?: number
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      arrivees_chantier: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          created_at: string
+          date: string
+          employe_id: string
+          employe_nom: string
+          heure_arrivee: string
+          id: string
+          matricule: string
+          poste: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date?: string
+          employe_id: string
+          employe_nom?: string
+          heure_arrivee?: string
+          id?: string
+          matricule?: string
+          poste?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date?: string
+          employe_id?: string
+          employe_nom?: string
+          heure_arrivee?: string
+          id?: string
+          matricule?: string
+          poste?: string
+        }
+        Relationships: []
+      }
+      bilans_sante_employes: {
+        Row: {
+          allergies: string
+          blessure: boolean
+          created_at: string
+          details_blessure: string
+          employe_id: string
+          employe_nom: string
+          etat_global: string
+          groupe_sanguin: string
+          id: string
+          semaine: string
+          updated_at: string
+        }
+        Insert: {
+          allergies?: string
+          blessure?: boolean
+          created_at?: string
+          details_blessure?: string
+          employe_id: string
+          employe_nom?: string
+          etat_global?: string
+          groupe_sanguin?: string
+          id?: string
+          semaine?: string
+          updated_at?: string
+        }
+        Update: {
+          allergies?: string
+          blessure?: boolean
+          created_at?: string
+          details_blessure?: string
+          employe_id?: string
+          employe_nom?: string
+          etat_global?: string
+          groupe_sanguin?: string
+          id?: string
+          semaine?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      candidatures_emploi: {
+        Row: {
+          adresse: string
+          created_at: string
+          id: string
+          motivation: string
+          niveau_etude: string
+          nom_complet: string
+          poste_autre: string
+          poste_vise: string
+          statut: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string
+          created_at?: string
+          id?: string
+          motivation?: string
+          niveau_etude?: string
+          nom_complet?: string
+          poste_autre?: string
+          poste_vise?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string
+          created_at?: string
+          id?: string
+          motivation?: string
+          niveau_etude?: string
+          nom_complet?: string
+          poste_autre?: string
+          poste_vise?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cartes_service: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          image_base64: string | null
+          matricule: string
+          nom_complet: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64?: string | null
+          matricule?: string
+          nom_complet?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64?: string | null
+          matricule?: string
+          nom_complet?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      certificats: {
+        Row: {
+          beneficiaire: string
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          beneficiaire?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at?: string
+        }
+        Update: {
+          beneficiaire?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chantiers: {
+        Row: {
+          autoriser_budget_chef: boolean
+          budget_global: number
+          chef_chantier: string
+          created_at: string
+          date_debut: string | null
+          date_fin_prevue: string | null
+          description: string
+          employes_assignes: string[]
+          id: string
+          images_chantier: string[]
+          localisation: string
+          nom_chantier: string
+          projet_lie: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          autoriser_budget_chef?: boolean
+          budget_global?: number
+          chef_chantier?: string
+          created_at?: string
+          date_debut?: string | null
+          date_fin_prevue?: string | null
+          description?: string
+          employes_assignes?: string[]
+          id?: string
+          images_chantier?: string[]
+          localisation?: string
+          nom_chantier?: string
+          projet_lie?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          autoriser_budget_chef?: boolean
+          budget_global?: number
+          chef_chantier?: string
+          created_at?: string
+          date_debut?: string | null
+          date_fin_prevue?: string | null
+          description?: string
+          employes_assignes?: string[]
+          id?: string
+          images_chantier?: string[]
+          localisation?: string
+          nom_chantier?: string
+          projet_lie?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chantiers_projet_lie_fkey"
+            columns: ["projet_lie"]
+            isOneToOne: false
+            referencedRelation: "projets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      codes_qr_employes: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          employe_id: string
+          employe_nom: string
+          id: string
+          matricule: string
+          nom_fichier: string
+          numero: string
+          qr_base64: string
+          updated_at: string
+          url_publique: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe_id: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          nom_fichier: string
+          numero: string
+          qr_base64: string
+          updated_at?: string
+          url_publique: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe_id?: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          nom_fichier?: string
+          numero?: string
+          qr_base64?: string
+          updated_at?: string
+          url_publique?: string
+        }
+        Relationships: []
+      }
+      communications: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      compteurs_documents: {
+        Row: {
+          dernier_numero: number
+          type_document: string
+          updated_at: string
+        }
+        Insert: {
+          dernier_numero?: number
+          type_document: string
+          updated_at?: string
+        }
+        Update: {
+          dernier_numero?: number
+          type_document?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      connexions_scm: {
+        Row: {
+          admin_id: string | null
+          connected_at: string
+          created_at: string
+          employe_id: string | null
+          id: string
+          matricule: string
+          nom_utilisateur: string
+          role: string
+          type_connexion: string
+        }
+        Insert: {
+          admin_id?: string | null
+          connected_at?: string
+          created_at?: string
+          employe_id?: string | null
+          id?: string
+          matricule?: string
+          nom_utilisateur?: string
+          role: string
+          type_connexion?: string
+        }
+        Update: {
+          admin_id?: string | null
+          connected_at?: string
+          created_at?: string
+          employe_id?: string | null
+          id?: string
+          matricule?: string
+          nom_utilisateur?: string
+          role?: string
+          type_connexion?: string
+        }
+        Relationships: []
+      }
+      contrats_construction: {
+        Row: {
+          client: string
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at?: string
+        }
+        Update: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      contrats_employes: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          employe: string
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe?: string
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe?: string
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      contrats_fournisseurs: {
+        Row: {
+          client: string
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at?: string
+        }
+        Update: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      demandes_conges: {
+        Row: {
+          created_at: string
+          employe_id: string
+          employe_nom: string
+          id: string
+          image_url: string
+          raison: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employe_id: string
+          employe_nom?: string
+          id?: string
+          image_url?: string
+          raison?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employe_id?: string
+          employe_nom?: string
+          id?: string
+          image_url?: string
+          raison?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      demandes_paiement: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          created_at: string
+          date_traitement: string | null
+          employe_id: string
+          employe_nom: string
+          id: string
+          matricule: string
+          montant: number
+          note: string
+          poste: string
+          reponse_admin: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date_traitement?: string | null
+          employe_id: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          montant?: number
+          note?: string
+          poste?: string
+          reponse_admin?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date_traitement?: string | null
+          employe_id?: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          montant?: number
+          note?: string
+          poste?: string
+          reponse_admin?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      descriptions_projets: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          projet: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          projet?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          projet?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dettes: {
+        Row: {
+          adresse: string
+          created_at: string
+          date_dette: string
+          date_paiement: string
+          devise: string
+          id: string
+          montant: number
+          nom_contractant: string
+          notes: string
+          statut: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string
+          created_at?: string
+          date_dette?: string
+          date_paiement: string
+          devise?: string
+          id?: string
+          montant?: number
+          nom_contractant?: string
+          notes?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string
+          created_at?: string
+          date_dette?: string
+          date_paiement?: string
+          devise?: string
+          id?: string
+          montant?: number
+          nom_contractant?: string
+          notes?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      devis: {
+        Row: {
+          client: string
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          montant_total: number
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          montant_total?: number
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at?: string
+        }
+        Update: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          montant_total?: number
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      devis_estimatifs: {
+        Row: {
+          client: string
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          montant_total: number
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          projet: string
+          updated_at: string
+        }
+        Insert: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          montant_total?: number
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          projet?: string
+          updated_at?: string
+        }
+        Update: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          montant_total?: number
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          projet?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employes: {
+        Row: {
+          adresse: string
+          chantier_assigne: string | null
+          contact_urgence: string
+          created_at: string
+          date_admission: string | null
+          date_naissance: string | null
+          email: string
+          genre: string
+          id: string
+          matricule: string
+          nom_complet: string
+          numero_piece_identite: string
+          peut_voir_budget: boolean
+          photo_profil: string
+          poste: string
+          role: string
+          salaire: number
+          salaire_recu: number
+          salaire_restant: number
+          salaire_total: number
+          statut: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string
+          chantier_assigne?: string | null
+          contact_urgence?: string
+          created_at?: string
+          date_admission?: string | null
+          date_naissance?: string | null
+          email?: string
+          genre?: string
+          id?: string
+          matricule?: string
+          nom_complet?: string
+          numero_piece_identite?: string
+          peut_voir_budget?: boolean
+          photo_profil?: string
+          poste?: string
+          role?: string
+          salaire?: number
+          salaire_recu?: number
+          salaire_restant?: number
+          salaire_total?: number
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string
+          chantier_assigne?: string | null
+          contact_urgence?: string
+          created_at?: string
+          date_admission?: string | null
+          date_naissance?: string | null
+          email?: string
+          genre?: string
+          id?: string
+          matricule?: string
+          nom_complet?: string
+          numero_piece_identite?: string
+          peut_voir_budget?: boolean
+          photo_profil?: string
+          poste?: string
+          role?: string
+          salaire?: number
+          salaire_recu?: number
+          salaire_restant?: number
+          salaire_total?: number
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employes_chantier_assigne_fkey"
+            columns: ["chantier_assigne"]
+            isOneToOne: false
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factures: {
+        Row: {
+          client: string
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          montant_total: number
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          montant_total?: number
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at?: string
+        }
+        Update: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          montant_total?: number
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      factures_employes: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          employe_id: string | null
+          employe_nom: string
+          id: string
+          matricule: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          poste: string
+          salaire_brut: number
+          salaire_net: number
+          total_deductions: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe_id?: string | null
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64?: string
+          poste?: string
+          salaire_brut?: number
+          salaire_net?: number
+          total_deductions?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe_id?: string | null
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          poste?: string
+          salaire_brut?: number
+          salaire_net?: number
+          total_deductions?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fiches_employes: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          titre: string
+          type_fiche: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          titre?: string
+          type_fiche?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          titre?: string
+          type_fiche?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      formulaires_personnalises: {
+        Row: {
+          champs: Json
+          created_at: string
+          description: string
+          id: string
+          publie: boolean
+          titre: string
+          updated_at: string
+          url_publique: string
+        }
+        Insert: {
+          champs?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          publie?: boolean
+          titre?: string
+          updated_at?: string
+          url_publique?: string
+        }
+        Update: {
+          champs?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          publie?: boolean
+          titre?: string
+          updated_at?: string
+          url_publique?: string
+        }
+        Relationships: []
+      }
+      incidents_chantier: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          chef_chantier_id: string
+          chef_chantier_nom: string
+          created_at: string
+          date_evenement: string
+          explication: string
+          id: string
+          images: string[]
+          statut: string
+          type_evenement: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id: string
+          chef_chantier_nom?: string
+          created_at?: string
+          date_evenement?: string
+          explication?: string
+          id?: string
+          images?: string[]
+          statut?: string
+          type_evenement?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id?: string
+          chef_chantier_nom?: string
+          created_at?: string
+          date_evenement?: string
+          explication?: string
+          id?: string
+          images?: string[]
+          statut?: string
+          type_evenement?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      jours_non_travailles: {
+        Row: {
+          actif: boolean
+          created_at: string
+          date_jour: string
+          description: string
+          id: string
+          titre: string
+          type_jour: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          date_jour: string
+          description?: string
+          id?: string
+          titre?: string
+          type_jour?: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          date_jour?: string
+          description?: string
+          id?: string
+          titre?: string
+          type_jour?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lettres_licenciement: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          employe: string
+          id: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe?: string
+          id?: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          employe?: string
+          id?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mouvements_caisse: {
+        Row: {
+          auteur: string
+          created_at: string
+          date_mouvement: string
+          description: string
+          devise: string
+          id: string
+          montant: number
+          type_mouvement: string
+          updated_at: string
+        }
+        Insert: {
+          auteur?: string
+          created_at?: string
+          date_mouvement?: string
+          description?: string
+          devise?: string
+          id?: string
+          montant: number
+          type_mouvement: string
+          updated_at?: string
+        }
+        Update: {
+          auteur?: string
+          created_at?: string
+          date_mouvement?: string
+          description?: string
+          devise?: string
+          id?: string
+          montant?: number
+          type_mouvement?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organigrammes_entreprise: {
+        Row: {
+          actif: boolean
+          blocs: Json
+          created_at: string
+          description: string
+          id: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          blocs?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          blocs?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      plans_architecturaux: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          image_base64: string
+          nom_fichier: string
+          numero: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64: string
+          nom_fichier: string
+          numero: string
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64?: string
+          nom_fichier?: string
+          numero?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      presences: {
+        Row: {
+          chantier_id: string
+          chef_chantier_id: string
+          created_at: string
+          date: string
+          employes_presence: Json
+          id: string
+          notes: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id: string
+          chef_chantier_id: string
+          created_at?: string
+          date?: string
+          employes_presence?: Json
+          id?: string
+          notes?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string
+          chef_chantier_id?: string
+          created_at?: string
+          date?: string
+          employes_presence?: Json
+          id?: string
+          notes?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      projets: {
+        Row: {
+          budget_estime: number
+          client: string
+          created_at: string
+          date_debut: string | null
+          date_fin_prevue: string | null
+          description: string
+          id: string
+          localisation: string
+          nom_projet: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          budget_estime?: number
+          client?: string
+          created_at?: string
+          date_debut?: string | null
+          date_fin_prevue?: string | null
+          description?: string
+          id?: string
+          localisation?: string
+          nom_projet?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          budget_estime?: number
+          client?: string
+          created_at?: string
+          date_debut?: string | null
+          date_fin_prevue?: string | null
+          description?: string
+          id?: string
+          localisation?: string
+          nom_projet?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rapports_materiel: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          chef_chantier_id: string
+          chef_chantier_nom: string
+          created_at: string
+          id: string
+          materiel_perdu: Json
+          materiel_prevu: Json
+          materiel_recupere: Json
+          materiel_utilise: Json
+          notes: string
+          semaine: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id: string
+          chef_chantier_nom?: string
+          created_at?: string
+          id?: string
+          materiel_perdu?: Json
+          materiel_prevu?: Json
+          materiel_recupere?: Json
+          materiel_utilise?: Json
+          notes?: string
+          semaine?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          chef_chantier_id?: string
+          chef_chantier_nom?: string
+          created_at?: string
+          id?: string
+          materiel_perdu?: Json
+          materiel_prevu?: Json
+          materiel_recupere?: Json
+          materiel_utilise?: Json
+          notes?: string
+          semaine?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      realistic_sketchup: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          image_base64: string
+          nom_fichier: string
+          numero: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64: string
+          nom_fichier: string
+          numero: string
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64?: string
+          nom_fichier?: string
+          numero?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recus: {
+        Row: {
+          client: string
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          montant_total: number
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at: string
+        }
+        Insert: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          montant_total?: number
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          updated_at?: string
+        }
+        Update: {
+          client?: string
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          montant_total?: number
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recus_employes: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          created_at: string
+          date_confirmation: string | null
+          date_envoi: string
+          donnees_formulaire: Json
+          employe_id: string
+          employe_nom: string
+          id: string
+          matricule: string
+          montant: number
+          motif: string
+          nom_fichier: string
+          numero: string
+          pdf_base64: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date_confirmation?: string | null
+          date_envoi?: string
+          donnees_formulaire?: Json
+          employe_id: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          montant?: number
+          motif?: string
+          nom_fichier?: string
+          numero: string
+          pdf_base64?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date_confirmation?: string | null
+          date_envoi?: string
+          donnees_formulaire?: Json
+          employe_id?: string
+          employe_nom?: string
+          id?: string
+          matricule?: string
+          montant?: number
+          motif?: string
+          nom_fichier?: string
+          numero?: string
+          pdf_base64?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rendus_3d: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          image_base64: string
+          nom_fichier: string
+          numero: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64: string
+          nom_fichier: string
+          numero: string
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64?: string
+          nom_fichier?: string
+          numero?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reponses_formulaires: {
+        Row: {
+          created_at: string
+          fichiers: Json
+          formulaire_id: string
+          id: string
+          reponses: Json
+        }
+        Insert: {
+          created_at?: string
+          fichiers?: Json
+          formulaire_id: string
+          id?: string
+          reponses?: Json
+        }
+        Update: {
+          created_at?: string
+          fichiers?: Json
+          formulaire_id?: string
+          id?: string
+          reponses?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reponses_formulaires_formulaire_id_fkey"
+            columns: ["formulaire_id"]
+            isOneToOne: false
+            referencedRelation: "formulaires_personnalises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salaires_chantier: {
+        Row: {
+          chantier_id: string
+          created_at: string
+          employe_id: string
+          id: string
+          montant: number
+          updated_at: string
+        }
+        Insert: {
+          chantier_id: string
+          created_at?: string
+          employe_id: string
+          id?: string
+          montant?: number
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string
+          created_at?: string
+          employe_id?: string
+          id?: string
+          montant?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      scm_sessions: {
+        Row: {
+          admin_id: string | null
+          created_at: string
+          employe_id: string | null
+          expires_at: string
+          id: string
+          last_seen_at: string
+          role: string
+          token_hash: string
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string
+          employe_id?: string | null
+          expires_at: string
+          id?: string
+          last_seen_at?: string
+          role: string
+          token_hash: string
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string
+          employe_id?: string | null
+          expires_at?: string
+          id?: string
+          last_seen_at?: string
+          role?: string
+          token_hash?: string
+        }
+        Relationships: []
+      }
+      stagiaires: {
+        Row: {
+          adresse: string
+          chantier_id: string | null
+          created_at: string
+          ecole: string
+          id: string
+          matricule: string
+          motivation: string
+          niveau_etude: string
+          nom_complet: string
+          photo_profil: string
+          statut: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string
+          chantier_id?: string | null
+          created_at?: string
+          ecole?: string
+          id?: string
+          matricule?: string
+          motivation?: string
+          niveau_etude?: string
+          nom_complet?: string
+          photo_profil?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string
+          chantier_id?: string | null
+          created_at?: string
+          ecole?: string
+          id?: string
+          matricule?: string
+          motivation?: string
+          niveau_etude?: string
+          nom_complet?: string
+          photo_profil?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      versions_nuit: {
+        Row: {
+          created_at: string
+          date_document: string
+          donnees_formulaire: Json
+          id: string
+          image_base64: string
+          nom_fichier: string
+          numero: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64: string
+          nom_fichier: string
+          numero: string
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_document?: string
+          donnees_formulaire?: Json
+          id?: string
+          image_base64?: string
+          nom_fichier?: string
+          numero?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      acces_application_scm: { Args: never; Returns: boolean }
+      confirmer_recu_employe: {
+        Args: { _employe_id: string; _recu_id: string }
+        Returns: Json
+      }
+      generer_numero_document: {
+        Args: { _prefixe: string; _type_document: string }
+        Returns: string
+      }
+      scm_get_employe_public: {
+        Args: { _employe_id: string }
+        Returns: {
+          adresse: string
+          date_admission: string
+          email: string
+          genre: string
+          id: string
+          matricule: string
+          nom_complet: string
+          photo_profil: string
+          poste: string
+          statut: string
+          telephone: string
+        }[]
+      }
+      scm_get_session: { Args: { _token_hash: string }; Returns: Json }
+      scm_login_admin: {
+        Args: { _token_hash: string; _username: string }
+        Returns: Json
+      }
+      scm_login_employe: {
+        Args: { _matricule: string; _token_hash: string }
+        Returns: Json
+      }
+      scm_logout: { Args: { _token_hash: string }; Returns: boolean }
+      scm_update_own_profile_photo: {
+        Args: { _photo_profil: string; _token_hash: string }
+        Returns: {
+          adresse: string
+          chantier_assigne: string | null
+          contact_urgence: string
+          created_at: string
+          date_admission: string | null
+          date_naissance: string | null
+          email: string
+          genre: string
+          id: string
+          matricule: string
+          nom_complet: string
+          numero_piece_identite: string
+          peut_voir_budget: boolean
+          photo_profil: string
+          poste: string
+          role: string
+          salaire: number
+          salaire_recu: number
+          salaire_restant: number
+          salaire_total: number
+          statut: string
+          telephone: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "employes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      scm_visible_employes: {
+        Args: { _token_hash: string }
+        Returns: {
+          adresse: string
+          chantier_assigne: string | null
+          contact_urgence: string
+          created_at: string
+          date_admission: string | null
+          date_naissance: string | null
+          email: string
+          genre: string
+          id: string
+          matricule: string
+          nom_complet: string
+          numero_piece_identite: string
+          peut_voir_budget: boolean
+          photo_profil: string
+          poste: string
+          role: string
+          salaire: number
+          salaire_recu: number
+          salaire_restant: number
+          salaire_total: number
+          statut: string
+          telephone: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "employes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       [_ in never]: never
