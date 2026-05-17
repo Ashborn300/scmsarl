@@ -23,12 +23,53 @@ export function UninstallPwaButton() {
     if (typeof window === "undefined") return;
     setPlatform(detectPlatform());
 
-    const standalone =
-      window.matchMedia?.("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true;
-    const installed =
-      standalone || localStorage.getItem(INSTALLED_KEY) === "1";
-    setCanShow(installed);
+    let cancelled = false;
+
+    const evaluate = async () => {
+      const standalone =
+        window.matchMedia?.("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true;
+      if (standalone) {
+        localStorage.setItem(INSTALLED_KEY, "1");
+        if (!cancelled) setCanShow(true);
+        return;
+      }
+
+      const nav = navigator as any;
+      if (typeof nav.getInstalledRelatedApps === "function") {
+        try {
+          const apps = await nav.getInstalledRelatedApps();
+          const installed = Array.isArray(apps) && apps.length > 0;
+          if (installed) {
+            localStorage.setItem(INSTALLED_KEY, "1");
+            if (!cancelled) setCanShow(true);
+          } else {
+            localStorage.removeItem(INSTALLED_KEY);
+            if (!cancelled) setCanShow(false);
+          }
+          return;
+        } catch {}
+      }
+
+      const flag = localStorage.getItem(INSTALLED_KEY) === "1";
+      if (!cancelled) setCanShow(flag);
+    };
+
+    evaluate();
+
+    const onInstalled = () => evaluate();
+    const onBeforeInstall = () => {
+      localStorage.removeItem(INSTALLED_KEY);
+      if (!cancelled) setCanShow(false);
+    };
+    window.addEventListener("appinstalled", onInstalled);
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("appinstalled", onInstalled);
+      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+    };
   }, []);
 
   if (!canShow) return null;
