@@ -81,9 +81,9 @@ function EmploiPage() {
     <main className="min-h-screen bg-background">
       <section className="relative overflow-hidden bg-gradient-to-br from-[#1e40af] via-[#1e3a8a] to-[#0f172a] px-4 py-8 text-white sm:px-6 lg:px-10">
         <div className="mx-auto max-w-4xl">
-          <Link to="/" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white">
+          <a href="https://scm-sarl.site/" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white">
             <ArrowLeft className="size-4" /> Retour à l’accueil
-          </Link>
+          </a>
           <div className="flex items-center gap-4">
             <img src={scmLogo} alt="SCM SARL" className="h-14 w-24 rounded-lg bg-white/10 object-contain p-1 sm:h-16 sm:w-28" />
             <div>
