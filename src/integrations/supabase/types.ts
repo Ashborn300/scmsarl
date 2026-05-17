@@ -277,6 +277,48 @@ export type Database = {
         }
         Relationships: []
       }
+      candidatures_emploi: {
+        Row: {
+          adresse: string
+          created_at: string
+          id: string
+          motivation: string
+          niveau_etude: string
+          nom_complet: string
+          poste_autre: string
+          poste_vise: string
+          statut: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string
+          created_at?: string
+          id?: string
+          motivation?: string
+          niveau_etude?: string
+          nom_complet?: string
+          poste_autre?: string
+          poste_vise?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string
+          created_at?: string
+          id?: string
+          motivation?: string
+          niveau_etude?: string
+          nom_complet?: string
+          poste_autre?: string
+          poste_vise?: string
+          statut?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cartes_service: {
         Row: {
           created_at: string

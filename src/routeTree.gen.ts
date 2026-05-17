@@ -13,6 +13,7 @@ import { Route as StagiaireRouteImport } from './routes/stagiaire'
 import { Route as StageRouteImport } from './routes/stage'
 import { Route as OutilsRouteImport } from './routes/outils'
 import { Route as EmployeRouteImport } from './routes/employe'
+import { Route as EmploiRouteImport } from './routes/emploi'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QrEmployeEmployeIdRouteImport } from './routes/qr-employe.$employeId'
 import { Route as FormulaireFormulaireIdRouteImport } from './routes/formulaire.$formulaireId'
@@ -37,6 +38,11 @@ const EmployeRoute = EmployeRouteImport.update({
   path: '/employe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmploiRoute = EmploiRouteImport.update({
+  id: '/emploi',
+  path: '/emploi',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -55,6 +61,7 @@ const FormulaireFormulaireIdRoute = FormulaireFormulaireIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/emploi': typeof EmploiRoute
   '/employe': typeof EmployeRoute
   '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/emploi': typeof EmploiRoute
   '/employe': typeof EmployeRoute
   '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/emploi': typeof EmploiRoute
   '/employe': typeof EmployeRoute
   '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
@@ -85,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/emploi'
     | '/employe'
     | '/outils'
     | '/stage'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/emploi'
     | '/employe'
     | '/outils'
     | '/stage'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/emploi'
     | '/employe'
     | '/outils'
     | '/stage'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EmploiRoute: typeof EmploiRoute
   EmployeRoute: typeof EmployeRoute
   OutilsRoute: typeof OutilsRoute
   StageRoute: typeof StageRoute
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmployeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/emploi': {
+      id: '/emploi'
+      path: '/emploi'
+      fullPath: '/emploi'
+      preLoaderRoute: typeof EmploiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -177,6 +197,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EmploiRoute: EmploiRoute,
   EmployeRoute: EmployeRoute,
   OutilsRoute: OutilsRoute,
   StageRoute: StageRoute,
