@@ -590,6 +590,40 @@ function EmployePage() {
 
   async function retirerImage(url: string) { await supprimerFichierStockage("chantier-images", url); setFormChantier({ ...formChantier, images_chantier: formChantier.images_chantier.filter((img) => img !== url) }); }
 
+  async function televerserImagesChantierDirect(chantierId: string, files: FileList | null) {
+    if (!files?.length) return;
+    const chantier = chantiers.find((c) => c.id === chantierId);
+    if (!chantier) return;
+    setSauvegarde(true);
+    const current = [...(chantier.images_chantier || [])];
+    for (const file of Array.from(files)) {
+      const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+      const { error } = await supabase.storage.from("chantier-images").upload(path, file, { upsert: false });
+      if (error) { setMessage("Téléversement image impossible."); setSauvegarde(false); return; }
+      const { data } = supabase.storage.from("chantier-images").getPublicUrl(path);
+      current.push(data.publicUrl);
+    }
+    const { error: errUpdate } = await db.from("chantiers").update({ images_chantier: current }).eq("id", chantierId);
+    setSauvegarde(false);
+    if (errUpdate) { setMessage(errUpdate.message || "Mise à jour du chantier impossible."); return; }
+    setMessage("Photo(s) ajoutée(s) au chantier.");
+    await chargerDonnees();
+  }
+
+  async function retirerImageChantierDirect(chantierId: string, url: string) {
+    const chantier = chantiers.find((c) => c.id === chantierId);
+    if (!chantier) return;
+    if (!confirm("Retirer cette photo du chantier ?")) return;
+    setSauvegarde(true);
+    await supprimerFichierStockage("chantier-images", url);
+    const next = (chantier.images_chantier || []).filter((img) => img !== url);
+    const { error } = await db.from("chantiers").update({ images_chantier: next }).eq("id", chantierId);
+    setSauvegarde(false);
+    if (error) { setMessage(error.message || "Suppression impossible."); return; }
+    setMessage("Photo retirée.");
+    await chargerDonnees();
+  }
+
   async function televerserPhotoEmploye(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
