@@ -13,6 +13,7 @@ import { Route as StagiaireRouteImport } from './routes/stagiaire'
 import { Route as StageRouteImport } from './routes/stage'
 import { Route as OutilsRouteImport } from './routes/outils'
 import { Route as EmployeRouteImport } from './routes/employe'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as QrEmployeEmployeIdRouteImport } from './routes/qr-employe.$employeId'
 import { Route as FormulaireFormulaireIdRouteImport } from './routes/formulaire.$formulaireId'
 
@@ -36,6 +37,11 @@ const EmployeRoute = EmployeRouteImport.update({
   path: '/employe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QrEmployeEmployeIdRoute = QrEmployeEmployeIdRouteImport.update({
   id: '/qr-employe/$employeId',
   path: '/qr-employe/$employeId',
@@ -48,6 +54,7 @@ const FormulaireFormulaireIdRoute = FormulaireFormulaireIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
   '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
@@ -56,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/qr-employe/$employeId': typeof QrEmployeEmployeIdRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
   '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
@@ -65,6 +73,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/employe': typeof EmployeRoute
   '/outils': typeof OutilsRoute
   '/stage': typeof StageRoute
@@ -75,6 +84,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/employe'
     | '/outils'
     | '/stage'
@@ -83,6 +93,7 @@ export interface FileRouteTypes {
     | '/qr-employe/$employeId'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/employe'
     | '/outils'
     | '/stage'
@@ -91,6 +102,7 @@ export interface FileRouteTypes {
     | '/qr-employe/$employeId'
   id:
     | '__root__'
+    | '/'
     | '/employe'
     | '/outils'
     | '/stage'
@@ -100,6 +112,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   EmployeRoute: typeof EmployeRoute
   OutilsRoute: typeof OutilsRoute
   StageRoute: typeof StageRoute
@@ -138,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmployeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qr-employe/$employeId': {
       id: '/qr-employe/$employeId'
       path: '/qr-employe/$employeId'
@@ -156,6 +176,7 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   EmployeRoute: EmployeRoute,
   OutilsRoute: OutilsRoute,
   StageRoute: StageRoute,
