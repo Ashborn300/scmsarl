@@ -1,4 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { InstallPwaPrompt } from "@/components/InstallPwaPrompt";
 
 import appCss from "../styles.css?url";
 
