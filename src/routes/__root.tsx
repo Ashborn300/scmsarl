@@ -1,5 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { InstallPwaPrompt } from "@/components/InstallPwaPrompt";
+import { UninstallPwaButton } from "@/components/UninstallPwaButton";
 
 import appCss from "../styles.css?url";
 
