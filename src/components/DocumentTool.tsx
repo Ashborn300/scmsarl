@@ -11,7 +11,7 @@ import { GestionDettesTool } from "./GestionDettesTool";
 import { GestionStageTool } from "./GestionStageTool";
 import { GestionPresenceTool } from "./GestionPresenceTool";
 import { OffresEmploiTool } from "./OffresEmploiTool";
-import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerPlanArchitectural, enregistrerRealisticSketchup, enregistrerRendu3D, enregistrerVersionNuit, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerDemandesPaiement, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mettreAJourStatutDemandePaiement, modifierFormulairePersonnalise, supprimerDemandePaiementParId, supprimerDocument, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, voirPdf, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DemandePaiementRecord, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type StatutDemandePaiement, type TypeChampPersonnalise } from "@/lib/scmDocuments";
+import { creerFormulairePersonnalise, creerPdf, creerPdfArchiveChantier, creerPdfFicheEmploye, enregistrerArchiveChantier, enregistrerCarteService, enregistrerCodeQR, enregistrerDocument, enregistrerFicheEmploye, enregistrerJourNonTravaille, enregistrerOrganigrammeEntreprise, enregistrerPlanArchitectural, enregistrerRealisticSketchup, enregistrerRendu3D, enregistrerVersionNuit, listerArchivesChantiers, listerArrivagesMateriel, listerConnexionsScm, listerDemandesPaiement, listerEmployes, listerFormulairesPersonnalises, listerBilansSanteEmployes, listerDemandesConges, listerIncidentsChantier, listerJoursNonTravailles, listerOrganigrammesEntreprise, listerRapportsMateriel, listerReponsesFormulaire, mettreAJourStatutDemandePaiement, modifierFormulairePersonnalise, supprimerDemandePaiementParId, supprimerDocument, supprimerFormulairePersonnalise, supprimerJourNonTravaille, supprimerOrganigrammeEntreprise, telechargerPdf, televerserImageArchiveChantier, televerserImageOrganigramme, voirPdf, type ArchiveChantier, type ArrivageMateriel, type BilanSanteEmploye, type BlocOrganigramme, type ChampPersonnalise, type ConnexionScm, type DemandeConge, type DemandePaiementRecord, type DocumentRecord, type EmployeRecord, type FormulairePersonnalise, type IncidentChantier, type JourNonTravaille, type LigneDeduction, type LignePrestation, type OrganigrammeEntreprise, type OutilType, type RapportMateriel, type ReponseFormulaire, type StatutDemandePaiement, type TypeChampPersonnalise } from "@/lib/scmDocuments";
 import { genererImageOpenRouter } from "@/lib/openrouterImage.functions";
 import scmLogo from "@/assets/scm-logo.jpeg";
 
@@ -364,18 +364,138 @@ function ListeMateriel({ titre, items }: { titre: string; items: { nom: string; 
 
 function OrganigrammeTool({ retour }: { retour: () => void }) {
   const [organigrammes, setOrganigrammes] = useState<OrganigrammeEntreprise[]>([]);
+  const [employes, setEmployes] = useState<EmployeRecord[]>([]);
   const [editionId, setEditionId] = useState<string | undefined>();
   const [titre, setTitre] = useState("Organigramme SCM SARL");
   const [description, setDescription] = useState("Compétence · Engagement · Performance");
-  const [imageUrl, setImageUrl] = useState("");
-  const [imageFichier, setImageFichier] = useState<File>();
+  const [blocs, setBlocs] = useState<BlocOrganigramme[]>([]);
   const [chargement, setChargement] = useState(false);
-  useEffect(() => { listerOrganigrammesEntreprise().then(setOrganigrammes).catch((e) => alert(e instanceof Error ? e.message : "Chargement impossible.")); }, []);
-  const imagePreview = imageFichier ? URL.createObjectURL(imageFichier) : imageUrl;
-  async function enregistrer(event: React.FormEvent) { event.preventDefault(); if (!imageFichier && !imageUrl) return alert("Veuillez importer une image d’organigramme."); setChargement(true); try { const url = imageFichier ? await televerserImageOrganigramme(imageFichier) : imageUrl; const item = await enregistrerOrganigrammeEntreprise({ titre, description, blocs: [{ id: "image-organigramme", titre, niveau: 0, couleur: "bleu", image_url: url }], actif: true }, editionId); setOrganigrammes((liste) => editionId ? liste.map((o) => o.id === item.id ? item : o) : [item, ...liste]); setEditionId(item.id); setImageUrl(url); setImageFichier(undefined); alert("Image d’organigramme publiée sur les dashboards employés."); } catch (erreur) { alert(erreur instanceof Error ? erreur.message : "Publication impossible."); } finally { setChargement(false); } }
-  async function retirer(id: string) { if (!confirm("Supprimer cet organigramme ?")) return; await supprimerOrganigrammeEntreprise(id); setOrganigrammes((liste) => liste.filter((item) => item.id !== id)); }
-  function modifier(item: OrganigrammeEntreprise) { setEditionId(item.id); setTitre(item.titre); setDescription(item.description); setImageUrl(String(item.blocs?.[0]?.image_url || "")); setImageFichier(undefined); window.scrollTo({ top: 0, behavior: "smooth" }); }
-  return <main className="min-h-screen bg-background px-4 py-5 sm:px-6 lg:px-8 tool-organization-chart"><div className="mx-auto max-w-7xl"><button type="button" onClick={retour} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Retour au tableau de bord</button><div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-8"><span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span><h1 className="max-w-3xl text-3xl font-black lg:text-5xl">Organigramme de l’entreprise</h1><p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">Importez l’image officielle de l’organigramme visible par tous les employés.</p></div><div className="grid gap-6 xl:grid-cols-[.85fr_1.15fr]"><form onSubmit={enregistrer} className="rounded-2xl border border-border bg-card p-5 shadow-document"><div className="grid gap-4"><label><span className="mb-1 block text-sm font-semibold">Titre</span><input className="form-control" value={titre} onChange={(e) => setTitre(e.target.value)} /></label><label><span className="mb-1 block text-sm font-semibold">Signature</span><input className="form-control" value={description} onChange={(e) => setDescription(e.target.value)} /></label><label><span className="mb-1 block text-sm font-semibold">Image de l’organigramme *</span><input type="file" accept="image/*" className="file-input" onChange={(e) => setImageFichier(e.target.files?.[0])} /></label></div><button disabled={chargement} className="primary-action mt-5 w-full"><Save className="size-4" /> {chargement ? "Publication…" : editionId ? "Modifier l’image" : "Publier l’image"}</button><div className="mt-5 space-y-3">{organigrammes.map((item) => <article key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3"><strong className="text-sm">{item.titre}</strong><div className="flex gap-2"><button type="button" className="tool-action" onClick={() => modifier(item)}><Pencil className="size-4" /></button><button type="button" className="tool-action danger" onClick={() => retirer(item.id)}><Trash2 className="size-4" /></button></div></article>)}</div></form><section className="rounded-2xl border border-border bg-card p-4 shadow-document"><div className="org-chart org-image-chart"><img src={scmLogo} alt="Logo SCM SARL" className="org-logo" /><h2>ORGANIGRAMME</h2><div className="org-line" />{imagePreview ? <img src={imagePreview} alt="Organigramme SCM SARL" className="org-uploaded-image" /> : <div className="rounded-2xl border border-dashed border-border bg-muted p-8 text-center text-sm font-bold text-muted-foreground">Aucune image sélectionnée.</div>}</div><p className="mt-4 text-center text-sm font-black text-muted-foreground">{description}</p></section></div></div></main>;
+
+  useEffect(() => {
+    Promise.all([listerOrganigrammesEntreprise(), listerEmployes()])
+      .then(([orgs, emps]) => { setOrganigrammes(orgs); setEmployes(emps); })
+      .catch((e) => alert(e instanceof Error ? e.message : "Chargement impossible."));
+  }, []);
+
+  const couleurs: BlocOrganigramme["couleur"][] = ["bleu", "vert", "orange", "violet", "turquoise"];
+
+  function ajouterBloc(parentId?: string) {
+    const niveau = parentId ? ((blocs.find((b) => b.id === parentId)?.niveau ?? 0) + 1) : 0;
+    const couleur = couleurs[niveau % couleurs.length];
+    setBlocs((l) => [...l, { id: crypto.randomUUID(), titre: "Nouveau poste", niveau, couleur, parentId }]);
+  }
+  function majBloc(id: string, patch: Partial<BlocOrganigramme>) {
+    setBlocs((l) => l.map((b) => b.id === id ? { ...b, ...patch } : b));
+  }
+  function affecterEmploye(id: string, employeId: string) {
+    const emp = employes.find((e) => e.id === employeId);
+    majBloc(id, emp ? { employe_id: emp.id, employe_nom: emp.nom_complet, image_url: emp.photo_profil || "" } : { employe_id: undefined, employe_nom: undefined, image_url: undefined });
+  }
+  function supprimerBloc(id: string) {
+    // supprime aussi tous les descendants
+    const aSupprimer = new Set<string>([id]);
+    let change = true;
+    while (change) {
+      change = false;
+      for (const b of blocs) if (b.parentId && aSupprimer.has(b.parentId) && !aSupprimer.has(b.id)) { aSupprimer.add(b.id); change = true; }
+    }
+    setBlocs((l) => l.filter((b) => !aSupprimer.has(b.id)));
+  }
+
+  async function enregistrer(event: React.FormEvent) {
+    event.preventDefault();
+    if (!blocs.length) return alert("Ajoutez au moins un poste à l’organigramme.");
+    setChargement(true);
+    try {
+      const item = await enregistrerOrganigrammeEntreprise({ titre, description, blocs, actif: true }, editionId);
+      setOrganigrammes((liste) => editionId ? liste.map((o) => o.id === item.id ? item : o) : [item, ...liste]);
+      setEditionId(item.id);
+      alert("Organigramme publié sur les dashboards employés.");
+    } catch (erreur) { alert(erreur instanceof Error ? erreur.message : "Publication impossible."); }
+    finally { setChargement(false); }
+  }
+  async function retirer(id: string) {
+    if (!confirm("Supprimer cet organigramme ?")) return;
+    await supprimerOrganigrammeEntreprise(id);
+    setOrganigrammes((liste) => liste.filter((item) => item.id !== id));
+    if (editionId === id) { setEditionId(undefined); setBlocs([]); }
+  }
+  function modifier(item: OrganigrammeEntreprise) {
+    setEditionId(item.id); setTitre(item.titre); setDescription(item.description);
+    setBlocs(Array.isArray(item.blocs) ? item.blocs.filter((b) => b.id !== "image-organigramme") : []);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function nouveau() {
+    setEditionId(undefined); setTitre("Organigramme SCM SARL"); setDescription("Compétence · Engagement · Performance"); setBlocs([]);
+  }
+
+  const racines = blocs.filter((b) => !b.parentId);
+
+  return <main className="min-h-screen bg-background px-4 py-5 sm:px-6 lg:px-8 tool-organization-chart"><div className="mx-auto max-w-7xl"><button type="button" onClick={retour} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Retour au tableau de bord</button><div className="mb-6 rounded-3xl bg-tool-gradient p-6 text-tool-foreground shadow-tool lg:p-8"><span className="mb-4 inline-flex rounded-full bg-tool-foreground/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">SCM SARL</span><h1 className="max-w-3xl text-3xl font-black lg:text-5xl">Organigramme de l’entreprise</h1><p className="mt-3 max-w-2xl text-sm opacity-90 lg:text-base">Construisez l’organigramme en ajoutant des postes et en assignant un employé à chacun.</p></div>
+    <div className="grid gap-6 xl:grid-cols-[.95fr_1.05fr]">
+      <form onSubmit={enregistrer} className="rounded-2xl border border-border bg-card p-5 shadow-document">
+        <div className="grid gap-4">
+          <label><span className="mb-1 block text-sm font-semibold">Titre</span><input className="form-control" value={titre} onChange={(e) => setTitre(e.target.value)} /></label>
+          <label><span className="mb-1 block text-sm font-semibold">Signature</span><input className="form-control" value={description} onChange={(e) => setDescription(e.target.value)} /></label>
+        </div>
+        <div className="mt-5 flex items-center justify-between"><h3 className="text-sm font-black uppercase tracking-wide text-muted-foreground">Postes ({blocs.length})</h3><div className="flex gap-2"><button type="button" className="tool-action" onClick={nouveau}>Nouveau</button><button type="button" className="primary-action" onClick={() => ajouterBloc(undefined)}><Plus className="size-4" /> Poste racine</button></div></div>
+        <div className="mt-3 space-y-3 max-h-[60vh] overflow-auto pr-1">
+          {blocs.map((b) => {
+            const parents = blocs.filter((p) => p.id !== b.id);
+            return <div key={b.id} className="rounded-xl border border-border bg-background p-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="sm:col-span-2"><span className="mb-1 block text-xs font-bold uppercase text-muted-foreground">Poste</span><input className="form-control" value={b.titre} onChange={(e) => majBloc(b.id, { titre: e.target.value })} placeholder="Ex: Directeur Général" /></label>
+                <label><span className="mb-1 block text-xs font-bold uppercase text-muted-foreground">Employé assigné</span>
+                  <select className="form-control" value={b.employe_id || ""} onChange={(e) => affecterEmploye(b.id, e.target.value)}>
+                    <option value="">— Aucun —</option>
+                    {employes.map((e) => <option key={e.id} value={e.id}>{e.nom_complet} {e.poste ? `(${e.poste})` : ""}</option>)}
+                  </select>
+                </label>
+                <label><span className="mb-1 block text-xs font-bold uppercase text-muted-foreground">Rattaché à</span>
+                  <select className="form-control" value={b.parentId || ""} onChange={(e) => majBloc(b.id, { parentId: e.target.value || undefined })}>
+                    <option value="">— Racine —</option>
+                    {parents.map((p) => <option key={p.id} value={p.id}>{p.titre}</option>)}
+                  </select>
+                </label>
+                <label><span className="mb-1 block text-xs font-bold uppercase text-muted-foreground">Couleur</span>
+                  <select className="form-control" value={b.couleur} onChange={(e) => majBloc(b.id, { couleur: e.target.value as BlocOrganigramme["couleur"] })}>
+                    {couleurs.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+              </div>
+              <div className="mt-2 flex gap-2"><button type="button" className="tool-action" onClick={() => ajouterBloc(b.id)}><Plus className="size-4" /> Sous-poste</button><button type="button" className="tool-action danger" onClick={() => supprimerBloc(b.id)}><Trash2 className="size-4" /> Supprimer</button></div>
+            </div>;
+          })}
+          {!blocs.length && <p className="rounded-xl bg-muted p-4 text-center text-sm font-bold text-muted-foreground">Cliquez sur « Poste racine » pour commencer.</p>}
+        </div>
+        <button disabled={chargement} className="primary-action mt-5 w-full"><Save className="size-4" /> {chargement ? "Publication…" : editionId ? "Modifier l’organigramme" : "Publier l’organigramme"}</button>
+        <div className="mt-5 space-y-2">{organigrammes.map((item) => <article key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3"><strong className="text-sm">{item.titre}</strong><div className="flex gap-2"><button type="button" className="tool-action" onClick={() => modifier(item)}><Pencil className="size-4" /></button><button type="button" className="tool-action danger" onClick={() => retirer(item.id)}><Trash2 className="size-4" /></button></div></article>)}</div>
+      </form>
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-document">
+        <div className="org-chart">
+          <img src={scmLogo} alt="Logo SCM SARL" className="org-logo" />
+          <h2>ORGANIGRAMME</h2>
+          <div className="org-line" />
+          {racines.length ? <OrganigrammeArbre blocs={blocs} /> : <div className="rounded-2xl border border-dashed border-border bg-muted p-8 text-center text-sm font-bold text-muted-foreground">Ajoutez des postes pour visualiser l’organigramme.</div>}
+        </div>
+        <p className="mt-4 text-center text-sm font-black text-muted-foreground">{description}</p>
+      </section>
+    </div>
+  </div></main>;
+}
+
+export function OrganigrammeArbre({ blocs }: { blocs: BlocOrganigramme[] }) {
+  const racines = blocs.filter((b) => !b.parentId || !blocs.some((p) => p.id === b.parentId));
+  return <ul className="org-tree">{racines.map((r) => <NoeudOrg key={r.id} bloc={r} blocs={blocs} />)}</ul>;
+}
+function NoeudOrg({ bloc, blocs }: { bloc: BlocOrganigramme; blocs: BlocOrganigramme[] }) {
+  const enfants = blocs.filter((b) => b.parentId === bloc.id);
+  const initiales = (bloc.employe_nom || bloc.titre).split(/\s+/).map((m) => m[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+  return <li><div className={`org-node org-node-${bloc.couleur}`}>
+    {bloc.image_url ? <img src={bloc.image_url} alt={bloc.employe_nom || bloc.titre} className="org-node-photo" loading="lazy" /> : <div className="org-node-photo org-node-initials">{initiales || "?"}</div>}
+    <p className="org-node-poste">{bloc.titre}</p>
+    {bloc.employe_nom && <p className="org-node-nom">{bloc.employe_nom}</p>}
+  </div>{enfants.length > 0 && <ul>{enfants.map((c) => <NoeudOrg key={c.id} bloc={c} blocs={blocs} />)}</ul>}</li>;
 }
 
 function DemandesPaiementTool({ retour }: { retour: () => void }) {
