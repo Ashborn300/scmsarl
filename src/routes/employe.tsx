@@ -499,8 +499,57 @@ function EmployePage() {
       setSauvegarde(false);
       return setMessage(`Ce matricule « ${matriculeNettoye} » est déjà attribué à ${doublon.nom_complet || "un autre employé"}. Choisissez un matricule unique.`);
     }
-    const payload = { ...formEmploye, nom_complet: formEmploye.nom_complet.trim(), matricule: matriculeNettoye, poste: formEmploye.poste.trim(), telephone: formEmploye.telephone.trim(), adresse: formEmploye.adresse.trim(), email: (formEmploye.email || "").trim(), numero_piece_identite: (formEmploye.numero_piece_identite || "").trim(), contact_urgence: (formEmploye.contact_urgence || "").trim(), salaire: total, salaire_total: total, salaire_recu: recu, salaire_restant: Math.max(total - recu, 0), chantier_assigne: formEmploye.chantier_assigne || null, date_admission: normaliserDate(formEmploye.date_admission || null), date_naissance: normaliserDate(formEmploye.date_naissance || null) };
-    const { error } = edition?.id ? await db.from("employes").update(payload).eq("id", edition.id) : await db.from("employes").insert(payload);
+    const nouveauChantierId = formEmploye.chantier_assigne || null;
+    const payload = {
+      nom_complet: formEmploye.nom_complet.trim(),
+      matricule: matriculeNettoye,
+      poste: formEmploye.poste.trim(),
+      telephone: formEmploye.telephone.trim(),
+      adresse: formEmploye.adresse.trim(),
+      email: (formEmploye.email || "").trim(),
+      numero_piece_identite: (formEmploye.numero_piece_identite || "").trim(),
+      contact_urgence: (formEmploye.contact_urgence || "").trim(),
+      genre: formEmploye.genre || "",
+      photo_profil: formEmploye.photo_profil || "",
+      role: formEmploye.role || "employe",
+      statut: formEmploye.statut || "actif",
+      peut_voir_budget: !!formEmploye.peut_voir_budget,
+      salaire: total,
+      salaire_total: total,
+      salaire_recu: recu,
+      salaire_restant: Math.max(total - recu, 0),
+      chantier_assigne: nouveauChantierId,
+      date_admission: normaliserDate(formEmploye.date_admission || null),
+      date_naissance: normaliserDate(formEmploye.date_naissance || null),
+    };
+    const ancienChantierId = edition?.id ? (employes.find((e) => e.id === edition.id)?.chantier_assigne || null) : null;
+    const { data: employeSauvegarde, error } = edition?.id
+      ? await db.from("employes").update(payload).eq("id", edition.id).select().single()
+      : await db.from("employes").insert(payload).select().single();
+    if (!error && employeSauvegarde?.id) {
+      // Synchroniser la liste employes_assignes du chantier
+      if (ancienChantierId && ancienChantierId !== nouveauChantierId) {
+        const ancien = chantiers.find((c) => c.id === ancienChantierId);
+        if (ancien) {
+          const nouvelleListe = (ancien.employes_assignes || []).filter((id) => id !== employeSauvegarde.id);
+          await db.from("chantiers").update({ employes_assignes: nouvelleListe }).eq("id", ancienChantierId);
+        }
+      }
+      if (nouveauChantierId && nouveauChantierId !== ancienChantierId) {
+        const nouveau = chantiers.find((c) => c.id === nouveauChantierId);
+        const listeActuelle = nouveau?.employes_assignes || [];
+        if (!listeActuelle.includes(employeSauvegarde.id)) {
+          await db.from("chantiers").update({ employes_assignes: [...listeActuelle, employeSauvegarde.id] }).eq("id", nouveauChantierId);
+        }
+      }
+      // Si rôle = chef_chantier et chantier assigné, le définir comme chef
+      if (payload.role === "chef_chantier" && nouveauChantierId) {
+        const ch = chantiers.find((c) => c.id === nouveauChantierId);
+        if (ch && ch.chef_chantier !== employeSauvegarde.id) {
+          await db.from("chantiers").update({ chef_chantier: employeSauvegarde.id }).eq("id", nouveauChantierId);
+        }
+      }
+    }
     if (error && (error as { code?: string }).code === "23505") {
       setSauvegarde(false);
       return setMessage(`Ce matricule « ${matriculeNettoye} » est déjà utilisé par un autre employé. Veuillez en choisir un autre.`);
