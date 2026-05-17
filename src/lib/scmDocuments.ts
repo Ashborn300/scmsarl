@@ -3344,3 +3344,171 @@ export async function creerPdfPresences(options: {
 
   return pdf.output("datauristring");
 }
+
+// ====================== Arrivées chantier (pointage employé) ======================
+export type ArriveeChantier = {
+  id: string;
+  employe_id: string;
+  employe_nom: string;
+  matricule: string;
+  poste: string;
+  chantier_id: string | null;
+  chantier_nom: string;
+  date: string;
+  heure_arrivee: string;
+  created_at: string;
+};
+
+export async function signalerArriveeChantier(payload: {
+  employe_id: string;
+  employe_nom: string;
+  matricule: string;
+  poste: string;
+  chantier_id: string | null;
+  chantier_nom: string;
+}): Promise<ArriveeChantier> {
+  const now = new Date();
+  const date = now.toISOString().slice(0, 10);
+  const insertion = {
+    ...payload,
+    date,
+    heure_arrivee: now.toISOString(),
+  };
+  const { data, error } = await (supabase.from("arrivees_chantier" as never) as unknown as {
+    insert: (v: unknown) => { select: (c: string) => { single: () => Promise<{ data: ArriveeChantier | null; error: { message: string } | null }> } };
+  }).insert(insertion).select("*").single();
+  if (error) throw new Error(error.message);
+  return data as ArriveeChantier;
+}
+
+export async function listerArriveesChantier(options: { dateDebut?: string; dateFin?: string; chantierId?: string; employeId?: string } = {}): Promise<ArriveeChantier[]> {
+  let q = (supabase.from("arrivees_chantier" as never) as unknown as { select: (c: string) => unknown }).select("*") as unknown as {
+    gte: (k: string, v: string) => unknown;
+    lte: (k: string, v: string) => unknown;
+    eq: (k: string, v: string) => unknown;
+    order: (k: string, opts: { ascending: boolean }) => unknown;
+  };
+  if (options.dateDebut) q = q.gte("date", options.dateDebut) as typeof q;
+  if (options.dateFin) q = q.lte("date", options.dateFin) as typeof q;
+  if (options.chantierId) q = q.eq("chantier_id", options.chantierId) as typeof q;
+  if (options.employeId) q = q.eq("employe_id", options.employeId) as typeof q;
+  const finale = q.order("heure_arrivee", { ascending: false }) as unknown as Promise<{ data: ArriveeChantier[] | null; error: { message: string } | null }>;
+  const { data, error } = await finale;
+  if (error) throw new Error(error.message);
+  return (data || []) as ArriveeChantier[];
+}
+
+export function formaterHeure(iso: string): string {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${hh}:${mm}`;
+  } catch { return "—"; }
+}
+
+export async function creerPdfArrivees(options: {
+  arrivees: ArriveeChantier[];
+  dateDebut?: string;
+  dateFin?: string;
+  chantierNom?: string;
+}): Promise<string> {
+  const { arrivees, dateDebut, dateFin, chantierNom } = options;
+  const pdf = new jsPDF({ format: "a4", unit: "mm", orientation: "portrait" });
+  const PAGE_W = pdf.internal.pageSize.getWidth();
+  const PAGE_H = pdf.internal.pageSize.getHeight();
+  const principal: [number, number, number] = [16, 185, 129];
+  const secondaire: [number, number, number] = [30, 64, 175];
+  const doux: [number, number, number] = [228, 252, 240];
+
+  const logo = await imageVersBase64(logoUrl).catch(() => "");
+  const drapeau = await drapeauRdcVersPng().catch(() => "");
+
+  const dessinerEntete = (numeroPage: number) => {
+    pdf.setFillColor(...principal); pdf.rect(0, 0, PAGE_W, 32, "F");
+    pdf.setFillColor(...secondaire); pdf.rect(0, 32, PAGE_W, 2, "F");
+    if (logo) { try { pdf.addImage(logo, "JPEG", 12, 6, 22, 22, undefined, "FAST"); } catch { /* ignore */ } }
+    if (drapeau) { try { pdf.addImage(drapeau, "PNG", PAGE_W - 38, 9, 24, 16, undefined, "FAST"); } catch { /* ignore */ } }
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(16);
+    pdf.text("SCM SARL", 40, 14);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
+    pdf.text("Société de Construction et Maintenance · République Démocratique du Congo", 40, 19);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(11);
+    pdf.text("POINTAGES D'ARRIVÉE AU CHANTIER", 40, 26);
+    pdf.setFontSize(8); pdf.setFont("helvetica", "normal");
+    pdf.text(`Page ${numeroPage}`, PAGE_W - 14, 30, { align: "right" });
+    pdf.setTextColor(40, 40, 40);
+  };
+
+  dessinerEntete(1);
+  let y = 42;
+
+  const periode = dateDebut && dateFin
+    ? (dateDebut === dateFin ? `Journée du ${formaterDateFr(dateDebut)}` : `Du ${formaterDateFr(dateDebut)} au ${formaterDateFr(dateFin)}`)
+    : "Toutes périodes";
+
+  pdf.setFillColor(...doux); pdf.roundedRect(12, y, PAGE_W - 24, 24, 2, 2, "F");
+  pdf.setTextColor(...principal); pdf.setFont("helvetica", "bold"); pdf.setFontSize(10);
+  pdf.text("SYNTHÈSE", 16, y + 7);
+  pdf.setTextColor(30, 30, 30); pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
+  pdf.text(`Période : ${periode}`, 16, y + 13);
+  pdf.text(`Chantier : ${chantierNom || "Tous les chantiers"}`, 16, y + 18);
+  pdf.setFont("helvetica", "bold"); pdf.setTextColor(...principal);
+  pdf.text(`Total pointages : ${arrivees.length}`, PAGE_W - 16, y + 18, { align: "right" });
+  pdf.setFont("helvetica", "italic"); pdf.setFontSize(8); pdf.setTextColor(110, 110, 110);
+  pdf.text(`Édité le ${formaterDateFr(new Date().toISOString().slice(0, 10))}`, PAGE_W - 16, y + 13, { align: "right" });
+  y += 30;
+
+  let pageCourante = 1;
+  const colDate = 12, colHeure = 42, colEmploye = 70, colMatricule = 130, colChantier = PAGE_W - 12;
+
+  const dessinerEnteteTableau = () => {
+    pdf.setFillColor(...principal); pdf.rect(12, y, PAGE_W - 24, 8, "F");
+    pdf.setTextColor(255, 255, 255); pdf.setFont("helvetica", "bold"); pdf.setFontSize(9);
+    pdf.text("Date", colDate + 2, y + 5.5);
+    pdf.text("Heure", colHeure, y + 5.5);
+    pdf.text("Employé", colEmploye, y + 5.5);
+    pdf.text("Matricule", colMatricule, y + 5.5);
+    pdf.text("Chantier", colChantier - 2, y + 5.5, { align: "right" });
+    y += 8;
+    pdf.setTextColor(30, 30, 30); pdf.setFont("helvetica", "normal");
+  };
+  dessinerEnteteTableau();
+
+  const triees = [...arrivees].sort((a, b) => b.heure_arrivee.localeCompare(a.heure_arrivee));
+  let zebra = false;
+  pdf.setFontSize(9);
+
+  if (triees.length === 0) {
+    pdf.setTextColor(120, 120, 120); pdf.setFont("helvetica", "italic");
+    pdf.text("Aucun pointage d'arrivée pour cette sélection.", PAGE_W / 2, y + 10, { align: "center" });
+  }
+
+  for (const a of triees) {
+    const hauteurLigne = 7;
+    if (y + hauteurLigne > PAGE_H - 14) {
+      pdf.addPage(); pageCourante += 1; dessinerEntete(pageCourante); y = 42; dessinerEnteteTableau();
+      zebra = false;
+    }
+    if (zebra) { pdf.setFillColor(247, 247, 247); pdf.rect(12, y, PAGE_W - 24, hauteurLigne, "F"); }
+    zebra = !zebra;
+    pdf.setTextColor(30, 30, 30); pdf.setFont("helvetica", "normal");
+    pdf.text(formaterDateFr(a.date), colDate + 2, y + 5);
+    pdf.setFont("helvetica", "bold"); pdf.setTextColor(...principal);
+    pdf.text(formaterHeure(a.heure_arrivee), colHeure, y + 5);
+    pdf.setFont("helvetica", "normal"); pdf.setTextColor(30, 30, 30);
+    const nomEmp = pdf.splitTextToSize(a.employe_nom || "—", colMatricule - colEmploye - 2)[0] || a.employe_nom;
+    pdf.text(nomEmp, colEmploye, y + 5);
+    pdf.text(a.matricule || "—", colMatricule, y + 5);
+    const nomCh = pdf.splitTextToSize(a.chantier_nom || "—", 60)[0] || a.chantier_nom;
+    pdf.text(nomCh, colChantier - 2, y + 5, { align: "right" });
+    y += hauteurLigne;
+  }
+
+  pdf.setFont("helvetica", "italic"); pdf.setFontSize(8); pdf.setTextColor(110, 110, 110);
+  pdf.text("Document généré automatiquement par le système SCM SARL.", PAGE_W / 2, PAGE_H - 8, { align: "center" });
+
+  return pdf.output("datauristring");
+}

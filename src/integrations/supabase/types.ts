@@ -235,6 +235,45 @@ export type Database = {
         }
         Relationships: []
       }
+      arrivees_chantier: {
+        Row: {
+          chantier_id: string | null
+          chantier_nom: string
+          created_at: string
+          date: string
+          employe_id: string
+          employe_nom: string
+          heure_arrivee: string
+          id: string
+          matricule: string
+          poste: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date?: string
+          employe_id: string
+          employe_nom?: string
+          heure_arrivee?: string
+          id?: string
+          matricule?: string
+          poste?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          chantier_nom?: string
+          created_at?: string
+          date?: string
+          employe_id?: string
+          employe_nom?: string
+          heure_arrivee?: string
+          id?: string
+          matricule?: string
+          poste?: string
+        }
+        Relationships: []
+      }
       bilans_sante_employes: {
         Row: {
           allergies: string
