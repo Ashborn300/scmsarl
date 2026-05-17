@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, Archive, ArrowRight, Award, Building2, CalendarDays, ClipboardCheck, ClipboardList, Cuboid, GraduationCap, HandCoins, HeartPulse, FileClock, FileText, FilePlus2, FileX2, Hammer, HardHat, IdCard, LayoutGrid, Megaphone, Moon, Network, PackageCheck, PiggyBank, QrCode, ReceiptText, Receipt, Search, ShieldCheck, SquarePen, Truck, UsersRound, Wallet, Warehouse, X } from "lucide-react";
+import { AlertTriangle, Archive, ArrowRight, Award, Briefcase, Building2, CalendarDays, ClipboardCheck, ClipboardList, Cuboid, GraduationCap, HandCoins, HeartPulse, FileClock, FileText, FilePlus2, FileX2, Hammer, HardHat, IdCard, LayoutGrid, Megaphone, Moon, Network, PackageCheck, PiggyBank, QrCode, ReceiptText, Receipt, Search, ShieldCheck, SquarePen, Truck, UsersRound, Wallet, Warehouse, X } from "lucide-react";
 import { useMemo, useState, type CSSProperties } from "react";
 import { configs, DocumentTool } from "@/components/DocumentTool";
 import { type OutilType } from "@/lib/scmDocuments";
@@ -52,6 +52,7 @@ const icones: Record<OutilType, React.ElementType> = {
   gestion_dettes: Receipt,
   gestion_stage: GraduationCap,
   gestion_presence: ClipboardCheck,
+  offres_emploi: Briefcase,
 };
 
 type ToolVisual = {
@@ -335,6 +336,14 @@ const stylesOutils: Record<OutilType, ToolVisual> = {
     footer: { background: "rgba(30,64,175,0.08)", border: "1px solid rgba(16,185,129,0.16)" },
     action: { background: "rgba(16,185,129,0.14)", border: "1px solid rgba(30,64,175,0.18)" },
     icon: { background: "linear-gradient(135deg, #1e40af, #10b981)", color: "white" },
+  },
+  offres_emploi: {
+    card: { background: "linear-gradient(180deg, rgba(30,64,175,0.16) 0%, rgba(255,255,255,0.98) 34%)", borderColor: "rgba(15,23,42,0.32)" },
+    banner: { background: "linear-gradient(135deg, #1e40af, #0f172a)", color: "white" },
+    badge: { background: "rgba(255,255,255,0.18)", color: "white" },
+    footer: { background: "rgba(30,64,175,0.08)", border: "1px solid rgba(15,23,42,0.16)" },
+    action: { background: "rgba(15,23,42,0.12)", border: "1px solid rgba(30,64,175,0.18)" },
+    icon: { background: "linear-gradient(135deg, #1e40af, #0f172a)", color: "white" },
   },
 };
 
