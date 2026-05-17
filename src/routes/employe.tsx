@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   ClipboardList,
+  Clock,
   Edit3,
   Eye,
   EyeOff,
@@ -37,6 +38,7 @@ import {
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { signalerArriveeChantier } from "@/lib/scmDocuments";
 import scmCompanyLogo from "@/assets/scm-company-logo.jpeg";
 
 export const Route = createFileRoute("/employe")({
