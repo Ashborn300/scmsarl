@@ -2199,6 +2199,7 @@ export async function supprimerRecuEmploye(id: string) {
 
 export type LigneDevisEstimatif = { designation: string; unite: string; quantite: number; prixUnitaire: number };
 export type EtapeDevisEstimatif = { titre: string; lignes: LigneDevisEstimatif[] };
+export type LigneDepenseDevis = { designation: string; montant: number };
 
 export type DonneesDevisEstimatif = {
   numero: string;
@@ -2213,6 +2214,9 @@ export type DonneesDevisEstimatif = {
   dateDocument: string;
   imprevuPourcentage: number;
   etapes: EtapeDevisEstimatif[];
+  mainOeuvre?: LigneDepenseDevis[];
+  restauration?: LigneDepenseDevis[];
+  transport?: LigneDepenseDevis[];
   sceau?: string;
   nomImportateur?: string;
   fonctionImportateur?: string;
