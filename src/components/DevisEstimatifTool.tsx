@@ -10,6 +10,7 @@ import {
   voirPdf,
   type DocumentRecord,
   type EtapeDevisEstimatif,
+  type LigneDepenseDevis,
   type LigneDevisEstimatif,
 } from "@/lib/scmDocuments";
 
@@ -33,6 +34,10 @@ function nouvelleEtape(num: number): EtapeDevisEstimatif {
   return { titre: `Étape ${num}`, lignes: [nouvelleLigne()] };
 }
 
+function nouvelleDepense(): LigneDepenseDevis {
+  return { designation: "", montant: 0 };
+}
+
 export function DevisEstimatifTool({ retour }: { retour: () => void }) {
   const [titreDevis, setTitreDevis] = useState("SYNTHÈSE DU DEVIS ESTIMATIF");
   const [projet, setProjet] = useState("");
@@ -45,6 +50,9 @@ export function DevisEstimatifTool({ retour }: { retour: () => void }) {
   const [imprevuPourcentage, setImprevuPourcentage] = useState(0);
   const [dateDocument, setDateDocument] = useState(aujourdhui);
   const [etapes, setEtapes] = useState<EtapeDevisEstimatif[]>([nouvelleEtape(1)]);
+  const [mainOeuvre, setMainOeuvre] = useState<LigneDepenseDevis[]>([]);
+  const [restauration, setRestauration] = useState<LigneDepenseDevis[]>([]);
+  const [transport, setTransport] = useState<LigneDepenseDevis[]>([]);
   const [sceau, setSceau] = useState<File>();
   const [signature, setSignature] = useState<File>();
   const [nomImportateur, setNomImportateur] = useState("");
@@ -56,8 +64,14 @@ export function DevisEstimatifTool({ retour }: { retour: () => void }) {
 
   const sousTotaux = etapes.map((e) => e.lignes.reduce((s, l) => s + Number(l.quantite || 0) * Number(l.prixUnitaire || 0), 0));
   const totalGlobal = sousTotaux.reduce((a, b) => a + b, 0);
-  const montantImprevu = Math.round(totalGlobal * Number(imprevuPourcentage || 0)) / 100;
-  const coutGlobal = totalGlobal + montantImprevu;
+  const sommeDepense = (l: LigneDepenseDevis[]) => l.reduce((s, x) => s + Number(x.montant || 0), 0);
+  const totalMainOeuvre = sommeDepense(mainOeuvre);
+  const totalRestauration = sommeDepense(restauration);
+  const totalTransport = sommeDepense(transport);
+  const totalExtras = totalMainOeuvre + totalRestauration + totalTransport;
+  const baseTotal = totalGlobal + totalExtras;
+  const montantImprevu = Math.round(baseTotal * Number(imprevuPourcentage || 0)) / 100;
+  const coutGlobal = baseTotal + montantImprevu;
 
   function reinitialiser() {
     setTitreDevis("SYNTHÈSE DU DEVIS ESTIMATIF");
@@ -65,6 +79,7 @@ export function DevisEstimatifTool({ retour }: { retour: () => void }) {
     setDuree("1 MOIS"); setAdresseChantier(""); setTelephone(""); setDescription("");
     setImprevuPourcentage(0); setDateDocument(aujourdhui);
     setEtapes([nouvelleEtape(1)]); setSceau(undefined); setSignature(undefined);
+    setMainOeuvre([]); setRestauration([]); setTransport([]);
     setNomImportateur(""); setFonctionImportateur("Secrétaire d'entreprise");
     setEditionId(null); setEditionNumero(null);
   }
@@ -80,6 +95,9 @@ export function DevisEstimatifTool({ retour }: { retour: () => void }) {
       setDescription(String(d.description || "")); setImprevuPourcentage(Number(d.imprevuPourcentage || 0));
       setDateDocument(String(d.dateDocument || aujourdhui));
       setEtapes(Array.isArray(d.etapes) && d.etapes.length ? (d.etapes as EtapeDevisEstimatif[]) : [nouvelleEtape(1)]);
+      setMainOeuvre(Array.isArray(d.mainOeuvre) ? (d.mainOeuvre as LigneDepenseDevis[]) : []);
+      setRestauration(Array.isArray(d.restauration) ? (d.restauration as LigneDepenseDevis[]) : []);
+      setTransport(Array.isArray(d.transport) ? (d.transport as LigneDepenseDevis[]) : []);
       setNomImportateur(String(d.nomImportateur || ""));
       setFonctionImportateur(String(d.fonctionImportateur || "Secrétaire d'entreprise"));
       setEditionId(complet.id); setEditionNumero(complet.numero);
@@ -101,14 +119,16 @@ export function DevisEstimatifTool({ retour }: { retour: () => void }) {
       const pdf = await creerPdfDevisEstimatif({
         numero, titreDevis, projet, client, localisation, duree, adresseChantier,
         telephone, description, dateDocument, imprevuPourcentage,
-        etapes, sceau: sceauBase64, signature: signatureBase64,
+        etapes, mainOeuvre, restauration, transport,
+        sceau: sceauBase64, signature: signatureBase64,
         nomImportateur, fonctionImportateur,
       });
       await enregistrerDevisEstimatif({
         titreDevis, projet, client, localisation, duree, adresseChantier, telephone,
         description, dateDocument, imprevuPourcentage, etapes,
+        mainOeuvre, restauration, transport,
         nomImportateur, fonctionImportateur,
-        sousTotaux, totalGlobal, montantImprevu, coutGlobal,
+        sousTotaux, totalGlobal, totalMainOeuvre, totalRestauration, totalTransport, totalExtras, montantImprevu, coutGlobal,
       }, pdf, numero, editionId || undefined);
       alert(editionId ? "Devis estimatif modifié avec succès." : "Devis estimatif généré et enregistré avec succès.");
       reinitialiser();
