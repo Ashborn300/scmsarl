@@ -1,0 +1,11 @@
+# Configuration de déploiement Netlify pour l'application TanStack Start.
+[build]
+  command = "npm run build"
+  publish = "dist/client"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# TanStack Start (cible « netlify ») émet automatiquement les fonctions
+# serverless dans .netlify/functions-internal et la configuration de routage
+# nécessaire. Aucune redirection manuelle n'est requise ici.
