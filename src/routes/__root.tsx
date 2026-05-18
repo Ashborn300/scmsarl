@@ -1,6 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { InstallPwaPrompt } from "@/components/InstallPwaPrompt";
-import { UninstallPwaButton } from "@/components/UninstallPwaButton";
 
 import appCss from "../styles.css?url";
 
@@ -66,9 +65,6 @@ function RootComponent() {
     <>
       <Outlet />
       <InstallPwaPrompt />
-      <div className="fixed bottom-3 right-3 z-[90]">
-        <UninstallPwaButton />
-      </div>
     </>
   );
 }
