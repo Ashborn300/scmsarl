@@ -5,6 +5,11 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  VITE_SUPABASE_URL = "https://gprvojlbybgmfufciqvu.supabase.co"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwcnZvamxieWJnbWZ1ZmNpcXZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMzcwNDUsImV4cCI6MjA5NDYxMzA0NX0.kP3ntC12V-K4Vwex4XC6DRL75OfeMMNJDyc3tAT95Nw"
+  VITE_SUPABASE_PROJECT_ID = "gprvojlbybgmfufciqvu"
+  SUPABASE_URL = "https://gprvojlbybgmfufciqvu.supabase.co"
+  SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwcnZvamxieWJnbWZ1ZmNpcXZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMzcwNDUsImV4cCI6MjA5NDYxMzA0NX0.kP3ntC12V-K4Vwex4XC6DRL75OfeMMNJDyc3tAT95Nw"
 
 # TanStack Start (cible « netlify ») émet automatiquement les fonctions
 # serverless dans .netlify/functions-internal et la configuration de routage
