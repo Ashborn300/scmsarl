@@ -227,6 +227,36 @@ export function DevisEstimatifTool({ retour }: { retour: () => void }) {
               })}
             </div>
 
+            {([
+              { titre: "Main d'œuvre", liste: mainOeuvre, set: setMainOeuvre, total: totalMainOeuvre },
+              { titre: "Restauration", liste: restauration, set: setRestauration, total: totalRestauration },
+              { titre: "Transport", liste: transport, set: setTransport, total: totalTransport },
+            ] as const).map((bloc) => (
+              <div key={bloc.titre} className="mt-6 rounded-xl border border-border bg-muted/40 p-4 xl:p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-base font-black text-foreground">{bloc.titre}</h3>
+                  <button type="button" onClick={() => bloc.set([...bloc.liste, nouvelleDepense()])} className="mini-button"><Plus className="size-4" /> Ajouter</button>
+                </div>
+                {bloc.liste.length === 0 ? (
+                  <p className="text-xs italic text-muted-foreground">Aucune ligne. Cliquez sur « Ajouter » pour insérer une dépense.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {bloc.liste.map((ligne, idx) => (
+                      <div key={idx} className="grid gap-2 rounded-lg border border-border/60 bg-card p-3 sm:grid-cols-[1fr_140px_40px] sm:items-center">
+                        <input placeholder="Désignation" value={ligne.designation} onChange={(e) => bloc.set(bloc.liste.map((l, j) => j === idx ? { ...l, designation: e.target.value } : l))} className="form-control" />
+                        <input type="number" min="0" step="0.01" placeholder="Montant ($)" value={ligne.montant} onChange={(e) => bloc.set(bloc.liste.map((l, j) => j === idx ? { ...l, montant: Number(e.target.value) } : l))} className="form-control" />
+                        <button type="button" onClick={() => bloc.set(bloc.liste.filter((_, j) => j !== idx))} className="tool-action danger justify-self-end"><Trash2 className="size-4" /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-3 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/10 px-4 py-2">
+                  <span className="text-xs font-bold uppercase tracking-wide text-primary">Sous-total {bloc.titre.toLowerCase()}</span>
+                  <strong className="text-base font-black tabular-nums text-primary">{bloc.total.toLocaleString("fr-FR")} $</strong>
+                </div>
+              </div>
+            ))}
+
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               <div className="rounded-lg border border-border/60 bg-card p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Sous-total étapes</p><p className="mt-1 text-base font-black tabular-nums text-foreground">{totalGlobal.toLocaleString("fr-FR")} $</p></div>
               <div className="rounded-lg border border-border/60 bg-card p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Imprévu ({imprevuPourcentage}%)</p><p className="mt-1 text-base font-black tabular-nums text-foreground">{montantImprevu.toLocaleString("fr-FR")} $</p></div>
