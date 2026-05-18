@@ -2199,6 +2199,7 @@ export async function supprimerRecuEmploye(id: string) {
 
 export type LigneDevisEstimatif = { designation: string; unite: string; quantite: number; prixUnitaire: number };
 export type EtapeDevisEstimatif = { titre: string; lignes: LigneDevisEstimatif[] };
+export type LigneDepenseDevis = { designation: string; montant: number };
 
 export type DonneesDevisEstimatif = {
   numero: string;
@@ -2213,6 +2214,9 @@ export type DonneesDevisEstimatif = {
   dateDocument: string;
   imprevuPourcentage: number;
   etapes: EtapeDevisEstimatif[];
+  mainOeuvre?: LigneDepenseDevis[];
+  restauration?: LigneDepenseDevis[];
+  transport?: LigneDepenseDevis[];
   sceau?: string;
   nomImportateur?: string;
   fonctionImportateur?: string;
@@ -2447,7 +2451,42 @@ export async function creerPdfDevisEstimatif(data: DonneesDevisEstimatif): Promi
 
   // Imprévu
   const imprevuPct = Number(data.imprevuPourcentage || 0);
-  const montantImprevu = Math.round(totalGlobal * imprevuPct) / 100;
+
+  // Charges additionnelles (Main d'œuvre, Restauration, Transport)
+  const sectionsExtra: Array<[string, LigneDepenseDevis[] | undefined]> = [
+    ["MAIN D'ŒUVRE", data.mainOeuvre],
+    ["RESTAURATION", data.restauration],
+    ["TRANSPORT", data.transport],
+  ];
+  let totalExtras = 0;
+  sectionsExtra.forEach(([titre, lignes]) => {
+    if (!lignes || !lignes.length) return;
+    verifierPlace(8);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...couleurs.principal);
+    pdf.text(titre, MARGE_X + 2, y);
+    y += 5;
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(36, 45, 64);
+    let sousTotalExtra = 0;
+    lignes.forEach((l) => {
+      const montant = Number(l.montant || 0);
+      sousTotalExtra += montant;
+      verifierPlace(5);
+      pdf.text(`• ${l.designation || "—"}`, MARGE_X + 6, y);
+      pdf.text(`${formaterMontant(montant)} $`, PAGE_W - MARGE_X - 2, y, { align: "right" });
+      y += 5;
+    });
+    pdf.setFont("helvetica", "bold");
+    pdf.text(`Sous-total ${titre.toLowerCase()}`, MARGE_X + 2, y);
+    pdf.text(`${formaterMontant(sousTotalExtra)} $`, PAGE_W - MARGE_X - 2, y, { align: "right" });
+    y += 6;
+    totalExtras += sousTotalExtra;
+  });
+
+  const baseTotal = totalGlobal + totalExtras;
+  const montantImprevu = Math.round(baseTotal * imprevuPct) / 100;
   verifierPlace(7);
   pdf.setDrawColor(...couleurs.secondaire);
   pdf.setLineWidth(0.3);
@@ -2458,7 +2497,7 @@ export async function creerPdfDevisEstimatif(data: DonneesDevisEstimatif): Promi
   y += 6;
 
   // Coût global
-  const coutGlobal = totalGlobal + montantImprevu;
+  const coutGlobal = baseTotal + montantImprevu;
   verifierPlace(14);
   pdf.setFillColor(...couleurs.principal);
   pdf.roundedRect(MARGE_X, y, tableW, 11, 1.5, 1.5, "F");
