@@ -12,11 +12,11 @@ export function InstallAppDialog() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [open, setOpen] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Ne rien afficher si déjà installé
     const standalone =
       window.matchMedia?.("(display-mode: standalone)").matches ||
       (window.navigator as any).standalone === true;
@@ -24,9 +24,22 @@ export function InstallAppDialog() {
 
     if (localStorage.getItem(DISMISS_KEY) === "1") return;
 
+    // Contextes où l'installation n'est pas possible (preview Lovable / iframe)
+    const inIframe = (() => {
+      try { return window.self !== window.top; } catch { return true; }
+    })();
+    const host = window.location.hostname;
+    const isPreview = host.includes("lovable.app") && host.includes("preview");
+
     const ua = window.navigator.userAgent || "";
     const iOS = /iPhone|iPad|iPod/i.test(ua) && !/CriOS|FxiOS/i.test(ua);
     setIsIOS(iOS);
+
+    // Enregistre le service worker — condition requise pour que Chrome/Android
+    // déclenche `beforeinstallprompt`.
+    if (!inIframe && !isPreview && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -35,28 +48,41 @@ export function InstallAppDialog() {
     };
     window.addEventListener("beforeinstallprompt", handler);
 
-    const timer = window.setTimeout(() => setOpen(true), 1000);
+    // iOS n'émet pas `beforeinstallprompt` : on affiche les instructions manuelles.
+    const timer = iOS ? window.setTimeout(() => setOpen(true), 1000) : 0;
 
     const onInstalled = () => {
       setOpen(false);
       localStorage.setItem(DISMISS_KEY, "1");
+      // Tente de rouvrir l'app installée immédiatement après l'installation.
+      try {
+        const url = `${window.location.origin}/?pwa=1`;
+        window.location.replace(url);
+      } catch {}
     };
     window.addEventListener("appinstalled", onInstalled);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
       window.removeEventListener("appinstalled", onInstalled);
-      window.clearTimeout(timer);
+      if (timer) window.clearTimeout(timer);
     };
   }, []);
 
   const installer = async () => {
     if (!deferred) return;
-    await deferred.prompt();
-    const { outcome } = await deferred.userChoice;
-    if (outcome === "accepted") localStorage.setItem(DISMISS_KEY, "1");
-    setDeferred(null);
-    setOpen(false);
+    try {
+      setInstalling(true);
+      await deferred.prompt();
+      const { outcome } = await deferred.userChoice;
+      if (outcome === "accepted") {
+        localStorage.setItem(DISMISS_KEY, "1");
+      }
+    } finally {
+      setInstalling(false);
+      setDeferred(null);
+      setOpen(false);
+    }
   };
 
   const fermer = () => {
@@ -88,11 +114,11 @@ export function InstallAppDialog() {
         ) : (
           <button
             onClick={installer}
-            disabled={!deferred}
+            disabled={!deferred || installing}
             className="primary-action mt-5 w-full justify-center disabled:opacity-50"
           >
             <Download className="size-4" />
-            Installer
+            {installing ? "Installation…" : "Installer"}
           </button>
         )}
       </div>
