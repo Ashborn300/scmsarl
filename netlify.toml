@@ -1,7 +1,9 @@
 # Configuration de déploiement Netlify pour l'application TanStack Start.
+# Le plugin @netlify/vite-plugin-tanstack-start s'occupe de générer la sortie
+# (dossier de publication + fonctions serverless) au bon endroit, on n'a donc
+# pas besoin de préciser `publish` ici.
 [build]
   command = "npm run build"
-  publish = "dist/client"
 
 [build.environment]
   NODE_VERSION = "20"
