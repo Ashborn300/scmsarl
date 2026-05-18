@@ -873,7 +873,7 @@ function EmployePage() {
     if (w) w.document.write(`<iframe src="${pdfBase64}" style="width:100%;height:100vh;border:0;"></iframe>`);
   }
 
-  if (!session) return <LoginScreen identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} />;
+  if (!session) return (<><InstallAppDialog /><LoginScreen identifiant={identifiant} setIdentifiant={setIdentifiant} connecter={connecter} saving={sauvegarde} message={message} chargement={chargement} /></>);
 
   const titreOnglet = onglet === "dashboard" ? "Tableau de bord" : onglet === "projets" ? "Projets" : onglet === "employes" ? "Employés" : onglet === "chantiers" ? "Chantiers" : onglet === "annonces" ? "Annonces" : onglet === "calendrier" ? "Jours fériés" : onglet === "organigramme" ? "Organigramme" : onglet === "demande_conge" ? "Demande de Congé" : onglet === "bilan_sante" ? "Bilan de santé" : onglet === "gestion_materiel" ? "Gestion de Matériel" : onglet === "arrivage_materiel" ? "Rapport arrivage de Matériel" : onglet === "incident_chantier" ? "Incident / Accident" : onglet === "paiement" ? "Paiement" : "Présences";
   const chefOptions = employes.filter((e) => e.role === "chef_chantier");
@@ -882,7 +882,6 @@ function EmployePage() {
 
   return (
     <main className="dashboard-shell min-h-screen text-foreground">
-      <InstallAppDialog />
       <div className="flex min-h-screen">
         <aside className={`${menuOuvert ? "translate-x-0" : "-translate-x-full"} dashboard-sidebar fixed inset-y-0 left-0 z-40 w-72 border-r border-border p-5 shadow-document transition-transform lg:sticky lg:translate-x-0`}>
           <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">SCM SARL</p><h1 className="mt-1 text-2xl font-black">Gestion</h1><p className="mt-1 text-xs font-bold text-primary">{sessionRoleLabel(session.role)}</p></div><button className="tool-action lg:hidden" onClick={() => setMenuOuvert(false)} aria-label="Fermer"><X className="size-4" /></button></div>
